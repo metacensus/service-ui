@@ -44,6 +44,7 @@ type Action =
   | { type: "ADD_AUTHOR" }
   | { type: "REMOVE_AUTHOR"; index: number }
   | { type: "SET_AUTHOR"; index: number; value: string }
+  | { type: "PREFILL"; values: Partial<Omit<State, "file">> }
   | { type: "RESET" };
 
 const initialState: State = {
@@ -74,6 +75,8 @@ function reducer(state: State, action: Action): State {
         ...state,
         authors: state.authors.filter((_, index) => index !== action.index),
       };
+    case "PREFILL":
+      return { ...state, ...action.values };
     case "SET_AUTHOR":
       const updatedAuthors = [...state.authors];
       updatedAuthors[action.index] = action.value;
@@ -91,10 +94,52 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
 }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [pmidLookupLoading, setPmidLookupLoading] = useState<boolean>(false);
+  const [pmidLookupError, setPmidLookupError] = useState<string>("");
   const { toast } = useToast();
 
+  // Fetch article metadata from PubMed for the entered PMID and pre-fill the
+  // form. Only overwrites fields PubMed actually returns so anything the user
+  // already typed is preserved when PubMed has no value for it.
+  const handlePmidLookup = async () => {
+    const pmid = state.pmid.trim();
+    if (!pmid) {
+      setPmidLookupError("Enter a PMID first.");
+      return;
+    }
+
+    setPmidLookupError("");
+    setPmidLookupLoading(true);
+
+    try {
+      const { data } = await axios.get(routes.api.paperLookup, {
+        params: { pmid },
         headers: Object.fromEntries(headers),
       });
+
+      const values: Partial<Omit<State, "file">> = {};
+      if (data.title) values.title = data.title;
+      if (data.doi) values.doi = data.doi;
+      if (data.abstract) values.abstract = data.abstract;
+      if (data.publishedDate) values.publishedDate = data.publishedDate;
+      if (data.url) values.url = data.url;
+      if (Array.isArray(data.authors) && data.authors.length > 0) {
+        values.authors = data.authors;
+      }
+
+      dispatch({ type: "PREFILL", values });
+
+      toast({ title: "Fields filled from PubMed" });
+    } catch (error) {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : "Could not look up that PMID.";
+      setPmidLookupError(message);
+    } finally {
+      setPmidLookupLoading(false);
+    }
+  };
 
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -163,16 +208,45 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
 
   return (
     <form onSubmit={handleSubmit}>
+      <div>
+        <div className="flex items-center gap-2">
+          <Input
             type="text"
             value={state.pmid}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setPmidLookupError("");
               dispatch({
                 type: "SET_FIELD",
                 field: "pmid",
                 value: e.target.value,
+              });
+            }}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === "Enter") {
+                // Prevent the keypress from submitting the form; look up instead.
+                e.preventDefault();
+                if (!pmidLookupLoading && state.pmid.trim() !== "") {
+                  handlePmidLookup();
+                }
+              }
+            }}
           />
           <Button
             type="button"
             variant="secondary"
+            onClick={handlePmidLookup}
+            disabled={pmidLookupLoading || state.pmid.trim() === ""}
+          >
+            {pmidLookupLoading ? "Looking up…" : "Look up"}
+          </Button>
+        </div>
+          Enter a PMID and click Look up to auto-fill from PubMed.
+        </p>
+        {pmidLookupError && (
+        )}
+      </div>
+
+      <div className="col-span-full mt-4">
 
         {state.file ? (
           // When a file is selected, display the file name and a 'Remove' button
