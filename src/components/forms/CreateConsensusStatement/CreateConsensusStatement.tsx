@@ -25,6 +25,7 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
   const {
     register,
     handleSubmit,
+    formState: { errors, isSubmitting },
     reset,
   } = useForm<FormValues>();
 
@@ -32,6 +33,7 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
+      const response = await fetch(`${routes.api.topic}/${topicId}/prop`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -39,6 +41,10 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
           description: data.statement,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to create Consensus Statement");
+      }
 
       await queryClient.invalidateQueries({
         queryKey: [`statements-${topicId}`],
@@ -59,6 +65,9 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
       console.error("Error creating Consensus Statement:", error);
       toast({
         title: "Consensus Statement",
+        description: "Unable to create Consensus Statement. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -76,6 +85,8 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
 
       {/* Submit Button */}
       <div className="mt-6">
+        <Button type="submit" variant="primary" disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Submit"}
         </Button>
       </div>
     </form>

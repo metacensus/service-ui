@@ -23,6 +23,7 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
   const {
     register,
     handleSubmit,
+    formState: { errors, isSubmitting },
     reset,
   } = useForm<FormValues>();
 
@@ -30,6 +31,7 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
+      const response = await fetch(`${routes.api.topic}/${topicId}/prop`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -37,6 +39,10 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
           description: data.statement,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to create Meta Analysis Question");
+      }
 
       await queryClient.invalidateQueries({
         queryKey: [`props-${topicId}`],
@@ -57,6 +63,9 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
       console.error("Error creating Meta Analysis Question:", error);
       toast({
         title: "Meta Analysis Question",
+        description: "Unable to create Meta Analysis Question. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -74,6 +83,8 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
 
       {/* Submit Button */}
       <div className="mt-6">
+        <Button type="submit" variant="primary" disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Submit"}
         </Button>
       </div>
     </form>
