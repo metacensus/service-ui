@@ -29,6 +29,8 @@ export default function LogIn() {
 
   return (
             type="email"
+            autoComplete="email"
+            placeholder="you@organization.org"
           />
 
             type="password"

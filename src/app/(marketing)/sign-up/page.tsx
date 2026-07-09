@@ -91,6 +91,8 @@ export default function SignUp() {
             />
 
               type="email"
+              autoComplete="email"
+              placeholder="you@organization.org"
               {...form.register("email", { required: true })}
             />
 
