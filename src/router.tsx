@@ -23,6 +23,10 @@ import TopicPaper from "@/app/(authenticated)/topics/[topicId]/topic-papers/[pap
 import TopicContributors from "@/app/(authenticated)/topics/[topicId]/topic-contributors/page";
 import TopicConsensusStatements from "@/app/(authenticated)/topics/[topicId]/topic-consensus-statements/page";
 import TopicExtraction from "@/app/(authenticated)/topics/[topicId]/topic-extraction/[paperId]/page";
+import TopicReview from "@/app/(authenticated)/topics/[topicId]/topic-review/page";
+import TopicReviewUnit from "@/app/(authenticated)/topics/[topicId]/topic-review/units/[unitId]/page";
+import TopicReviewSchema from "@/app/(authenticated)/topics/[topicId]/topic-review/schema/page";
+import TopicReviewData from "@/app/(authenticated)/topics/[topicId]/topic-review/data/page";
 
 // Topic layout — ports `app/(authenticated)/topics/[topicId]/layout.tsx`.
 import PageHeader from "@/components/partials/PageHeader";
@@ -176,10 +180,42 @@ const topicExtractionRoute = createRoute({
   },
 });
 
+const topicReviewRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
+  path: "topic-review",
+  component: function TopicReviewRoute() {
+    const { topicId } = topicReviewRoute.useParams();
+    return <TopicReview params={{ topicId }} />;
+  },
+});
+
+const topicReviewUnitRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
+  path: "topic-review/units/$unitId",
+  component: function TopicReviewUnitRoute() {
+    const { topicId, unitId } = topicReviewUnitRoute.useParams();
+    return <TopicReviewUnit params={{ topicId, unitId }} />;
+  },
+});
+
+const topicReviewSchemaRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
+  path: "topic-review/schema",
+  component: function TopicReviewSchemaRoute() {
+    const { topicId } = topicReviewSchemaRoute.useParams();
+    return <TopicReviewSchema params={{ topicId }} />;
+  },
+});
+
+const topicReviewDataRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
+  path: "topic-review/data",
+  component: function TopicReviewDataRoute() {
+    const { topicId } = topicReviewDataRoute.useParams();
+    return <TopicReviewData params={{ topicId }} />;
+  },
+});
+
   getParentRoute: () => topicLayoutRoute,
 // ---------------------------------------------------------------------------
 const routeTree = rootRoute.addChildren([
@@ -198,6 +234,10 @@ const routeTree = rootRoute.addChildren([
       topicContributorsRoute,
       topicConsensusStatementsRoute,
       topicExtractionRoute,
+      topicReviewRoute,
+      topicReviewUnitRoute,
+      topicReviewSchemaRoute,
+      topicReviewDataRoute,
     ]),
   ]),
 ]);
