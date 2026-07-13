@@ -1,4 +1,6 @@
 // Snapshot + review-state types for the local reviewer-workspace port.
+// These mirror the reviewer snapshot contract while keeping the non-visual
+// data/model layer independent from any one domain's frozen fixture.
 
 export type SourceRect = { x: number; y: number; w: number; h: number };
 export type SourceLocation = { page: number; rects: SourceRect[] }[];
@@ -26,6 +28,37 @@ export interface GateInfo {
   by_tier: Record<string, number>;
 }
 
+export type SchemaSemanticRole =
+  | "citation"
+  | "study"
+  | "population"
+  | "exposure"
+  | "comparator"
+  | "outcome"
+  | "subgroup"
+  | "count"
+  | "percentage"
+  | "continuous_result"
+  | "effect_estimate"
+  | "uncertainty"
+  | "reported_value"
+  | "standardized_value"
+  | "provenance"
+  | "technical";
+
+export interface SchemaPresentationGroup {
+  id: string;
+  label: string;
+  description?: string;
+  fields: string[];
+}
+
+export interface SchemaPresentation {
+  finding_label?: string;
+  groups?: SchemaPresentationGroup[];
+  field_roles?: Record<string, SchemaSemanticRole | SchemaSemanticRole[]>;
+}
+
 export interface RectStats {
   exact?: number;
   table_region?: number;
@@ -37,6 +70,7 @@ export interface RectStats {
 export interface DemoConfig {
   featured_papers?: string[];
   featured_units?: string[];
+  schema_presentation?: SchemaPresentation;
 }
 
   featured_papers?: string[];
@@ -256,6 +290,7 @@ export type DemoReviewState = {
   row_index: number;
   field: string;
 export type ReviewerPersistenceAdapter = {
+  getStorageMode(): Promise<"persistent" | "memory">;
   getReviewerName(): Promise<string | null>;
   setReviewerName(name: string): Promise<void>;
   listActions(runId: string): Promise<StoredReviewAction[]>;

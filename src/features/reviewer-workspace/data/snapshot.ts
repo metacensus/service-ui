@@ -20,6 +20,7 @@ export class SnapshotNotFoundError extends Error {
 }
 
 async function jsonFetch<T>(url: string): Promise<T> {
+  const res = await fetch(url);
   if (!res.ok) {
     throw new SnapshotNotFoundError(url, res.status, res.statusText);
   }
@@ -27,6 +28,7 @@ async function jsonFetch<T>(url: string): Promise<T> {
 }
 
 async function optionalJsonFetch<T>(url: string): Promise<T | null> {
+  const res = await fetch(url);
   if (res.status === 404) return null;
   if (!res.ok) {
     throw new SnapshotNotFoundError(url, res.status, res.statusText);
@@ -35,6 +37,7 @@ async function optionalJsonFetch<T>(url: string): Promise<T | null> {
 }
 
 async function textFetch(url: string): Promise<string> {
+  const res = await fetch(url);
   if (!res.ok) {
     throw new SnapshotNotFoundError(url, res.status, res.statusText);
   }

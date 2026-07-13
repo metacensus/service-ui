@@ -27,6 +27,20 @@ export function useReviewState(topicId: string, runId: string | null) {
     [topicId, runId]
   );
 
+  const storageModeKey = [
+    "reviewer-workspace",
+    queryRunId,
+    "review-state",
+    topicId,
+    "storage-mode",
+  ] as const;
+
+  const storageModeQuery = useQuery({
+    queryKey: storageModeKey,
+    queryFn: () => requireAdapter(adapter).getStorageMode(),
+    enabled,
+  });
+
   const reviewerNameQuery = useQuery({
     queryKey: reviewerWorkspaceQueryKeys.reviewerName(queryRunId, topicId),
     queryFn: () => requireAdapter(adapter).getReviewerName(),
@@ -76,37 +90,46 @@ export function useReviewState(topicId: string, runId: string | null) {
       queryKey: reviewerWorkspaceQueryKeys.reviewState(queryRunId, topicId),
     });
 
+  const invalidateStorageMode = () =>
+    queryClient.invalidateQueries({ queryKey: storageModeKey });
+
   const upsertActionMutation = useMutation({
     mutationFn: (action: ReviewAction) =>
       requireAdapter(adapter).upsertAction(action),
     onSuccess: invalidateActions,
+    onSettled: invalidateStorageMode,
   });
 
   const bulkUpsertActionsMutation = useMutation({
     mutationFn: (actions: ReviewAction[]) =>
       requireAdapter(adapter).bulkUpsertActions(queryRunId, actions),
     onSuccess: invalidateActions,
+    onSettled: invalidateStorageMode,
   });
 
   const addCommentMutation = useMutation({
     mutationFn: (comment: NewReviewComment) =>
       requireAdapter(adapter).addComment(comment),
     onSuccess: invalidateComments,
+    onSettled: invalidateStorageMode,
   });
 
   const deleteActionMutation = useMutation({
     mutationFn: (id: number) => requireAdapter(adapter).deleteAction(id),
     onSuccess: invalidateActions,
+    onSettled: invalidateStorageMode,
   });
 
   const setReviewerNameMutation = useMutation({
     mutationFn: (name: string) => requireAdapter(adapter).setReviewerName(name),
     onSuccess: invalidateReviewerName,
+    onSettled: invalidateStorageMode,
   });
 
   const resetReviewStateMutation = useMutation({
     mutationFn: () => requireAdapter(adapter).resetReviewState(queryRunId),
     onSuccess: invalidateReviewState,
+    onSettled: invalidateStorageMode,
   });
 
   return {
@@ -114,10 +137,12 @@ export function useReviewState(topicId: string, runId: string | null) {
     actionHistory: actionHistoryQuery.data ?? [],
     comments: commentsQuery.data ?? [],
     reviewerName: reviewerNameQuery.data ?? null,
+    storageMode: storageModeQuery.data ?? "persistent",
     actionsQuery,
     actionHistoryQuery,
     commentsQuery,
     reviewerNameQuery,
+    storageModeQuery,
     upsertAction: upsertActionMutation.mutateAsync,
     deleteAction: deleteActionMutation.mutateAsync,
     bulkUpsertActions: bulkUpsertActionsMutation.mutateAsync,

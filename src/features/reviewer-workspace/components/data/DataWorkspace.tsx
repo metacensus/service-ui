@@ -28,6 +28,7 @@ type DataWorkspaceProps = {
         </div>
       )}
 
+      )}
 
             return (
               />

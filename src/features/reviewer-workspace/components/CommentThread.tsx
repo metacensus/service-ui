@@ -50,6 +50,7 @@ const CommentThread = ({ comments, reviewerName, onAdd }: CommentThreadProps) =>
         }}
       >
         <Textarea
+          aria-label="Review comment"
           className="text-sm"
           rows={1}
           value={draft}

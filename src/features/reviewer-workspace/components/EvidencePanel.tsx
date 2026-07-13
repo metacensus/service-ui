@@ -40,6 +40,7 @@ const EvidencePanel = ({
   const isPageOnly =
     source?.resolution === "page_only" ||
     source?.resolution === "not_resolved_for_demo";
+    source?.highlight?.[0]?.page ??
 
   useEffect(() => {
     let alive = true;
@@ -50,6 +51,7 @@ const EvidencePanel = ({
       };
     }
     setPdfState("checking");
+    fetch(pdfUrl, { method: "HEAD" })
       .then((response) => {
         if (!alive) return;
         const contentType = response.headers.get("content-type") ?? "";
@@ -74,8 +76,14 @@ const EvidencePanel = ({
         <TabButton active={tab === "source"} onClick={() => setTab("source")}>
           Source text
         </TabButton>
+            PDF page {pdfHighlightPage}
+              ? ` · article page ${source.page}`
+              : ""}
+          </span>
+        ) : source?.page != null ? (
             page {source.page}
           </span>
+        ) : null}
       </div>
 
       {tab === "pdf" && (
@@ -247,17 +255,39 @@ const BundleMarkdown = ({ text, quote }: { text: string; quote: string }) => {
           source text without a highlight.
         </div>
       )}
+      {!missingQuote && quote.trim() && (
+        <div className="border-l-4 border-yellow-400 bg-yellow-50 px-4 py-3">
+          <div className="text-xs font-bold uppercase text-yellow-900">
+            Cited passage
+          </div>
+            {quote.trim()}
+          </mark>
+        </div>
+      )}
+      <details open={missingQuote || !quote.trim()} className="mt-4">
+          Surrounding source text
+        </summary>
           {segments.map((segment, i) =>
             segment.mark ? (
               <mark key={i} className="rounded-sm bg-yellow-200 px-0.5">
                 {segment.text}
               </mark>
             ) : (
+              <span key={i}>{readableBundleText(segment.text)}</span>
             )
           )}
+        </div>
+      </details>
     </>
   );
 };
+
+function readableBundleText(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1");
+}
 
 const BundleTable = ({
   table,

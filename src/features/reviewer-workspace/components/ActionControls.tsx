@@ -4,12 +4,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { parseCorrectionValue } from "../model/correctionValue";
 import { stateChipClass, type RowReviewState } from "../model/rowStatus";
 import type { CorrectedPayload } from "../types";
 
 type ActionControlsProps = {
   state: RowReviewState;
   reviewerName: string | null;
+  fieldType?: string | null;
+  originalValue: unknown;
   onApprove: () => Promise<unknown>;
   onCorrect: (corrected: CorrectedPayload) => Promise<unknown>;
   onFlag: (reason: string) => Promise<unknown>;
@@ -20,6 +23,8 @@ type OpenForm = "correct" | "flag" | null;
 const ActionControls = ({
   state,
   reviewerName,
+  fieldType,
+  originalValue,
   onApprove,
   onCorrect,
   onFlag,
@@ -87,8 +92,18 @@ const ActionControls = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            const parsed = parseCorrectionValue(
+              correctedValue,
+              fieldType,
+              originalValue
+            );
+            if (!parsed.ok) {
+              setError(parsed.error);
+              return;
+            }
             void run(() =>
               onCorrect({
+                value: parsed.value,
                 ...(correctedNote.trim() ? { note: correctedNote.trim() } : {}),
               })
             );

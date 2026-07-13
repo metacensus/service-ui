@@ -162,6 +162,11 @@ export function createLocalReviewerPersistence(
   };
 
   return {
+    async getStorageMode() {
+      await readState();
+      return useMemoryFallback ? "memory" : "persistent";
+    },
+
     async getReviewerName() {
       return (await readState()).reviewerName ?? null;
     },

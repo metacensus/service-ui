@@ -15,9 +15,12 @@ const TopicReviewSchema = ({ params }: Props) => {
 
   const manifest = manifestQuery.data;
   const summary = schemaSummaryQuery.data;
+  const schemaPresentation = demoConfigQuery.data?.schema_presentation;
 
   const model = useMemo(() => {
     if (!manifest || !summary) return null;
+    return buildSchemaExplorerModel(summary, manifest, schemaPresentation);
+  }, [manifest, schemaPresentation, summary]);
 
   const isLoading = manifestQuery.isLoading || schemaSummaryQuery.isLoading;
   const hasError = manifestQuery.isError || schemaSummaryQuery.isError;

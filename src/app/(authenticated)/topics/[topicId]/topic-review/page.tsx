@@ -8,6 +8,7 @@ import ReviewLandingFilters from "@/features/reviewer-workspace/components/Revie
 import ReviewProgressHeader from "@/features/reviewer-workspace/components/ReviewProgressHeader";
 import ReviewSubNav from "@/features/reviewer-workspace/components/ReviewSubNav";
 import ReviewerIdentityControl from "@/features/reviewer-workspace/components/ReviewerIdentityControl";
+import ReviewStorageNotice from "@/features/reviewer-workspace/components/ReviewStorageNotice";
 import ReviewWorkspaceMenu from "@/features/reviewer-workspace/components/ReviewWorkspaceMenu";
 import {
 import { useReviewState } from "@/features/reviewer-workspace/hooks/useReviewState";
@@ -24,6 +25,7 @@ const TopicReview = ({ params }: Props) => {
     actionHistory,
     comments,
     reviewerName,
+    storageMode,
     setReviewerName,
     resetReviewState,
   } = useReviewState(topicId, runId);
@@ -38,6 +40,7 @@ const TopicReview = ({ params }: Props) => {
 
   return (
     <div>
+      <ReviewStorageNotice mode={storageMode} />
 
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
