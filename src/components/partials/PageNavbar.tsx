@@ -5,6 +5,7 @@ import { usePathname } from "@/lib/next-navigation-compat";
 type PageNavbarLink = {
   name: string;
   href: string;
+  activePrefix?: string;
 };
 
 type PageNavbarProps = {
@@ -35,6 +36,16 @@ const NavbarLink = ({
 
 const PageNavbar = ({ links }: PageNavbarProps) => {
   const pathName = usePathname();
+  const activeHref = links
+    .map((link) => ({
+      link,
+      matchPath: link.activePrefix ?? link.href,
+    }))
+    .filter(
+      ({ matchPath }) =>
+        pathName === matchPath || pathName.startsWith(`${matchPath}/`)
+    )
+    .sort((a, b) => b.matchPath.length - a.matchPath.length)[0]?.link.href;
 
   return (
       {links.map((link, index) => (
@@ -42,6 +53,7 @@ const PageNavbar = ({ links }: PageNavbarProps) => {
           key={index}
           name={link.name}
           href={link.href}
+          isActive={activeHref === link.href}
         />
       ))}
     </div>

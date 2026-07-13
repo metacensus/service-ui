@@ -2,6 +2,7 @@
 
 import { resolveRunId } from "../data/runResolver";
 import {
+  fetchDemoConfig,
   fetchManifest,
   fetchReviewUnits,
   fetchSchemaSummary,
@@ -15,6 +16,8 @@ export const reviewerWorkspaceQueryKeys = {
     ["reviewer-workspace", runId, "review-units"] as const,
   schemaSummary: (runId: string) =>
     ["reviewer-workspace", runId, "schema-summary"] as const,
+  demoConfig: (runId: string) =>
+    ["reviewer-workspace", runId, "demo-config"] as const,
   paperRows: (runId: string, paperId: string) =>
     ["reviewer-workspace", runId, "rows", paperId] as const,
   reviewState: (runId: string, topicId: string) =>
@@ -29,11 +32,14 @@ export const reviewerWorkspaceQueryKeys = {
       topicId,
       "comments",
     ] as const,
+  actionHistory: (runId: string, topicId: string) =>
     [
       "reviewer-workspace",
       runId,
       "review-state",
       topicId,
+      "action-history",
+    ] as const,
   reviewerName: (runId: string, topicId: string) =>
     [
       "reviewer-workspace",
@@ -67,6 +73,9 @@ export function useRunSnapshot(topicId: string) {
     enabled,
   });
 
+  const demoConfigQuery = useQuery({
+    queryKey: reviewerWorkspaceQueryKeys.demoConfig(queryRunId),
+    queryFn: () => fetchDemoConfig(queryRunId),
     enabled,
   });
 
@@ -75,5 +84,6 @@ export function useRunSnapshot(topicId: string) {
     manifestQuery,
     reviewUnitsQuery,
     schemaSummaryQuery,
+    demoConfigQuery,
   };
 }

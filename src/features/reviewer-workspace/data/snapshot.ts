@@ -1,4 +1,5 @@
 import type {
+  DemoConfig,
   Manifest,
   ReviewUnits,
   Row,
@@ -25,6 +26,8 @@ async function jsonFetch<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+async function optionalJsonFetch<T>(url: string): Promise<T | null> {
+  if (res.status === 404) return null;
   if (!res.ok) {
     throw new SnapshotNotFoundError(url, res.status, res.statusText);
   }
@@ -60,6 +63,10 @@ export function fetchSchemaSummary(runId: string): Promise<SchemaSummary> {
   );
 }
 
+export function fetchDemoConfig(runId: string): Promise<DemoConfig | null> {
+  return optionalJsonFetch<DemoConfig>(
+    `${fixtureBasePath(runId)}/demo_config.json`
+  );
 }
 
   runId: string,

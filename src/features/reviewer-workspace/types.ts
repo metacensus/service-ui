@@ -17,6 +17,8 @@ export interface PaperMeta {
   field_fill_rate: number;
   certainty_counts: CertaintyCounts;
   tier_counts: TierCounts;
+  pdf_available?: boolean;
+  highlight_stats?: Partial<RectStats>;
 }
 
 export interface GateInfo {
@@ -25,8 +27,19 @@ export interface GateInfo {
 }
 
 export interface RectStats {
+  exact?: number;
+  table_region?: number;
+  page_only?: number;
+  pdf_missing?: number;
+  not_resolved_for_demo?: number;
 }
 
+export interface DemoConfig {
+  featured_papers?: string[];
+  featured_units?: string[];
+}
+
+  featured_papers?: string[];
 export interface IdentityDimension {
   field: string;
   description: string;
@@ -55,6 +68,11 @@ export interface Identity {
   [k: string]: unknown;
 }
 
+export type ResolutionKind =
+  | "exact"
+  | "table_region"
+  | "page_only"
+  | "not_resolved_for_demo";
 
 export interface ProvSource {
   quote: string;
@@ -219,6 +237,7 @@ export type ReviewComment = {
   paper_id: string;
   row_index: number | null;
   field: string | null;
+  unit_id?: string;
   author: string;
   text: string;
   created_at: string;
@@ -230,6 +249,7 @@ export type DemoReviewState = {
   version: 1;
   reviewerName?: string;
   actions: StoredReviewAction[];
+  actionHistory?: StoredReviewAction[];
   comments: ReviewComment[];
 };
 
@@ -239,6 +259,7 @@ export type ReviewerPersistenceAdapter = {
   getReviewerName(): Promise<string | null>;
   setReviewerName(name: string): Promise<void>;
   listActions(runId: string): Promise<StoredReviewAction[]>;
+  listActionHistory(runId: string): Promise<StoredReviewAction[]>;
   upsertAction(action: ReviewAction): Promise<StoredReviewAction>;
   bulkUpsertActions(
     runId: string,

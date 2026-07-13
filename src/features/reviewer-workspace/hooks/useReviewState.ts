@@ -39,6 +39,12 @@ export function useReviewState(topicId: string, runId: string | null) {
     enabled,
   });
 
+  const actionHistoryQuery = useQuery({
+    queryKey: reviewerWorkspaceQueryKeys.actionHistory(queryRunId, topicId),
+    queryFn: () => requireAdapter(adapter).listActionHistory(queryRunId),
+    enabled,
+  });
+
   const commentsQuery = useQuery({
     queryKey: reviewerWorkspaceQueryKeys.comments(queryRunId, topicId),
     queryFn: () => requireAdapter(adapter).listComments(queryRunId),
@@ -46,9 +52,14 @@ export function useReviewState(topicId: string, runId: string | null) {
   });
 
   const invalidateActions = () =>
+    Promise.all([
       queryClient.invalidateQueries({
         queryKey: reviewerWorkspaceQueryKeys.actions(queryRunId, topicId),
+      }),
       queryClient.invalidateQueries({
+        queryKey: reviewerWorkspaceQueryKeys.actionHistory(queryRunId, topicId),
+      }),
+    ]);
 
   const invalidateComments = () =>
     queryClient.invalidateQueries({
@@ -83,7 +94,11 @@ export function useReviewState(topicId: string, runId: string | null) {
     onSuccess: invalidateComments,
   });
 
+  const deleteActionMutation = useMutation({
+    mutationFn: (id: number) => requireAdapter(adapter).deleteAction(id),
     onSuccess: invalidateActions,
+  });
+
   const setReviewerNameMutation = useMutation({
     mutationFn: (name: string) => requireAdapter(adapter).setReviewerName(name),
     onSuccess: invalidateReviewerName,
@@ -96,18 +111,22 @@ export function useReviewState(topicId: string, runId: string | null) {
 
   return {
     actions: actionsQuery.data ?? [],
+    actionHistory: actionHistoryQuery.data ?? [],
     comments: commentsQuery.data ?? [],
     reviewerName: reviewerNameQuery.data ?? null,
     actionsQuery,
+    actionHistoryQuery,
     commentsQuery,
     reviewerNameQuery,
     upsertAction: upsertActionMutation.mutateAsync,
+    deleteAction: deleteActionMutation.mutateAsync,
     bulkUpsertActions: bulkUpsertActionsMutation.mutateAsync,
     addComment: addCommentMutation.mutateAsync,
     setReviewerName: setReviewerNameMutation.mutateAsync,
     resetReviewState: resetReviewStateMutation.mutateAsync,
     mutations: {
       upsertAction: upsertActionMutation,
+      deleteAction: deleteActionMutation,
       bulkUpsertActions: bulkUpsertActionsMutation,
       addComment: addCommentMutation,
       setReviewerName: setReviewerNameMutation,

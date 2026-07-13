@@ -21,6 +21,7 @@ function emptyState(): DemoReviewState {
   return {
     version: STORAGE_VERSION,
     actions: [],
+    actionHistory: [],
     comments: [],
   };
 }
@@ -44,6 +45,9 @@ function parseState(raw: unknown): DemoReviewState {
           ? parsed.reviewerName
           : undefined,
       actions: Array.isArray(parsed.actions) ? parsed.actions : [],
+      actionHistory: Array.isArray(parsed.actionHistory)
+        ? parsed.actionHistory
+        : [],
       comments: Array.isArray(parsed.comments) ? parsed.comments : [],
     };
   } catch {
@@ -77,7 +81,9 @@ function actionKey(action: ReviewAction): string {
 
 function nextId(state: DemoReviewState): number {
   const actionIds = state.actions.map((action) => action.id);
+  const historyIds = (state.actionHistory ?? []).map((action) => action.id);
   const commentIds = state.comments.map((comment) => comment.id);
+  return Math.max(0, ...actionIds, ...historyIds, ...commentIds) + 1;
 }
 
 export function createLocalReviewerPersistence(
@@ -142,6 +148,10 @@ export function createLocalReviewerPersistence(
       created_at: new Date().toISOString(),
     };
 
+    const replaced = state.actions.filter(
+      (existing) => actionKey(existing) === actionKey(action)
+    );
+    state.actionHistory = [...(state.actionHistory ?? []), ...replaced];
     state.actions = [
       ...state.actions.filter(
         (existing) => actionKey(existing) !== actionKey(action)
@@ -168,7 +178,13 @@ export function createLocalReviewerPersistence(
       );
     },
 
+    async listActionHistory(requestedRunId) {
       const state = await readState();
+      return (state.actionHistory ?? [])
+        .filter((action) => action.run_id === requestedRunId)
+        .sort((a, b) => a.id - b.id);
+    },
+
     async upsertAction(action) {
       const state = await readState();
       const stored = storeAction(state, action);
@@ -185,6 +201,13 @@ export function createLocalReviewerPersistence(
       for (const action of actions) {
         const key = actionKey(action);
         incomingKeys.add(key);
+        const supersededIncoming = latestActionsByKey.get(key);
+        if (supersededIncoming) {
+          state.actionHistory = [
+            ...(state.actionHistory ?? []),
+            supersededIncoming,
+          ];
+        }
         latestActionsByKey.delete(key);
         latestActionsByKey.set(key, {
           ...action,
@@ -194,6 +217,10 @@ export function createLocalReviewerPersistence(
         id += 1;
       }
 
+      const replaced = state.actions.filter((existing) =>
+        incomingKeys.has(actionKey(existing))
+      );
+      state.actionHistory = [...(state.actionHistory ?? []), ...replaced];
       state.actions = [
         ...state.actions.filter(
           (existing) => !incomingKeys.has(actionKey(existing))
@@ -206,7 +233,18 @@ export function createLocalReviewerPersistence(
 
     async deleteAction(id) {
       const state = await readState();
+      const current = state.actions.find((action) => action.id === id);
       state.actions = state.actions.filter((action) => action.id !== id);
+      if (current) {
+        const history = state.actionHistory ?? [];
+        const prior = history
+          .filter((action) => actionKey(action) === actionKey(current))
+          .sort((a, b) => b.id - a.id)[0];
+        if (prior) {
+          state.actionHistory = history.filter((action) => action.id !== prior.id);
+          state.actions = [...state.actions, prior];
+        }
+      }
       await writeState(state);
     },
 

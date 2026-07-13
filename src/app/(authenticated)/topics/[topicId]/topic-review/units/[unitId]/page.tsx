@@ -16,6 +16,7 @@ const TopicReviewUnit = ({ params }: Props) => {
 
   const {
     actions,
+    actionHistory,
     comments,
     reviewerName,
     setReviewerName,
@@ -23,6 +24,8 @@ const TopicReviewUnit = ({ params }: Props) => {
     addComment,
   } = useReviewState(topicId, runId);
 
+    () =>
+  );
   );
   );
   });
@@ -34,11 +37,16 @@ const TopicReviewUnit = ({ params }: Props) => {
     );
     <div className="mt-6 flex flex-col gap-4">
       <Skeleton className="h-36 w-full" />
+  );
+
     );
   }
     );
+  }
   }
 
+      actions={actions}
+      actionHistory={actionHistory}
       reviewerName={reviewerName}
     />
   );

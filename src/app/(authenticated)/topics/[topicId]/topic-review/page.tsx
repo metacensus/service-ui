@@ -1,11 +1,14 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "@/components/shared/Link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import ReviewLandingFilters from "@/features/reviewer-workspace/components/ReviewLandingFilters";
 import ReviewProgressHeader from "@/features/reviewer-workspace/components/ReviewProgressHeader";
 import ReviewSubNav from "@/features/reviewer-workspace/components/ReviewSubNav";
 import ReviewerIdentityControl from "@/features/reviewer-workspace/components/ReviewerIdentityControl";
+import ReviewWorkspaceMenu from "@/features/reviewer-workspace/components/ReviewWorkspaceMenu";
 import {
 import { useReviewState } from "@/features/reviewer-workspace/hooks/useReviewState";
 
@@ -18,14 +21,20 @@ const TopicReview = ({ params }: Props) => {
   const base = `/topics/${topicId}/topic-review`;
   const {
     actions,
+    actionHistory,
+    comments,
     reviewerName,
     setReviewerName,
     resetReviewState,
   } = useReviewState(topicId, runId);
 
+    () =>
   );
+  );
+    () =>
   );
 
+    <ReviewLandingFilters
 
   return (
     <div>
@@ -33,13 +42,25 @@ const TopicReview = ({ params }: Props) => {
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-bold text-2xl">Extraction review</h1>
+            High-leverage extraction decisions, ordered by their impact on the
           </p>
         </div>
+        <div className="flex items-center gap-2">
           <ReviewerIdentityControl
             reviewerName={reviewerName}
             onSave={setReviewerName}
           />
+          {runId && (
+            <ReviewWorkspaceMenu
+              runId={runId}
               reviewerName={reviewerName}
+              actions={actions}
+              actionHistory={actionHistory}
+              comments={comments}
+              onReset={resetReviewState}
+            />
+          )}
+        </div>
       </div>
 
           No Comparanda extraction run is linked to this topic yet.
@@ -73,6 +94,9 @@ const TopicReview = ({ params }: Props) => {
           ) : (
               <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
               </div>
+          )}
+
+            </div>
           )}
 
             />

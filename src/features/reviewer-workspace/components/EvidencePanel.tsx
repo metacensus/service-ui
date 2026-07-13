@@ -17,6 +17,7 @@ type EvidencePanelProps = {
   paperId: string;
   pdfUrl: string;
   source: ProvSource | null;
+  pdfAvailable?: boolean;
 };
 
 type Tab = "pdf" | "source";
@@ -25,10 +26,44 @@ type Tab = "pdf" | "source";
 // highlighted, and the extracted source file (section text or table) with the
 // quote or cited cell marked. Every value under review keeps this one click
 // away — the reviewer decides while looking at the evidence.
+const EvidencePanel = ({
+  runId,
+  paperId,
+  pdfUrl,
+  source,
+  pdfAvailable,
+}: EvidencePanelProps) => {
   const [tab, setTab] = useState<Tab>("pdf");
+  const [pdfState, setPdfState] = useState<
+    "checking" | "available" | "missing"
+  >(pdfAvailable === false ? "missing" : "checking");
+  const isPageOnly =
+    source?.resolution === "page_only" ||
+    source?.resolution === "not_resolved_for_demo";
 
   useEffect(() => {
     let alive = true;
+    if (pdfAvailable !== undefined) {
+      setPdfState(pdfAvailable ? "available" : "missing");
+      return () => {
+        alive = false;
+      };
+    }
+    setPdfState("checking");
+      .then((response) => {
+        if (!alive) return;
+        const contentType = response.headers.get("content-type") ?? "";
+        setPdfState(
+          response.ok && contentType.toLowerCase().includes("application/pdf")
+            ? "available"
+            : "missing"
+        );
+      })
+      .catch(() => alive && setPdfState("missing"));
+    return () => {
+      alive = false;
+    };
+  }, [pdfAvailable, pdfUrl]);
 
   return (
     <div className="flex h-full flex-col rounded-lg border bg-white shadow-sm">
@@ -45,8 +80,24 @@ type Tab = "pdf" | "source";
 
       {tab === "pdf" && (
         <div className="relative flex-1 overflow-auto">
+          {pdfState === "available" && isPageOnly && (
+              {source?.resolution === "not_resolved_for_demo"
+                ? "This paper was not pre-highlighted for the demo. Showing the cited page; the quote remains available in Source text."
+                : "An exact highlight could not be resolved for this value. Showing the cited page; the quote remains available in Source text."}
             </div>
           )}
+          {pdfState === "checking" && (
+          )}
+          {pdfState === "missing" && (
+            <div className="p-6">
+                PDF is not available in this snapshot.
+              </p>
+                The extracted source file and citation remain available in the
+                Source text tab. No PDF viewer was opened for the missing asset.
+              </p>
+            </div>
+          )}
+          {pdfState === "available" && (
             <Suspense
               fallback={
               }
@@ -56,6 +107,7 @@ type Tab = "pdf" | "source";
                 highlight={isPageOnly ? null : source?.highlight ?? null}
               />
             </Suspense>
+          )}
         </div>
       )}
 
