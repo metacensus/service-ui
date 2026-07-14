@@ -44,6 +44,13 @@ See `.env.example` for the full list. Key values:
 - `API_PROXY_TARGET` — dev-server-only target for proxying `/metacensus/*`.
   Defaults to `http://localhost:3001`.
 
+
+The published `metacensus/ui` image (`Dockerfile`, served by Caddy) is a static host
+for the built SPA — it does **not** proxy or route to the API itself.
+
+- **Listens on port `8080`** — e.g. `docker run -p 8080:8080 metacensus/ui`.
+
+
 ## Project structure
 
 ```
