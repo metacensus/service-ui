@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "tsc": "tsc --noEmit",
+    "test": "vitest run",
   },
   "dependencies": {
     "@fontsource/inter": "^5.0.18",

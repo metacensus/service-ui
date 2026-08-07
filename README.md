@@ -63,3 +63,4 @@ src/
   main.tsx      App entry point
 types/          Shared domain TypeScript types
 ```
+

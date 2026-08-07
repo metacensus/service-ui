@@ -9,9 +9,24 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+/**
+ * True when the user has requested reduced motion.
+ *
+ * Read synchronously for the first render. Starting at `false` and correcting in
+ * an effect would give exactly the people who asked for less motion a frame of
+ * the thing they opted out of — and in the hero's case a frame of locked scroll.
+ */
 export function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia(REDUCED_MOTION_QUERY).matches
+  );
 
   useEffect(() => {
+    const mq = window.matchMedia(REDUCED_MOTION_QUERY);
     setReduced(mq.matches);
     const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
     mq.addEventListener("change", onChange);
