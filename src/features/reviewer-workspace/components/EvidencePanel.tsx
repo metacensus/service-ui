@@ -40,7 +40,10 @@ const EvidencePanel = ({
   const isPageOnly =
     source?.resolution === "page_only" ||
     source?.resolution === "not_resolved_for_demo";
+  const pdfHighlightPage =
+    source?.highlight?.find((entry) => entry.rects.length > 0)?.page ??
     source?.highlight?.[0]?.page ??
+    null;
 
   useEffect(() => {
     let alive = true;
@@ -113,6 +116,7 @@ const EvidencePanel = ({
               <ViewPDF
                 fileLocation={pdfUrl}
                 highlight={isPageOnly ? null : source?.highlight ?? null}
+                citedPage={pdfHighlightPage}
               />
             </Suspense>
           )}

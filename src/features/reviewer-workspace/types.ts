@@ -104,6 +104,7 @@ export interface Identity {
 
 export type ResolutionKind =
   | "exact"
+  | "partial_quote"
   | "table_region"
   | "page_only"
   | "not_resolved_for_demo";
@@ -289,6 +290,26 @@ export type DemoReviewState = {
 
   row_index: number;
   field: string;
+  source_index: number;
+  title: string;
+  pdf_path: string;
+  pdf_available: boolean;
+  value: unknown;
+  quote: string | null;
+  location: string | null;
+  article_page: number | null;
+  pdf_page: number | null;
+  resolution: ResolutionKind;
+  highlight: ProvSource["highlight"] | null;
+  cell: ProvSource["cell"] | null;
+  provenance_type: string | null;
+  derivation: string | null;
+  derivation_kind: string | null;
+  extraction_certainty: string | null;
+  reasoning: string | null;
+  review_status: "unreviewed" | "approved" | "corrected" | "flagged";
+};
+
 export type ReviewerPersistenceAdapter = {
   getStorageMode(): Promise<"persistent" | "memory">;
   getReviewerName(): Promise<string | null>;
