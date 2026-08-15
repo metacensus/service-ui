@@ -69,6 +69,105 @@ export function useInView<T extends Element>(
   return [ref, inView];
 }
 
+export type Clock = {
+  play: () => void;
+  pause: () => void;
+  /** Jump to a point on the timeline. Clamped, and ticks immediately. */
+  seek: (ms: number) => void;
+  /** The current position, for callers that need it outside a tick. */
+  elapsed: () => number;
+};
+
+/**
+ * A timeline's clock, and nothing else.
+ *
+ * It knows no DOM: what starts it, what stops it, and what it drives are all the
+ * caller's business. That separation is deliberate — "play when visible" fuses a
+ * clock with an IntersectionObserver, and the two have no reason to know about
+ * each other. Compose them at the call site instead, in a line.
+ *
+ * `onTick` is called per frame rather than the elapsed value being returned as
+ * state: the hero writes CSS custom properties straight to the DOM and must not
+ * re-render sixty times a second. A caller that *wants* a render can call
+ * `setState` from the tick.
+ *
+ * ## Elapsed is accumulated, not subtracted
+ *
+ * `elapsed += now - last`, never `now - start`. A backgrounded tab stops issuing
+ * frames, so with a start timestamp the first frame back would jump the whole
+ * time the tab was away. Accumulating deltas means an unfocused tab simply does
+ * not advance — pause comes for free, and `seek` is a plain assignment.
+ */
+export function useClock(
+  durationMs: number,
+  onTick: (elapsed: number) => void
+): Clock {
+  const elapsedRef = useRef(0);
+  const lastRef = useRef(0);
+  const frameRef = useRef(0);
+
+  // Held in a ref so a caller may pass an inline closure without restarting
+  // the clock on every render.
+  const tickRef = useRef(onTick);
+  tickRef.current = onTick;
+
+  const durationRef = useRef(durationMs);
+  durationRef.current = durationMs;
+
+  const clock = useRef<Clock>();
+  if (!clock.current) {
+    const emit = () => tickRef.current(elapsedRef.current);
+
+    const step = (now: number) => {
+      const last = lastRef.current || now;
+      lastRef.current = now;
+      elapsedRef.current = Math.min(
+        durationRef.current,
+        elapsedRef.current + (now - last)
+      );
+      emit();
+      // Stop at the end rather than burning frames on a settled timeline; a
+      // later `seek` restarts it.
+      if (elapsedRef.current < durationRef.current) {
+        frameRef.current = requestAnimationFrame(step);
+      } else {
+        frameRef.current = 0;
+      }
+    };
+
+    const play = () => {
+      if (frameRef.current || elapsedRef.current >= durationRef.current) return;
+      lastRef.current = 0;
+      frameRef.current = requestAnimationFrame(step);
+    };
+
+    const pause = () => {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = 0;
+      lastRef.current = 0;
+    };
+
+    clock.current = {
+      play,
+      pause,
+      elapsed: () => elapsedRef.current,
+      seek: (ms: number) => {
+        elapsedRef.current = Math.min(durationRef.current, Math.max(0, ms));
+        emit();
+      },
+    };
+  }
+
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(frameRef.current);
+    },
+    []
+  );
+
+  return clock.current;
+}
+
 type RevealProps = {
   children?: ReactNode;
   className?: string;

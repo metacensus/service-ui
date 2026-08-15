@@ -84,7 +84,9 @@ export default function SignUp() {
   };
 
   return (
+    <AuthShell title="Get started.">
       <Form {...form}>
+              type="text"
               autoComplete="name"
               placeholder="Jane Smith"
               {...form.register("name", { required: true })}
@@ -99,22 +101,30 @@ export default function SignUp() {
               {...form.register("country", { required: true })}
 
               type="password"
+              autoComplete="new-password"
+              placeholder="Your password"
               {...form.register("password", { required: true })}
             />
 
               type="password"
+              autoComplete="new-password"
+              placeholder="Re-enter your password"
               {...form.register("passwordConfirmation", { required: true })}
             />
 
             </p>
+            </p>
               Before proceeding, please verify the following:
             </p>
+              <li>I am using a secure computer that is not shared with others</li>
+              <li>I am not using incognito or private mode in my browser</li>
             </ul>
 
             <FormField
               control={form.control}
               name="verify"
               render={({ field }) => (
+                <FormItem className="mt-6 flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border p-4">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -124,6 +134,7 @@ export default function SignUp() {
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
+                      I confirm that I have read and understood the information.
                     </FormLabel>
                     <FormDescription>
                     </FormDescription>
@@ -132,7 +143,10 @@ export default function SignUp() {
               )}
             />
 
+
+            {isSubmitting ? "Registering…" : "Register"}
         </form>
       </Form>
+    </AuthShell>
   );
 }
