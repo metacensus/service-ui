@@ -288,6 +288,12 @@ export type DemoReviewState = {
   comments: ReviewComment[];
 };
 
+/**
+ * Explore (agentic evidence search) wire types, mirroring the API's
+ */
+export type ExploreEvidence = {
+  evidence_id: string;
+  paper_id: string;
   row_index: number;
   field: string;
   source_index: number;
@@ -308,6 +314,23 @@ export type DemoReviewState = {
   extraction_certainty: string | null;
   reasoning: string | null;
   review_status: "unreviewed" | "approved" | "corrected" | "flagged";
+};
+
+export type ExploreStep = { tool: string; summary: string };
+
+export type ExploreResponse = {
+  answer: string;
+  model: string;
+  steps: ExploreStep[];
+  evidence: ExploreEvidence[];
+  /** True when the agent hit its turn budget before concluding. */
+  truncated?: boolean;
+};
+
+export type ExploreRequest = {
+  session_id: string;
+  question: string;
+  review_overlay: ReviewAction[];
 };
 
 export type ReviewerPersistenceAdapter = {

@@ -5,7 +5,14 @@ import remarkGfm from "remark-gfm";
 import { fetchData } from "@/hooks/useFetchData";
 import { routes } from "@/lib/routes";
 import EvidencePanel from "../EvidencePanel";
+import { resolveRunId } from "../../data/runResolver";
 import { useReviewState } from "../../hooks/useReviewState";
+import type {
+  ExploreEvidence as Evidence,
+  ExploreRequest,
+  ExploreResponse,
+  ProvSource,
+} from "../../types";
 
 const prompts = [
   "Compare effect estimates for c.2846A>T across studies.",
@@ -98,11 +105,25 @@ function EvidenceAnswer({ response, onSelect }: {
   );
 }
 
+const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
+  // `resolveRunId` is a synchronous env lookup. Reading the run id off
+  // `useRunSnapshot` would start four snapshot queries this view never uses.
+  const runId = useMemo(() => resolveRunId(topicId), [topicId]);
   const { actions } = useReviewState(topicId, runId);
   const sourceLensRef = useRef<HTMLElement>(null);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Abandon an in-flight question when the view goes away, so the response
+  // never lands on an unmounted tree.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  useEffect(() => {
+    if (turns.length === 0 && !loading) return;
+  }, [turns.length, loading]);
   const source = useMemo<ProvSource | null>(() => active ? ({
     quote: active.quote ?? "",
     location: active.location ?? "",
@@ -116,16 +137,28 @@ function EvidenceAnswer({ response, onSelect }: {
     event?.preventDefault();
     const nextQuestion = question.trim();
     if (!nextQuestion || !runId || loading) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setError(null);
     try {
+      const result = await fetchData<ExploreRequest, ExploreResponse>(
+        routes.api.exploreQuery,
+        "POST",
+        {
+          session_id: sessionId,
           question: nextQuestion,
           review_overlay: actions,
+        }
+      );
+      if (controller.signal.aborted) return;
       setTurns((current) => [...current, { question: nextQuestion, response: result }]);
       setQuestion("");
     } catch (cause) {
+      if (controller.signal.aborted) return;
       setError(cause instanceof Error ? cause.message : "Explore could not complete this query.");
     } finally {
+      if (!controller.signal.aborted) setLoading(false);
     }
   }
 
@@ -149,6 +182,11 @@ function EvidenceAnswer({ response, onSelect }: {
             </div>
           </div>
 
+            <div
+              role="log"
+              aria-live="polite"
+              aria-busy={loading}
+            >
               {turns.length === 0 && !loading && (
                 <div className="mx-auto max-w-xl py-8">
                   <div className="mt-6 space-y-2">
@@ -159,6 +197,7 @@ function EvidenceAnswer({ response, onSelect }: {
                 </div>
               )}
               {turns.map((turn, turnIndex) => {
+                const revisedQueries = countRevisedQueries(turn.response.steps);
                 const paperCount = new Set(turn.response.evidence.map((item) => item.paper_id)).size;
                 return (
                     <div className="mb-5 flex justify-end">
@@ -199,7 +238,16 @@ function EvidenceAnswer({ response, onSelect }: {
                 <div className={`mx-auto flex max-w-sm flex-col items-center text-center ${turns.length ? "py-12" : "py-24"}`}>
                 </div>
               )}
+              <div ref={transcriptEndRef} />
+            </div>
+            {!runId && (
+              <div className="border-t bg-white px-5 py-4">
+                  Explore is available for the pinned DPYD reviewer release. No
+                  snapshot is configured for this topic, so there is nothing to
+                  ask about here.
+                </div>
               </div>
+            )}
               <label htmlFor="explore-question" className="sr-only">Ask the reviewed evidence</label>
               </div>
             </form>
@@ -215,3 +263,6 @@ function EvidenceAnswer({ response, onSelect }: {
         </div>
       </div>
   );
+};
+
+export default ExploreWorkspace;

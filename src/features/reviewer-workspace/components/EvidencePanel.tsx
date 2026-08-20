@@ -79,7 +79,18 @@ const EvidencePanel = ({
         <TabButton active={tab === "source"} onClick={() => setTab("source")}>
           Source text
         </TabButton>
+        {/*
+          Page-only evidence keeps the plain "page N" label it has always shown
+          in the Review and Data workspaces. Only resolved highlights, where the
+          PDF page and the printed article page can genuinely differ, spell out
+          which is which — and the article page is only worth naming when it is
+          a real page number (some rows carry page 0).
+        */}
+        {pdfHighlightPage != null && !isPageOnly ? (
             PDF page {pdfHighlightPage}
+            {source?.page != null &&
+            source.page > 0 &&
+            source.page !== pdfHighlightPage
               ? ` · article page ${source.page}`
               : ""}
           </span>

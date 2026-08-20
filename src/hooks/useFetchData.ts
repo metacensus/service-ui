@@ -23,10 +23,17 @@ export const fetchData = async <TBody, UResponse>(
   const response = await fetch(url, requestInit);
 
   if (!response.ok) {
+    // Parse inside its own try: throwing the parsed message from within the
+    // try block meant the catch swallowed it and every failure — including a
+    // 429 rate limit — surfaced as the generic "Request failed".
+    let message: string | undefined;
     try {
       const responseJson = await response.json();
+      message = responseJson.error || responseJson.message;
     } catch {
+      message = undefined;
     }
+    throw new Error(message || "Request failed");
   }
 
   return response.json();
