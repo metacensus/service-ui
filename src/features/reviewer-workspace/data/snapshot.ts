@@ -27,6 +27,63 @@ async function jsonFetch<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+const PROVENANCE_TYPES = new Set(["paper", "derived"]);
+const DERIVATION_KINDS = new Set(["verbatim", "derived", "inferred"]);
+const EXTRACTION_CERTAINTIES = new Set(["clean", "ambiguous", "abstained"]);
+
+function assertAllowed(
+  value: unknown,
+  allowed: Set<string>,
+  label: string,
+  coordinate: string
+): void {
+  if (value != null && (typeof value !== "string" || !allowed.has(value))) {
+    throw new Error(
+      `Invalid reviewer snapshot at ${coordinate}: unsupported ${label} ${JSON.stringify(value)}`
+    );
+  }
+}
+
+export function validatePaperRows(value: unknown, paperId: string): Row[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid reviewer snapshot for ${paperId}: rows must be an array`);
+  }
+  for (const row of value as Row[]) {
+    if (!row || typeof row !== "object" || typeof row.row_index !== "number") {
+      throw new Error(`Invalid reviewer snapshot for ${paperId}: malformed row`);
+    }
+    for (const [field, provenance] of Object.entries(row.provenance ?? {})) {
+      const coordinate = `${paperId}:${row.row_index}:${field}`;
+      assertAllowed(provenance.type, PROVENANCE_TYPES, "provenance type", coordinate);
+      assertAllowed(
+        provenance.derivation_kind,
+        DERIVATION_KINDS,
+        "derivation kind",
+        coordinate
+      );
+      assertAllowed(
+        provenance.extraction_certainty,
+        EXTRACTION_CERTAINTIES,
+        "extraction certainty",
+        coordinate
+      );
+      if (!Array.isArray(provenance.sources)) {
+        throw new Error(`Invalid reviewer snapshot at ${coordinate}: sources must be an array`);
+      }
+      for (const [index, component] of (
+        provenance.source_components ?? []
+      ).entries()) {
+        if (!component.label || !Array.isArray(component.sources)) {
+          throw new Error(
+            `Invalid reviewer snapshot at ${coordinate}: malformed source component ${index}`
+          );
+        }
+      }
+    }
+  }
+  return value as Row[];
+}
+
 async function optionalJsonFetch<T>(url: string): Promise<T | null> {
   const res = await fetch(url);
   if (res.status === 404) return null;
@@ -72,11 +129,13 @@ export function fetchDemoConfig(runId: string): Promise<DemoConfig | null> {
   );
 }
 
+export async function fetchPaperRows(
   runId: string,
   paperId: string
 ): Promise<Row[]> {
     `${fixtureBasePath(runId)}/rows/${pathPart(paperId)}.json`
   );
+  return validatePaperRows(rows, paperId);
 }
 
 export function fetchBundleFile(

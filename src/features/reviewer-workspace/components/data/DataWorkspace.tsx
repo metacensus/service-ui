@@ -15,6 +15,7 @@ type DataWorkspaceProps = {
     manifestQuery,
     demoConfigQuery,
   } = useRunSnapshot(topicId);
+
   });
   });
 

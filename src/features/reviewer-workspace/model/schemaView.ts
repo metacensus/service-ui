@@ -418,18 +418,25 @@ export function buildSchemaFieldViews(
   const presentationGroups = buildPresentationGroups(presentation);
 
   return summary.fields.map((field) => {
+    const reviewerDescription =
+      presentation?.reviewer_descriptions?.[field.name];
+    const displayField = reviewerDescription
+      ? { ...field, description: reviewerDescription }
+      : field;
     const identityDimension = identityByField[field.name] ?? null;
     const isIdentityDimension =
       field.identity_dimension === true || identityDimension !== null;
     const semanticRoles = semanticRolesForSchemaField(field, presentation);
     const group = groupForSchemaField(field.name, semanticRoles, presentationGroups);
     const role = roleForSchemaField(
+      displayField,
       group,
       isIdentityDimension,
       semanticRoles
     );
 
     return {
+      field: displayField,
       name: field.name,
       label: FRIENDLY_LABELS[field.name] ?? humanizeSchemaFieldName(field.name),
       group,

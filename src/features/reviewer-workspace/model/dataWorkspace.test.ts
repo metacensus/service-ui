@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Row, SchemaField, SchemaPresentation } from "../types";
 import {
   buildDataWorkspaceFieldOptionGroups,
+  dataWorkspaceFieldIsVisible,
   dataWorkspaceFieldValue,
+  dataWorkspaceRowMatchesField,
 } from "./dataWorkspace";
 
 const presentation: SchemaPresentation = {
@@ -60,6 +62,25 @@ function schemaField(
 }
 
 describe("data workspace schema presentation", () => {
+  it("keeps explicit abstentions visible while ordinary nulls stay hidden", () => {
+    const missingnessRow: Row = {
+      row_index: 0,
+      identity: {},
+      fields: { hwe_p_value: null, effect_size: null, n_events: 0 },
+      provenance: {
+        hwe_p_value: {
+          extraction_certainty: "abstained",
+          reasoning: "The supplement was unavailable.",
+          sources: [],
+        },
+      },
+    };
+    expect(dataWorkspaceFieldIsVisible(missingnessRow, "hwe_p_value")).toBe(true);
+    expect(dataWorkspaceRowMatchesField(missingnessRow, "hwe_p_value")).toBe(true);
+    expect(dataWorkspaceFieldIsVisible(missingnessRow, "effect_size")).toBe(false);
+    expect(dataWorkspaceFieldIsVisible(missingnessRow, "n_events")).toBe(true);
+  });
+
   it("reads identity values even when they are not duplicated in fields", () => {
     expect(dataWorkspaceFieldValue(row, "variant")).toBe("DPYD*2A");
   });

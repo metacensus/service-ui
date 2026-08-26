@@ -54,9 +54,15 @@ export interface SchemaPresentationGroup {
 }
 
 export interface SchemaPresentation {
+  schema_version?: string;
+  run_id?: string;
   finding_label?: string;
   groups?: SchemaPresentationGroup[];
   field_roles?: Record<string, SchemaSemanticRole | SchemaSemanticRole[]>;
+  /** Explicit standardized-field -> paper-reported-field relationships. */
+  reported_value_fields?: Record<string, string>;
+  /** Human-authored display copy; never generated from extraction guidance. */
+  reviewer_descriptions?: Record<string, string>;
 }
 
 export interface RectStats {
@@ -123,9 +129,20 @@ export interface ReviewHistoryEntry {
   [k: string]: unknown;
 }
 
+export interface SourceComponent {
+  label: string;
+  value: unknown;
+  sources: ProvSource[];
+}
+
 export interface ProvenanceEntry {
+  /** Legacy abstentions in the frozen run omit type. */
+  type?: "paper" | "derived";
   derivation?: string;
+  derivation_kind?: "verbatim" | "derived" | "inferred";
+  extraction_certainty?: "clean" | "ambiguous" | "abstained";
   reasoning?: string;
+  source_components?: SourceComponent[];
   review_history?: ReviewHistoryEntry[];
   sources: ProvSource[];
 }

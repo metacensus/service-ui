@@ -1,5 +1,6 @@
 import { displayValue } from "./display";
 import type {
+  ProvenanceEntry,
   Row,
   SchemaField,
   SchemaPresentation,
@@ -97,6 +98,11 @@ export function dataWorkspaceHasPopulatedValue(value: unknown): boolean {
   );
 }
 
+export function dataWorkspaceValueText(
+  value: unknown,
+  provenance?: ProvenanceEntry | null
+): string {
+  return displayValue(value, provenance);
 }
 
 export function dataWorkspaceFieldValue(row: Row, field: string): unknown {
@@ -104,6 +110,13 @@ export function dataWorkspaceFieldValue(row: Row, field: string): unknown {
     return row.fields[field];
   }
   return row.identity[field];
+}
+
+export function dataWorkspaceFieldIsVisible(row: Row, field: string): boolean {
+  return (
+    dataWorkspaceHasPopulatedValue(dataWorkspaceFieldValue(row, field)) ||
+    row.provenance[field]?.extraction_certainty === "abstained"
+  );
 }
 
 export function buildDataWorkspaceFieldOptionGroups(
@@ -149,6 +162,7 @@ export function buildDataWorkspaceFieldOptionGroups(
 
 export function dataWorkspaceRowMatchesField(row: Row, fieldFilter: string): boolean {
   if (fieldFilter === "all") return true;
+  return dataWorkspaceFieldIsVisible(row, fieldFilter);
 }
 
 export function dataWorkspaceFieldStatusTargets(
@@ -157,6 +171,7 @@ export function dataWorkspaceFieldStatusTargets(
 ): string[] {
   if (fieldFilter !== "all") return [fieldFilter];
   return Object.keys(row.fields).filter((field) =>
+    dataWorkspaceFieldIsVisible(row, field)
   );
 }
 
@@ -217,6 +232,7 @@ function buildDataWorkspaceFieldEntries(
   return dataWorkspaceOrderedFieldNames(row, presentation).flatMap(
     (field, order) => {
       const value = dataWorkspaceFieldValue(row, field);
+      if (!dataWorkspaceFieldIsVisible(row, field)) return [];
 
       return [
         {
