@@ -1,6 +1,7 @@
 # MetaCensus UI
 
 
+
 ## Tech stack
 
 - **React 18** + **TypeScript**
@@ -30,12 +31,20 @@ Start the dev server:
 npm run dev
 ```
 
+The app runs on Vite's default port (http://localhost:5173). The dev server stands
+in for the consumer's reverse proxy, so relative paths behave as they do in
+production:
+
+
 ## Scripts
 
 | Command                  | Description                                         |
+| ------------------------ | --------------------------------------------------- |
 | `npm run dev`            | Start the Vite dev server                           |
 | `npm run build`          | Build the production bundle to `dist/`              |
 | `npm run preview`        | Preview the production build locally                |
+| `npm run tsc`            | Type-check the SPA (`tsc --noEmit`)                 |
+| `npm test`               | Run the test suite                                  |
 
 ## Environment variables
 
@@ -44,11 +53,16 @@ See `.env.example` for the full list. Key values:
 - `API_PROXY_TARGET` — dev-server-only target for proxying `/metacensus/*`.
   Defaults to `http://localhost:3001`.
 
+## Container images
+
+### `metacensus/ui` — the SPA host
 
 The published `metacensus/ui` image (`Dockerfile`, served by Caddy) is a static host
 for the built SPA — it does **not** proxy or route to the API itself.
 
 - **Listens on port `8080`** — e.g. `docker run -p 8080:8080 metacensus/ui`.
+
+### Publishing
 
 
 ## Project structure

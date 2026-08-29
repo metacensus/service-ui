@@ -1,4 +1,8 @@
 // Single backend URL surface. Every backend call the UI makes goes through
+// `/metacensus/api/v1/*` as a relative path; the reverse proxy in front of the
+// SPA is what routes that prefix to whichever API backs the environment. This
+// image never proxies to an API itself, which is what lets one build run
+// everywhere.
 //
 // Naming follows the production backend convention: SINGULAR resource nouns
 // (`/topic`, `/user`, `/paper`, `/domain`, …), collection ops on the noun, and

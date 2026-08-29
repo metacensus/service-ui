@@ -3,6 +3,8 @@ import path from "node:path";
 import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
+  // Dev-server-only vars (no VITE_ prefix → not exposed to the client bundle).
+  // The dev server stands in for the consumer's reverse proxy, putting the API
   const env = loadEnv(mode, process.cwd(), "");
   const apiProxyTarget = env.API_PROXY_TARGET || "http://localhost:3001";
 
