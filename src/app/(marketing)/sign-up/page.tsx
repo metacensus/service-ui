@@ -12,6 +12,7 @@ import { useRouter } from "@/lib/next-navigation-compat";
 import owasp from "owasp-password-strength-test";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
+import { countryOptions, isCountryCode } from "@/lib/countries";
 
 const SignUpFormSchema = z
   .object({
@@ -25,10 +26,12 @@ const SignUpFormSchema = z
         required_error: "Email is required",
       })
       .email(),
+    // The ISO 3166-1 alpha-2 code, not the name — see `@/lib/countries`.
     country: z
       .string({
         required_error: "Country is required",
       })
+      .refine(isCountryCode, { message: "Country is required" }),
     password: z
       .string({
         required_error: "Password is required",
@@ -59,6 +62,9 @@ const SignUpFormSchema = z
 
 type SignUpFormInputs = z.infer<typeof SignUpFormSchema>;
 
+// Built once at module load: the list is 250 entries and does not vary.
+const countryList = countryOptions();
+
 export default function SignUp() {
   const router = useRouter();
 
@@ -67,6 +73,7 @@ export default function SignUp() {
     defaultValues: {
       name: "",
       email: "",
+      country: "",
       password: "",
       passwordConfirmation: "",
       verify: false,
@@ -98,7 +105,15 @@ export default function SignUp() {
               {...form.register("email", { required: true })}
             />
 
+              autoComplete="country"
               {...form.register("country", { required: true })}
+            >
+              <option value="">Select a country</option>
+              {countryList.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
 
               type="password"
               autoComplete="new-password"

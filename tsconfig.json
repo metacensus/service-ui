@@ -25,4 +25,5 @@
     },
     "types": ["vite/client", "node"]
   },
+  "include": ["src", "types", "vite.config.ts"]
 }
