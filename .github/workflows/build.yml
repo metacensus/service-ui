@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -70,6 +73,8 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker rm -f ui-ci || true
+    permissions:
+      contents: read
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
