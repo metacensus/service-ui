@@ -1,5 +1,7 @@
 name: Build
 
+# Validates the production artifact at the source: builds the published image
+# and smoke-tests that it does its job — the SPA host serves the app (root,
 
 on:
   pull_request:

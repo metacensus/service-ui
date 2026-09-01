@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: read
 
+    name: Publish ui
 
     steps:
       - name: Checkout repository
@@ -42,6 +43,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          images: ${{ env.REGISTRY }}/${{ env.ORG }}/ui
           tags: |
             type=ref,event=tag
             type=sha,format=short
@@ -51,6 +53,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "tsc": "tsc --noEmit",
     "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource/inter": "^5.0.18",
