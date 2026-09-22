@@ -10,6 +10,7 @@ const abstained: ProvenanceEntry = {
 
 describe("reviewer value display", () => {
   it("distinguishes ordinary nulls, abstentions, schema tokens, and zero", () => {
+    expect(displayValue(null)).toBe("No value in extraction");
     expect(displayValue(null, abstained)).toBe(
       "not recoverable from the available source (abstained)"
     );
@@ -18,8 +19,19 @@ describe("reviewer value display", () => {
     expect(displayValue(0)).toBe("0");
   });
 
+  it.each([null, undefined, ""])("labels an empty extraction value %s without inferring source absence", (value) => {
+    expect(displayValue(value)).toBe("No value in extraction");
+    expect(displayValue(value, abstained)).toBe(
       "not recoverable from the available source (abstained)"
     );
+    expect(abstained.reasoning).toBe("The required supplement was unavailable.");
+  });
+
+  it("preserves nonempty values, including false and direction semantics", () => {
+    expect(displayValue(false)).toBe("false");
+    expect(displayValue("increased_risk_in_variant_group")).toBe("increased_risk_in_variant_group");
+  });
+
   it("uses the explicit reported/standardized map without suffix inference", () => {
     const row: Row = {
       row_index: 0,

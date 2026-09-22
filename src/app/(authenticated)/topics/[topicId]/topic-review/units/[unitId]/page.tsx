@@ -4,6 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "@/components/shared/Link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSearchParams } from "@/lib/next-navigation-compat";
+import {
+  parseReviewOrigin,
+  reviewBackHref,
+} from "@/features/reviewer-workspace/model/returnContext";
 import ReviewSubNav from "@/features/reviewer-workspace/components/ReviewSubNav";
 import ReviewStorageNotice from "@/features/reviewer-workspace/components/ReviewStorageNotice";
 import { useReviewState } from "@/features/reviewer-workspace/hooks/useReviewState";
@@ -14,6 +19,7 @@ interface Props {
 
 const TopicReviewUnit = ({ params }: Props) => {
   const base = `/topics/${topicId}/topic-review`;
+  const backHref = reviewBackHref(base, origin);
 
   const {
     actions,
@@ -34,7 +40,13 @@ const TopicReviewUnit = ({ params }: Props) => {
   );
 
     <div>
+      <ReviewSubNav topicId={topicId} dataMode={origin?.mode ?? null} />
       <ReviewStorageNotice mode={storageMode} />
+      <div className="mt-6">
+        <Button asChild size="xs" variant="outline">
+          <Link href={backHref}>{backLabel}</Link>
+        </Button>
+      </div>
     </div>
         }
       </div>

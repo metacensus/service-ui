@@ -7,6 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ReviewLandingFilters from "@/features/reviewer-workspace/components/ReviewLandingFilters";
 import ReviewProgressHeader from "@/features/reviewer-workspace/components/ReviewProgressHeader";
 import ReviewSubNav from "@/features/reviewer-workspace/components/ReviewSubNav";
+import { useSearchParams } from "@/lib/next-navigation-compat";
+  unitHrefWithOrigin,
+} from "@/features/reviewer-workspace/model/returnContext";
 import ReviewerIdentityControl from "@/features/reviewer-workspace/components/ReviewerIdentityControl";
 import ReviewStorageNotice from "@/features/reviewer-workspace/components/ReviewStorageNotice";
 import ReviewWorkspaceMenu from "@/features/reviewer-workspace/components/ReviewWorkspaceMenu";
@@ -40,6 +43,7 @@ const TopicReview = ({ params }: Props) => {
 
   return (
     <div>
+      <ReviewSubNav topicId={topicId} dataMode={origin?.mode ?? null} />
       <ReviewStorageNotice mode={storageMode} />
 
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">

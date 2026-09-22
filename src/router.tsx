@@ -27,6 +27,11 @@ import TopicReview from "@/app/(authenticated)/topics/[topicId]/topic-review/pag
 import TopicReviewUnit from "@/app/(authenticated)/topics/[topicId]/topic-review/units/[unitId]/page";
 import TopicReviewSchema from "@/app/(authenticated)/topics/[topicId]/topic-review/schema/page";
 import TopicReviewData from "@/app/(authenticated)/topics/[topicId]/topic-review/data/page";
+import {
+  parseDataMode,
+  readLastDataMode,
+  resolveDataMode,
+} from "@/features/reviewer-workspace/model/dataMode";
 
 // Topic layout — ports `app/(authenticated)/topics/[topicId]/layout.tsx`.
 import PageHeader from "@/components/partials/PageHeader";
@@ -210,6 +215,8 @@ const topicReviewSchemaRoute = createRoute({
 const topicReviewDataRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-review/data",
+  validateSearch: (search: Record<string, unknown>) => ({
+  }),
   component: function TopicReviewDataRoute() {
     const { topicId } = topicReviewDataRoute.useParams();
     return <TopicReviewData params={{ topicId }} />;

@@ -14,6 +14,7 @@ export function displayValue(
   if (value === null || value === undefined || value === "") {
     return provenance?.extraction_certainty === "abstained"
       ? "not recoverable from the available source (abstained)"
+      : "No value in extraction";
   }
   if (value === "not_applicable") return "not applicable";
   if (value === "not_stated") return "not stated";
