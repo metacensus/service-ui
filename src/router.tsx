@@ -27,6 +27,8 @@ import TopicReview from "@/app/(authenticated)/topics/[topicId]/topic-review/pag
 import TopicReviewUnit from "@/app/(authenticated)/topics/[topicId]/topic-review/units/[unitId]/page";
 import TopicReviewSchema from "@/app/(authenticated)/topics/[topicId]/topic-review/schema/page";
 import TopicReviewData from "@/app/(authenticated)/topics/[topicId]/topic-review/data/page";
+import TopicAnalysis from "@/app/(authenticated)/topics/[topicId]/topic-analysis/page";
+import { TABLE_STATE_PARAMS } from "@/features/reviewer-workspace/model/returnContext";
 import {
   parseDataMode,
   readLastDataMode,
@@ -216,14 +218,35 @@ const topicReviewDataRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-review/data",
   validateSearch: (search: Record<string, unknown>) => ({
+    mode: parseDataMode(search.mode) ?? undefined,
+    // Declared so TanStack Router preserves them through navigate/search.
+    ...Object.fromEntries(
+      TABLE_STATE_PARAMS.map((k) => [
+        k,
+        typeof search[k] === "string" ? search[k] : undefined,
+      ])
+    ),
   }),
+  beforeLoad: ({ search }) => {
+    if (search.mode) return;
+    const stored = readLastDataMode(localStorage);
+    throw redirect({
+      to: ".",
+      search: { ...search, mode: resolveDataMode(null, stored) },
+    });
+  },
   component: function TopicReviewDataRoute() {
     const { topicId } = topicReviewDataRoute.useParams();
     return <TopicReviewData params={{ topicId }} />;
   },
 });
 
+const topicAnalysisRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
+  path: "topic-analysis",
+  component: TopicAnalysis,
+});
+
 // ---------------------------------------------------------------------------
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -245,6 +268,7 @@ const routeTree = rootRoute.addChildren([
       topicReviewUnitRoute,
       topicReviewSchemaRoute,
       topicReviewDataRoute,
+      topicAnalysisRoute,
     ]),
   ]),
 ]);

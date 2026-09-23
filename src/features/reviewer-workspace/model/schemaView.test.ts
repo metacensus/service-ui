@@ -31,14 +31,53 @@ function field(name: string): SchemaField {
   };
 }
 
+describe("synthesis field set characterization", () => {
+  it("counts fields with synthesis roles through presentation.field_roles", () => {
+    const synthesisPresentation: SchemaPresentation = {
+      field_roles: {
+        f_count: "count",
+        f_pct: "percentage",
+        f_cont: "continuous_result",
+        f_effect: "effect_estimate",
+        f_std: "standardized_value",
+        f_unc: "uncertainty",
+        f_two: ["count", "uncertainty"],
+        f_outcome: "outcome",
+        f_pop: "population",
+      },
+    };
+    const names = [
+      "f_count",
+      "f_pct",
+      "f_cont",
+      "f_effect",
+      "f_std",
+      "f_unc",
+      "f_two",
+      "f_outcome",
+      "f_pop",
+    ];
     const summary: SchemaSummary = {
       schema_version: "v006",
+      field_count: names.length,
+      top_n: 25,
+      fields: names.map(field),
     };
     const manifest = {
       schema_version: "v001",
       papers: [],
       identity_dimensions: [],
     } as unknown as Manifest;
+    const model = buildSchemaExplorerModel(
+      summary,
+      manifest,
+      synthesisPresentation
+    );
+
+    expect(model.overview.summarizableFieldCount).toBe(7);
+  });
+});
+
 describe("schema reviewer presentation", () => {
   it("uses reviewer descriptions instead of extraction guidance", () => {
     const summary: SchemaSummary = {

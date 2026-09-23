@@ -23,9 +23,13 @@ describe("resolveDataMode", () => {
   });
 
   it("falls back to the stored mode when the URL has none", () => {
+    expect(resolveDataMode(null, "table")).toBe("table");
     expect(resolveDataMode(null, "chat")).toBe("chat");
   });
 
+  it("resolves a bare visit with no memory to Chat", () => {
+    expect(resolveDataMode(null, null)).toBe("chat");
+  });
 });
 
 describe("last-mode storage", () => {

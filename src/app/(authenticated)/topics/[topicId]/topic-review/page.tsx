@@ -8,6 +8,8 @@ import ReviewLandingFilters from "@/features/reviewer-workspace/components/Revie
 import ReviewProgressHeader from "@/features/reviewer-workspace/components/ReviewProgressHeader";
 import ReviewSubNav from "@/features/reviewer-workspace/components/ReviewSubNav";
 import { useSearchParams } from "@/lib/next-navigation-compat";
+import {
+  parseReviewOrigin,
   unitHrefWithOrigin,
 } from "@/features/reviewer-workspace/model/returnContext";
 import ReviewerIdentityControl from "@/features/reviewer-workspace/components/ReviewerIdentityControl";
@@ -23,6 +25,8 @@ interface Props {
 const TopicReview = ({ params }: Props) => {
   const { topicId } = params;
   const base = `/topics/${topicId}/topic-review`;
+  const searchParams = useSearchParams();
+  const origin = parseReviewOrigin(searchParams.get("from"), searchParams);
   const {
     actions,
     actionHistory,

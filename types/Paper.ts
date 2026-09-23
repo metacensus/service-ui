@@ -1,3 +1,7 @@
+export const PAPER_LIFECYCLE_STAGES = ["Abstracts Gathered", "Abstracts Approved for Full-Text Review",
+  "Papers Extracted", "Papers Adjudicated"] as const;
+export type PaperLifecycleStage = typeof PAPER_LIFECYCLE_STAGES[number];
+
 export type Paper = {
   id: number;
   title: string;

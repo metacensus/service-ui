@@ -43,7 +43,9 @@ export function useRouter() {
   );
 }
 
+/** Mirrors `usePathname()`. Decoded: route params (topic ids contain a colon) arrive encoded. */
 export function usePathname(): string {
+  return decodeURIComponent(useLocation().pathname);
 }
 
 /**

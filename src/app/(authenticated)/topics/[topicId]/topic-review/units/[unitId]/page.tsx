@@ -8,6 +8,7 @@ import { useSearchParams } from "@/lib/next-navigation-compat";
 import {
   parseReviewOrigin,
   reviewBackHref,
+  reviewBackLabel,
 } from "@/features/reviewer-workspace/model/returnContext";
 import ReviewSubNav from "@/features/reviewer-workspace/components/ReviewSubNav";
 import ReviewStorageNotice from "@/features/reviewer-workspace/components/ReviewStorageNotice";
@@ -19,7 +20,10 @@ interface Props {
 
 const TopicReviewUnit = ({ params }: Props) => {
   const base = `/topics/${topicId}/topic-review`;
+  const searchParams = useSearchParams();
+  const origin = parseReviewOrigin(searchParams.get("from"), searchParams);
   const backHref = reviewBackHref(base, origin);
+  const backLabel = reviewBackLabel(origin);
 
   const {
     actions,

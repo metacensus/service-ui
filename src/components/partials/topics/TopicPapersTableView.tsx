@@ -1,11 +1,13 @@
 "use client";
 import TablePagination from "@/components/shared/TablePagination";
 import TableSimple from "@/components/shared/TableSimple";
+import { getPaperLifecycleStage } from "@/functions/getPaperStatusCount";
 import Link from "@/components/shared/Link";
 import { usePathname } from "@/lib/next-navigation-compat";
 import { useMemo } from "react";
 import { Paper } from "../../../../types/Paper";
 import { getPaperVoteCount } from "@/functions/getPaperVoteCount";
+import { PaperMembership } from "./PaperLifecycleDetails";
 import CardIndicators from "../CardIndicators";
 
 interface Props {

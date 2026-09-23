@@ -14,6 +14,20 @@ export type DataWorkspaceStatusFilter =
   | "corrected"
   | "flagged";
 
+export const DATA_WORKSPACE_STATUS_FILTERS: readonly DataWorkspaceStatusFilter[] = [
+  "all",
+  "open",
+  "approved",
+  "corrected",
+  "flagged",
+];
+
+export function isDataWorkspaceStatusFilter(
+  value: unknown
+): value is DataWorkspaceStatusFilter {
+  return (DATA_WORKSPACE_STATUS_FILTERS as readonly unknown[]).includes(value);
+}
+
 export type DataWorkspaceSelectedValue = {
   paperId: string;
   rowIndex: number;

@@ -384,10 +384,15 @@ const SEMANTIC_ROLE_ORDER: SchemaSemanticRole[] = [
 
 const VALID_SEMANTIC_ROLES = new Set<SchemaSemanticRole>(SEMANTIC_ROLE_ORDER);
 
+const SYNTHESIS_ROLES = new Set<SchemaSemanticRole>([
   "count",
   "percentage",
   "continuous_result",
   "effect_estimate",
+  "standardized_value",
+  "uncertainty",
+]);
+
 const SUMMARY_ROLES = new Set<SchemaSemanticRole>([
   "count",
   "percentage",
@@ -459,6 +464,13 @@ export function buildSchemaExplorerModel(
   presentation?: SchemaPresentation
 ): SchemaExplorerModel {
   const fields = buildSchemaFieldViews(summary, manifest, presentation);
+  const synthesisFieldNames = fields
+    .filter((field) => field.semanticRoles.some((role) => SYNTHESIS_ROLES.has(role)))
+    .map((field) => field.name);
+  const overview = buildSchemaOverview(
+    presentation,
+    new Set(synthesisFieldNames)
+  );
 
   return {
     schemaVersion: summary.schema_version ?? manifest.schema_version,
@@ -785,9 +797,11 @@ function isAnalysisReadySchemaField(
 
 function buildSchemaOverview(
   presentation: SchemaPresentation | undefined,
+  synthesisFieldNames: Set<string>
 ): SchemaOverview {
   return {
     findingLabel: presentation?.finding_label?.trim() || "finding",
+    summarizableFieldCount: synthesisFieldNames.size,
   };
 }
 
