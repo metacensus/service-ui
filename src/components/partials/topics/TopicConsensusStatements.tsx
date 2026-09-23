@@ -2,6 +2,7 @@ import TablePagination from "@/components/shared/TablePagination";
 import TableSimple from "@/components/shared/TableSimple";
 import { Button } from "@/components/ui/button";
 import { useFetchData } from "@/hooks/useFetchData";
+import { sameEntityId } from "@/lib/entityId";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -91,6 +92,8 @@ const TopicConsensusStatementTable = ({
 
           {
             content: () => {
+              const authorName = contributors?.find((contributor) =>
+                sameEntityId(contributor.id, statement.authorId)
               )?.name;
               return <span className="py-4">{authorName}</span>;
             },

@@ -1,6 +1,7 @@
 import formatIsoDate from "@/functions/formatIsoDate";
 import { useFetchData } from "@/hooks/useFetchData";
 import { useGetUserId } from "@/hooks/useGetUserId";
+import { findVoteForUser } from "@/lib/entityId";
 import { routes } from "@/lib/routes";
 import { useMemo } from "react";
 import PropVoteStatus from "../PropVoteStatus";
@@ -28,6 +29,10 @@ const StatementVoteStatus = ({
 
   const { userId } = useGetUserId();
 
+  const userVote = useMemo(
+    () => findVoteForUser(votes, userId),
+    [votes, userId]
+  );
 
   return (
     <div className="flex flex-col gap-2">

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Vote } from "../../../types/vote";
+import { citationsFromVotes } from "./statementCitations";
 
 export const StatementHeatmap = ({
   statement = "",
@@ -10,6 +11,7 @@ export const StatementHeatmap = ({
   statement: string;
   votes: Vote[];
 }) => {
+  const citations = useMemo(() => citationsFromVotes(votes), [votes]);
 
   const statementAsArray = statement.split("");
 
@@ -18,6 +20,9 @@ export const StatementHeatmap = ({
   return (
     <div>
         {statementAsArray.map((char, index) => {
+          // how many times is this index in a citation? half-open [start, end)
+          const weight = citations.reduce((acc, citation) => {
+            if (index >= citation.start && index < citation.end) {
               return acc + 1;
             }
             return acc;

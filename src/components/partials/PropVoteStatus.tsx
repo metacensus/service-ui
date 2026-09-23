@@ -2,6 +2,7 @@
 
 import formatIsoDate from "@/functions/formatIsoDate";
 import { useFetchData } from "@/hooks/useFetchData";
+import { sameEntityId } from "@/lib/entityId";
 import { routes } from "@/lib/routes";
 import { useState } from "react";
 import { Contributor } from "../../../types/Contributor";
@@ -12,6 +13,10 @@ import TableSimple from "../shared/TableSimple";
 import { Button } from "../ui/button";
 import CardIndicators from "./CardIndicators";
 import { StatementHeatmap } from "./StatementHeatmap";
+import {
+  excerptForCitation,
+  parseStatementCitation,
+} from "./statementCitations";
 
 type PropVoteStatusProps = {
   votes: Vote[];
@@ -85,7 +90,15 @@ const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
                   },
                 ]}
                 rows={votes.map((vote) => {
+                  const user = contributors?.find((contributor) =>
+                    sameEntityId(contributor.id, vote.userId)
                   );
+                  const citationExcerpt = prop?.description
+                    ? excerptForCitation({
+                        statement: prop.description,
+                        citation: parseStatementCitation(vote.citations?.[0]),
+                      })
+                    : "";
 
                   return [
                     {
@@ -102,6 +115,13 @@ const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
                       content: (
                         <span>
                           {vote.explanation}
+                          {citationExcerpt ? (
+                            <>
+                              <br />
+                                &ldquo;{citationExcerpt}&rdquo;
+                              </span>
+                            </>
+                          ) : null}
                           <br />
                             {formatIsoDate(vote.lastCast)}
                           </span>

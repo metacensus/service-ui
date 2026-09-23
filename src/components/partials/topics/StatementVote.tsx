@@ -2,6 +2,7 @@ import MyDrawer from "@/components/shared/Drawer";
 import { Button } from "@/components/ui/button";
 import { useFetchData } from "@/hooks/useFetchData";
 import { useGetUserId } from "@/hooks/useGetUserId";
+import { findVoteForUser, isPropVoteClosed } from "@/lib/entityId";
 import { routes } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Prop } from "../../../../types/Prop";
@@ -23,7 +24,12 @@ type StatementVoteProps = {
     "GET"
   );
 
+  const userVote = useMemo(
+    () => findVoteForUser(votes, userId),
+    [votes, userId]
+  );
 
+  const voteClosed = useMemo(() => isPropVoteClosed(prop), [prop]);
 
   if (voteClosed) {
     return <PropVoteConclusion prop={prop} />;

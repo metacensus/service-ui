@@ -3,10 +3,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useFetchData } from "@/hooks/useFetchData";
 import queryClient from "@/lib/queryClient";
 import { routes } from "@/lib/routes";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Prop } from "../../../types/Prop";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
+import {
+  excerptForCitation,
+  selectionOffsetsWithin,
+  type StatementCitation,
+} from "./statementCitations";
 
 type PropVotingProps = {
   topicId: string;
@@ -19,7 +25,15 @@ const votingOptionMap = {
   accept: "For",
   reject: "Against",
   abstain: "Abstain",
+} as const;
 
+type VotingOption = (typeof votingOptionMap)[keyof typeof votingOptionMap];
+
+const votingOptions = Object.values(votingOptionMap);
+
+function parseVotingOption(value: string): VotingOption | "" {
+  return votingOptions.find((option) => option === value) ?? "";
+}
 
 const PropVoting = ({
   topicId,
@@ -28,8 +42,13 @@ const PropVoting = ({
   userVote,
 }: PropVotingProps) => {
   const { toast } = useToast();
+  const statementRef = useRef<HTMLParagraphElement>(null);
 
   const [votingComment, setVotingComment] = useState("");
+  const [votingOption, setVotingOption] = useState<VotingOption | "">("");
+  const [selection, setSelection] = useState<StatementCitation | undefined>(
+    undefined
+  );
 
   const { data: propsData } = useFetchData<undefined, Prop[]>(
     `${routes.api.topic}/${topicId}/prop`,
@@ -38,6 +57,9 @@ const PropVoting = ({
   );
 
   const prop =
+    propsData
+      ?.filter((item) => item.type === "Statement")
+      .find((item) => item.id === propId) || null;
 
   const handleSubmitVote = async () => {
     if (!propId || !votingOption || !topicId) {
@@ -47,11 +69,15 @@ const PropVoting = ({
     const body: {
       position: string;
       explanation: string;
+      citations?: StatementCitation[];
     } = {
       position: votingOption,
       explanation: votingComment,
     };
 
+    // Citations are meaningful for Against only (contract).
+    if (votingOption === votingOptionMap.reject && selection) {
+      body.citations = [selection];
     }
 
     if (window.confirm("Are you sure you want to cast your vote?")) {
@@ -64,6 +90,24 @@ const PropVoting = ({
           body: JSON.stringify(body),
         }
       );
+
+      if (!request.ok) {
+        let description = "Your vote could not be submitted.";
+        try {
+          const responseJson = await request.json();
+          description =
+            responseJson.error || responseJson.message || description;
+        } catch {
+          // keep the default description when the body is not JSON
+        }
+        toast({
+          title: "Vote failed",
+          description,
+          variant: "destructive",
+        });
+        return;
+      }
+
       await request.json();
       await queryClient.invalidateQueries({
         queryKey: [`meta-vote-${topicId}`],
@@ -92,18 +136,57 @@ const PropVoting = ({
     if (votingOption !== votingOptionMap.reject) setSelection(undefined);
   }, [votingOption]);
 
+  const selectedText = useMemo(
+    () =>
+      excerptForCitation({
+        statement: prop?.description ?? "",
+        citation: selection,
+      }),
+    [prop?.description, selection]
+  );
 
+  const statementNodes = useMemo(() => {
     const text = prop?.description;
+    if (!text) return null;
+    if (!selection) return text;
+
+    return (
+      <>
+        {text.slice(0, selection.start)}
+          {text.slice(selection.start, selection.end)}
+        </mark>
+        {text.slice(selection.end)}
+      </>
+    );
   }, [prop?.description, selection]);
 
+  const captureSelection = () => {
+    const element = statementRef.current;
+    if (!element) return;
+    const offsets = selectionOffsetsWithin({ element });
+    if (!offsets) {
       setSelection(undefined);
+      return;
+    }
+    // Highlight-to-object: selecting a span starts an Against objection.
+    setSelection(offsets);
+    setVotingOption(votingOptionMap.reject);
+  };
 
   return (
     <div className="grid gap-6">
       {prop?.description && (
+        <div
+          data-vaul-no-drag
+        >
           <p
+            ref={statementRef}
             className="select-text"
+            onPointerUp={captureSelection}
+            onKeyUp={captureSelection}
+            tabIndex={0}
           >
+            {statementNodes}
           </p>
         </div>
       )}
@@ -116,14 +199,18 @@ const PropVoting = ({
           <ToggleGroup
             type="single"
             variant="outline"
+            value={votingOption}
+            onValueChange={(value) => setVotingOption(parseVotingOption(value))}
           >
             <ToggleGroupItem
               value={votingOptionMap.accept}
+              aria-label="Toggle accept"
             >
               <span>Accept</span>
             </ToggleGroupItem>
             <ToggleGroupItem
               value={votingOptionMap.reject}
+              aria-label="Toggle reject"
             >
               <span>Reject</span>
             </ToggleGroupItem>

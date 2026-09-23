@@ -1,4 +1,5 @@
 import formatIsoDate from "@/functions/formatIsoDate";
+import { isPropVoteClosed } from "@/lib/entityId";
 import { useMemo } from "react";
 import { Prop } from "../../../types/Prop";
 import TextBubble from "../shared/TextBubble";
@@ -20,6 +21,7 @@ const PropVoteConclusion = ({ prop }: PropVoteConclusionProps) => {
   };
 
   const voteConcluded = useMemo(() => {
+    if (!isPropVoteClosed(prop)) return null;
     return (
       <div className="w-fit">
         <TextBubble
