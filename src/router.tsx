@@ -11,6 +11,7 @@ import Providers from "@/app/providers";
 
 import LogIn from "@/app/(marketing)/log-in/page";
 import SignUp from "@/app/(marketing)/sign-up/page";
+import NotFoundPage from "@/app/(marketing)/not-found/page";
 
 // Authenticated pages
 import Dashboard from "@/app/(authenticated)/dashboard/page";
@@ -273,6 +274,13 @@ const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
+// `root` mode renders the 404 at the root route instead of inside the deepest
+// matched layout, so an unknown path under `/topics/$topicId` gets the
+export const router = createRouter({
+  routeTree,
+  notFoundMode: "root",
+  defaultNotFoundComponent: NotFoundPage,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
