@@ -8,6 +8,12 @@ import {
 
 import { Toaster } from "@/components/ui/toaster";
 import Providers from "@/app/providers";
+import { DocumentHead } from "@/components/DocumentHead";
+import { fetchData } from "@/hooks/useFetchData";
+import { pageHead } from "@/lib/head";
+import queryClient from "@/lib/queryClient";
+import { routes } from "@/lib/routes";
+import type { Topic } from "../types/Topic";
 
 import LogIn from "@/app/(marketing)/log-in/page";
 import SignUp from "@/app/(marketing)/sign-up/page";
@@ -46,6 +52,7 @@ import { PushRecentlyViewedTopic } from "@/app/(authenticated)/topics/[topicId]/
 const rootRoute = createRootRoute({
   component: () => (
     <Providers>
+      <DocumentHead />
       <Outlet />
       <Toaster />
     </Providers>
@@ -78,6 +85,19 @@ const authenticatedLayoutRoute = createRoute({
 const topicLayoutRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: "/topics/$topicId",
+  // Loads the topic's name for the tab title. Shares its cache entry with the
+  // `useFetchData(routes.api.topic, ["topics"])` call in PageHeader, whose key
+  // is `["topics", JSON.stringify(undefined)]`. A failed fetch only costs the
+  // name: the page's own queries surface the error.
+  loader: async ({ params }) => {
+    const topics = await queryClient
+      .ensureQueryData({
+        queryKey: ["topics", undefined],
+        queryFn: () => fetchData<undefined, Topic[]>(routes.api.topic),
+      })
+      .catch(() => undefined);
+    return { topicName: topics?.find((t) => t.id === params.topicId)?.name };
+  },
   component: function TopicLayout() {
     const { topicId } = topicLayoutRoute.useParams();
     return (
@@ -90,6 +110,18 @@ const topicLayoutRoute = createRoute({
   },
 });
 
+// A topic sub-page's head: "Papers · <topic name> | MetaCensus".
+const topicHead =
+  (section: string) =>
+  ({ matches }: { matches: Array<{ routeId: string; loaderData?: unknown }> }) => {
+    const topicName = (
+      matches.find((m) => m.routeId === topicLayoutRoute.id)?.loaderData as
+        | { topicName?: string }
+        | undefined
+    )?.topicName;
+    return pageHead({ title: topicName ? `${section} · ${topicName}` : section });
+  };
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
@@ -97,12 +129,24 @@ const indexRoute = createRoute({
 
 const logInRoute = createRoute({
   getParentRoute: () => rootRoute,
+  head: () =>
+    pageHead({
+      title: "Log in",
+      description:
+        "Log in to MetaCensus to work on your topics, extract evidence from papers, and vote on consensus statements.",
+    }),
   component: LogIn,
 });
 
 const signUpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/sign-up",
+  head: () =>
+    pageHead({
+      title: "Sign up",
+      description:
+        "Create a MetaCensus account to start a topic, turn papers into source-linked evidence, and vote on consensus statements.",
+    }),
   component: SignUp,
 });
 
@@ -110,24 +154,28 @@ const signUpRoute = createRoute({
 const dashboardRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: "/dashboard",
+  head: () => pageHead({ title: "Dashboard" }),
   component: Dashboard,
 });
 
 const contributorsRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: "/contributors",
+  head: () => pageHead({ title: "Contributors" }),
   component: Contributors,
 });
 
 const topicsRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: "/topics",
+  head: () => pageHead({ title: "Topics" }),
   component: Topics,
 });
 
 const topicDashboardRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-dashboard",
+  head: topicHead("Dashboard"),
   component: function TopicDashboardRoute() {
     const { topicId } = topicDashboardRoute.useParams();
     return <TopicDashboard params={{ topicId }} />;
@@ -137,6 +185,7 @@ const topicDashboardRoute = createRoute({
 const topicDetailsRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-details",
+  head: topicHead("Details"),
   component: function TopicDetailsRoute() {
     const { topicId } = topicDetailsRoute.useParams();
     return <TopicDetails params={{ topicId }} />;
@@ -146,6 +195,7 @@ const topicDetailsRoute = createRoute({
 const topicPapersRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-papers",
+  head: topicHead("Papers"),
   component: function TopicPapersRoute() {
     const { topicId } = topicPapersRoute.useParams();
     return <TopicPapers params={{ topicId }} />;
@@ -155,6 +205,7 @@ const topicPapersRoute = createRoute({
 const topicPaperRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-papers/$paperId",
+  head: topicHead("Paper"),
   component: function TopicPaperRoute() {
     const { topicId, paperId } = topicPaperRoute.useParams();
     return <TopicPaper params={{ topicId, paperId }} />;
@@ -164,6 +215,7 @@ const topicPaperRoute = createRoute({
 const topicContributorsRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-contributors",
+  head: topicHead("Contributors"),
   component: function TopicContributorsRoute() {
     const { topicId } = topicContributorsRoute.useParams();
     return <TopicContributors params={{ topicId }} />;
@@ -173,6 +225,7 @@ const topicContributorsRoute = createRoute({
 const topicConsensusStatementsRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-consensus-statements",
+  head: topicHead("Statements"),
   component: function TopicConsensusStatementsRoute() {
     const { topicId } = topicConsensusStatementsRoute.useParams();
     return <TopicConsensusStatements params={{ topicId }} />;
@@ -182,6 +235,7 @@ const topicConsensusStatementsRoute = createRoute({
 const topicExtractionRoute = createRoute({
   getParentRoute: () => topicLayoutRoute,
   path: "topic-extraction/$paperId",
+  head: topicHead("Extraction"),
   component: function TopicExtractionRoute() {
     const { topicId, paperId } = topicExtractionRoute.useParams();
     return <TopicExtraction params={{ topicId, paperId }} />;
