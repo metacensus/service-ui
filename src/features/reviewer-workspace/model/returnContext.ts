@@ -4,11 +4,23 @@ import {
   type DataWorkspaceSelectedValue,
   type DataWorkspaceStatusFilter,
 } from "./dataWorkspace";
+import { GROUPS, type Combine, type Group, type SortMode } from "./schemaSelect";
 
 /** Review return context, carried in the URL (`?from=chat|table` + Table params) so a shared or
  * reloaded link keeps its origin. */
 
 export type TableState = {
+  /** Selected term keys (`Group|category`, `Group|category|item`, `Paper|paperId`), in color-slot order. */
+  terms: string[];
+  /** Open paper ids, in open order. */
+  open: string[];
+  /** The scoped paper id when scope is "One paper"; empty = All papers. */
+  scope: string;
+  group: Group;
+  combine: Combine;
+  sort: SortMode;
+  view: "selection" | "whole";
+  /** The focused paper: the open paper where the user last changed the search, the filters or the evidence selection, and its tree state. */
   paper: string;
   q: string;
   field: string;
@@ -17,6 +29,7 @@ export type TableState = {
 };
 
 export const EMPTY_TABLE_STATE: TableState = parseTableState();
+export const TABLE_STATE_PARAMS = Object.keys(EMPTY_TABLE_STATE);
 
 export type ReviewOrigin = { mode: "chat" } | { mode: "table"; table: TableState };
 
@@ -43,6 +56,14 @@ export function parseSelectionParam(
     : null;
 }
 
+/** Ids never contain "," or "|", so both work as separators. */
+export function splitListParam(value: string): string[] {
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+}
+
 /** Parse `?from=` (plus table params) off a Review URL. Unknown/absent `from` means "not from Data". */
 export function parseReviewOrigin(
   from: unknown,
@@ -57,7 +78,18 @@ export function parseTableState(search?: SearchLike): TableState {
   const get = (key: string) => search?.get(key) ?? "";
   const field = get("field");
   const status = get("status");
+  const group = get("group");
+  const combine = get("combine");
+  const sort = get("sort");
+  const view = get("view");
   return {
+    terms: splitListParam(get("terms")),
+    open: splitListParam(get("open")),
+    scope: get("scope"),
+    group: (GROUPS as readonly string[]).includes(group) ? (group as Group) : "Variants",
+    combine: combine === "all" ? "all" : "any",
+    sort: sort === "matches" || sort === "findings" || sort === "az" ? sort : "custom",
+    view: view === "whole" ? "whole" : "selection",
     paper: get("paper"),
     q: get("q"),
     field: field.trim() ? field : "all",
@@ -72,6 +104,13 @@ export const hasTableState = (table: TableState) =>
 /** Encode a TableState as flat query params, omitting defaults/empties. */
 export function tableStateParams(table: TableState): Record<string, string> {
   const params: Record<string, string> = {};
+  if (table.terms.length > 0) params.terms = table.terms.join(",");
+  if (table.open.length > 0) params.open = table.open.join(",");
+  if (table.scope) params.scope = table.scope;
+  if (table.group !== "Variants") params.group = table.group;
+  if (table.combine === "all") params.combine = "all";
+  if (table.sort !== "custom") params.sort = table.sort;
+  if (table.view === "whole") params.view = "whole";
   if (table.paper) params.paper = table.paper;
   if (table.q) params.q = table.q;
   if (table.field && table.field !== "all") params.field = table.field;

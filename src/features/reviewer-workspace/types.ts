@@ -88,6 +88,7 @@ export interface IdentityDimension {
 export interface Manifest {
   run_id: string;
   domain: string;
+  snapshot_format_version?: string;
   exported_at: string;
   blind: boolean;
   schema_version: string;
@@ -342,6 +343,7 @@ export type ExploreResponse = {
   evidence: ExploreEvidence[];
   /** True when the agent hit its turn budget before concluding. */
   truncated?: boolean;
+  set_revision?: number;
 };
 
 export type ExploreRequest = {

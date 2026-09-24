@@ -8,8 +8,10 @@ import {
   reviewBackLabel,
   reviewSearchFromData,
   selectionParam,
+  splitListParam,
   tableStateParams,
   unitHrefWithOrigin,
+  type TableState,
 } from "./returnContext";
 
 const searchOf = (query: string) => new URLSearchParams(query);
@@ -35,6 +37,14 @@ describe("parseReviewOrigin", () => {
     );
     expect(origin).toEqual({
       mode: "table",
+      table: {
+        ...EMPTY_TABLE_STATE,
+        paper: "p1",
+        q: "hapb3",
+        field: "gene",
+        status: "open",
+        sel: "2:gene",
+      },
     });
     expect(parseReviewOrigin("chat", searchOf("paper=p1"))).toEqual({
       mode: "chat",
@@ -74,6 +84,7 @@ describe("parseTableState / tableStateParams", () => {
 
   it("round-trips through params, omitting defaults", () => {
     expect(tableStateParams(EMPTY_TABLE_STATE)).toEqual({});
+    const table: TableState = { ...EMPTY_TABLE_STATE, paper: "p1", q: "x", status: "open" };
     expect(tableStateParams(table)).toEqual({
       paper: "p1",
       q: "x",
@@ -83,7 +94,52 @@ describe("parseTableState / tableStateParams", () => {
   });
 });
 
+describe("new table params", () => {
+  const full = (): TableState => ({
+    terms: ["Variants|dpyd_variant", "Variants|dpyd_variant|x", "Paper|p9"],
+    open: ["p1", "p2"],
+    scope: "p3",
+    group: "Outcomes",
+    combine: "all",
+    sort: "matches",
+    view: "whole",
+    paper: "p1",
+    q: "hapb3",
+    field: "gene",
+    status: "approved",
+    sel: "2:gene",
+  });
+
+  it("encodes and round-trips every param, omitting defaults and empties", () => {
     expect(tableStateParams(EMPTY_TABLE_STATE)).toEqual({});
+    expect(tableStateParams(full())).toEqual({ terms: "Variants|dpyd_variant,Variants|dpyd_variant|x,Paper|p9", open: "p1,p2", scope: "p3", group: "Outcomes", combine: "all", sort: "matches", view: "whole", paper: "p1", q: "hapb3", field: "gene", status: "approved", sel: "2:gene" });
+    expect(parseTableState(new URLSearchParams(tableStateParams(full())))).toEqual(full());
+  });
+
+  it("falls back on invalid group, combine, sort and view", () => {
+    const back = parseTableState(
+      searchOf("group=Bogus&combine=both&sort=popular&view=full")
+    );
+    expect(back.group).toBe("Variants");
+    expect(back.combine).toBe("any");
+    expect(back.sort).toBe("custom");
+    expect(back.view).toBe("selection");
+  });
+
+  it("drops empty list segments", () => {
+    expect(splitListParam("")).toEqual([]);
+    expect(splitListParam("p1,,p2,")).toEqual(["p1", "p2"]);
+    expect(
+      parseTableState(searchOf("terms=Variants%7Ca%2C%2CPaper%7Cp1")).terms
+    ).toEqual(["Variants|a", "Paper|p1"]);
+  });
+
+  it("emits no value TanStack Router would JSON-parse", () => {
+    for (const [key, value] of Object.entries(tableStateParams(full())))
+      expect(() => JSON.parse(value), `${key}=${value}`).toThrow();
+  });
+});
+
 describe("review navigation hrefs", () => {
   const base = "/topics/t/topic-review";
 
@@ -97,6 +153,8 @@ describe("review navigation hrefs", () => {
   });
 
   it("carries the table snapshot through unit and back hrefs", () => {
+    const table: TableState = {
+      ...EMPTY_TABLE_STATE,
       paper: "p1",
       q: "hapb3",
     };

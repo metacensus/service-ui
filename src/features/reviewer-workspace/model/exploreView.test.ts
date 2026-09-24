@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
+import type { ExploreEvidence } from "../types";
 import {
   countRevisedQueries,
   displayTitle,
+  evidenceKind,
+  hasMembershipUpdate,
+  isFailedMembershipUpdate,
   isRevisedQuery,
+  stepLabel,
   stepSummaryLabel,
+  valueSources,
 } from "./exploreView";
 
 describe("displayTitle", () => {
@@ -58,6 +64,115 @@ describe("revised queries", () => {
     ).toBe(2);
   });
 });
+
+function evidenceItem(overrides: Partial<ExploreEvidence>): ExploreEvidence {
+  return {
+    evidence_id: "ev_a",
+    row_index: 16,
+    field: "n_total",
+    source_index: 0,
+    pdf_available: true,
+    value: 46,
+    quote: "All toxicities | YES | 174 | 48",
+    location: "sections/discussion.md",
+    article_page: 3,
+    pdf_page: 3,
+    resolution: "exact",
+    highlight: null,
+    cell: null,
+    provenance_type: "derived",
+    derivation: "34 + 12 = 46",
+    derivation_kind: "derived",
+    extraction_certainty: "ambiguous",
+    reasoning: null,
+    review_status: "unreviewed",
+    ...overrides,
+  };
+}
+
+describe("revised queries and membership steps", () => {
+  it("does not count a failed working-set change as a revised query", () => {
+    expect(isRevisedQuery({ tool: "membership_update", summary: "error: 409 stale_revision" })).toBe(false);
     expect(
       countRevisedQueries([
+        { tool: "membership_update", summary: "error: 409 stale_revision" },
         { tool: "execute_sql", summary: "error: bad" },
+      ])
+    ).toBe(1);
+  });
+});
+
+describe("stepLabel", () => {
+  it("labels a confirmed working-set change with its summary", () => {
+    );
+  });
+
+  it("labels a failed working-set change as a failure, not a revised query", () => {
+    expect(stepLabel({ tool: "membership_update", summary: "error: Working-set write failed: 409 stale_revision" })).toBe(
+      "Working-set change failed · nothing changed"
+    );
+  });
+
+  it("keeps the baseline labels for other steps", () => {
+    expect(stepLabel({ tool: "execute_sql", summary: "error: no such column" })).toBe(
+      "The agent revised an unsuccessful query."
+    );
+    expect(stepLabel({ tool: "execute_sql", summary: "2 statements; 9 rows returned" })).toBe(
+      "Evidence search · 2 search steps; 9 results reviewed"
+    );
+    );
+  });
+});
+
+describe("isFailedMembershipUpdate", () => {
+  it("is true only for a failed working-set change", () => {
+    expect(isFailedMembershipUpdate({ tool: "membership_update", summary: "error: 409 stale_revision" })).toBe(true);
+    expect(isFailedMembershipUpdate({ tool: "membership_update", summary: "X -> active at revision 2" })).toBe(false);
+    expect(isFailedMembershipUpdate({ tool: "execute_sql", summary: "error: bad" })).toBe(false);
+  });
+});
+
+describe("hasMembershipUpdate", () => {
+  it("is true for any membership_update step, successful or failed", () => {
+    expect(hasMembershipUpdate([{ tool: "membership_update", summary: "X -> active at revision 2" }])).toBe(true);
+    expect(hasMembershipUpdate([{ tool: "membership_update", summary: "error: 409" }])).toBe(true);
+    expect(hasMembershipUpdate([{ tool: "execute_sql", summary: "1 statement" }])).toBe(false);
+    expect(hasMembershipUpdate([])).toBe(false);
+  });
+});
+
+describe("valueSources", () => {
+  const first = evidenceItem({ evidence_id: "ev_1", source_index: 0 });
+  const second = evidenceItem({ evidence_id: "ev_2", source_index: 1, pdf_page: 4 });
+  const third = evidenceItem({ evidence_id: "ev_3", source_index: 2 });
+  const otherField = evidenceItem({ evidence_id: "ev_4", field: "n_events" });
+  const otherRow = evidenceItem({ evidence_id: "ev_5", row_index: 17 });
+
+  it("returns every source of the same paper, row and field in source_index order", () => {
+    const sources = valueSources([third, otherField, first, otherRow, second, otherPaper], second);
+    expect(sources.map((item) => item.evidence_id)).toEqual(["ev_1", "ev_2", "ev_3"]);
+  });
+
+  it("treats a single source as a list of one", () => {
+    expect(valueSources([otherPaper, first], otherPaper).map((item) => item.evidence_id)).toEqual(["ev_6"]);
+  });
+
+  it("always includes the linked item", () => {
+    expect(valueSources([first, third], second).map((item) => item.evidence_id)).toEqual(["ev_1", "ev_2", "ev_3"]);
+  });
+});
+
+describe("evidenceKind", () => {
+  it("uses the stated derivation kind", () => {
+    expect(evidenceKind({ derivation_kind: "verbatim", provenance_type: "paper" })).toBe("verbatim");
+    expect(evidenceKind({ derivation_kind: "derived", provenance_type: "derived" })).toBe("derived");
+    expect(evidenceKind({ derivation_kind: "inferred", provenance_type: "derived" })).toBe("inferred");
+  });
+
+  it("falls back to the provenance type", () => {
+    expect(evidenceKind({ derivation_kind: null, provenance_type: "paper" })).toBe("verbatim");
+    expect(evidenceKind({ derivation_kind: null, provenance_type: "derived" })).toBe("derived");
+    expect(evidenceKind({ derivation_kind: "arithmetic", provenance_type: "derived" })).toBe("derived");
+    expect(evidenceKind({ derivation_kind: null, provenance_type: null })).toBe("verbatim");
+  });
+});

@@ -15,6 +15,8 @@ export const routes = {
     // Auth / identity
 
     // Topics
+    workingSet: (topicId: string, runId: string) =>
+    workingSetMembership: (topicId: string, runId: string) =>
 
     // Taxonomy
 

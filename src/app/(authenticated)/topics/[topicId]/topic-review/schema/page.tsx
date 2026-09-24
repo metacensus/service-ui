@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSubNav from "@/features/reviewer-workspace/components/ReviewSubNav";
+import { SchemaDiagram } from "@/features/reviewer-workspace/components/schema/SchemaDiagram";
 import { useRunSnapshot } from "@/features/reviewer-workspace/hooks/useRunSnapshot";
 import { buildSchemaExplorerModel } from "@/features/reviewer-workspace/model/schemaView";
 
@@ -12,6 +13,8 @@ interface Props {
 
 const TopicReviewSchema = ({ params }: Props) => {
   const { topicId } = params;
+  const { runId, manifestQuery, schemaSummaryQuery, demoConfigQuery } =
+    useRunSnapshot(topicId);
 
   const manifest = manifestQuery.data;
   const summary = schemaSummaryQuery.data;
@@ -36,6 +39,7 @@ const TopicReviewSchema = ({ params }: Props) => {
       )}
 
       {manifest && model && (
+        <SchemaDiagram model={model} runId={runId} />
       )}
     </div>
   );

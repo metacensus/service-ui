@@ -5,6 +5,7 @@ import type {
   SchemaPresentation,
   SchemaSummary,
 } from "../types";
+import { buildSchemaExplorerModel, spaceSchemaFieldName } from "./schemaView";
 
 const presentation: SchemaPresentation = {
   reported_value_fields: {
@@ -75,6 +76,15 @@ describe("synthesis field set characterization", () => {
     );
 
     expect(model.overview.summarizableFieldCount).toBe(7);
+  });
+});
+
+describe("spaceSchemaFieldName", () => {
+  it("swaps underscores for spaces and keeps case", () => {
+    expect(spaceSchemaFieldName("entity_locus_type")).toBe(
+      "entity locus type"
+    );
+    expect(spaceSchemaFieldName("_total_n")).toBe("total n");
   });
 });
 

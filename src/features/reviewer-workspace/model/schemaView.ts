@@ -464,6 +464,9 @@ export function buildSchemaExplorerModel(
   presentation?: SchemaPresentation
 ): SchemaExplorerModel {
   const fields = buildSchemaFieldViews(summary, manifest, presentation);
+  const identityFieldCount = fields.filter(
+    (field) => field.isIdentityDimension
+  ).length;
   const synthesisFieldNames = fields
     .filter((field) => field.semanticRoles.some((role) => SYNTHESIS_ROLES.has(role)))
     .map((field) => field.name);
@@ -477,6 +480,7 @@ export function buildSchemaExplorerModel(
     overview,
     totals: {
       contractFields: summary.field_count,
+      identityFields: identityFieldCount,
       requiredFields: fields.filter((field) => field.field.required).length,
       analysisReadyFields: fields.filter((field) => field.isAnalysisReady)
         .length,
@@ -805,5 +809,12 @@ function buildSchemaOverview(
   };
 }
 
+export function spaceSchemaFieldName(name: string): string {
+  return name.replace(/^_+/, "").replace(/_/g, " ");
+}
+
 function humanizeSchemaFieldName(name: string): string {
+  return spaceSchemaFieldName(name).replace(/\b\w/g, (char) =>
+    char.toUpperCase()
+  );
 }

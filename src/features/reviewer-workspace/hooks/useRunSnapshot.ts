@@ -48,6 +48,8 @@ export const reviewerWorkspaceQueryKeys = {
       topicId,
       "reviewer-name",
     ] as const,
+  schemaIndex: (runId: string) =>
+    ["reviewer-workspace", runId, "schema-index"] as const,
 };
 
 export function useRunSnapshot(topicId: string) {

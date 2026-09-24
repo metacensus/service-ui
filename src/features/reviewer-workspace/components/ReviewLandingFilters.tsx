@@ -8,6 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  REVIEW_LANDING_ALL,
+  type ReviewLandingStatusFilter,
 
 type ReviewLandingOption<T extends string = string> = {
   value: T;
@@ -15,9 +18,13 @@ type ReviewLandingOption<T extends string = string> = {
 };
 
 type ReviewLandingFiltersProps = {
+  filters: ReviewTaskFilters;
   paperOptions: ReviewLandingOption[];
   visibleCount: number;
   totalCount: number;
+  onChange: (filters: ReviewTaskFilters) => void;
+  useWorkingSet: boolean;
+  onUseWorkingSet: (use: boolean) => void;
 };
 
 const STATUS_OPTIONS: ReviewLandingOption<ReviewLandingStatusFilter>[] = [
@@ -32,12 +39,16 @@ const ReviewLandingFilters = ({
   visibleCount,
   totalCount,
   onChange,
+  useWorkingSet,
+  onUseWorkingSet,
 }: ReviewLandingFiltersProps) => {
+  const update = (patch: Partial<ReviewTaskFilters>) =>
     onChange({ ...filters, ...patch });
 
   return (
     <div className="rounded-lg border bg-white p-3 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Select
               value={filters.paperId}
@@ -78,6 +89,17 @@ const ReviewLandingFilters = ({
           </div>
         </div>
 
+            <input
+              type="checkbox"
+              checked={useWorkingSet}
+              onChange={(event) => onUseWorkingSet(event.target.checked)}
+            />
+            Use working set
+          </label>
+          <span>
+            Showing {visibleCount.toLocaleString("en-US")}/
+            {totalCount.toLocaleString("en-US")}
+          </span>
         </div>
       </div>
     </div>

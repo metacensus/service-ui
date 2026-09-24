@@ -1,4 +1,9 @@
 
+export type TaskDecision =
+  | { action: "approve" }
+  | { action: "correct"; corrected: CorrectedPayload }
+  | { action: "flag"; reason?: string };
+
 
   runId: string,
   reviewerName: string,
@@ -8,6 +13,7 @@
 
   const reviewedAt = new Date().toISOString();
   return unit.members.map((member) => {
+    return {
       run_id: runId,
       paper_id: paperId,
       row_index: member.row_index,

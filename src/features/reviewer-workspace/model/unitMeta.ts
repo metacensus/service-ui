@@ -1,5 +1,10 @@
 
+import type { ReviewTaskKind } from "../data/reviewIndex";
 
+export const REVIEW_TASK_KIND_HEADINGS: Record<ReviewTaskKind, string> = {
+  inferred: "Inferred",
+  derived: "Derived",
+  verbatim: "Verbatim",
 };
 
 };

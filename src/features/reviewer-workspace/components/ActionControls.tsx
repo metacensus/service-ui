@@ -37,6 +37,7 @@ const ActionControls = ({
   const [flagReason, setFlagReason] = useState("");
 
   const hasReviewer = Boolean(reviewerName?.trim());
+  const disabled = !hasReviewer || busy || selectedCount === 0;
 
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
@@ -85,6 +86,9 @@ const ActionControls = ({
         )}
         {!hasReviewer && (
             Set your reviewer name to enable decisions.
+          </span>
+        )}
+            Correct… needs exactly one checked question.
           </span>
         )}
       </div>

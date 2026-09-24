@@ -52,6 +52,7 @@ export type DataWorkspaceFieldOptionGroup = {
   options: DataWorkspaceFieldOption[];
 };
 
+type DataWorkspaceFieldEntry = {
   field: string;
   label: string;
   value: unknown;
@@ -282,9 +283,11 @@ function dataWorkspaceOrderedFieldNames(
   return fields;
 }
 
+function dataWorkspaceCellFromEntry(entry: DataWorkspaceFieldEntry): {
   field: string;
   label: string;
   value: unknown;
+} {
   return {
     field: entry.field,
     label: entry.label,

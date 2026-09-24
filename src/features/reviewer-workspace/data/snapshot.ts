@@ -129,12 +129,101 @@ export function fetchDemoConfig(runId: string): Promise<DemoConfig | null> {
   );
 }
 
+type EvidenceStore = {
+  sources: unknown[];
+  reasoning: unknown[];
+  derivation: unknown[];
+};
+
+function evidenceRef(
+  table: "sources" | "reasoning" | "derivation",
+  entries: unknown,
+  ref: unknown,
+  paperId: string
+): unknown {
+  if (!Number.isInteger(ref)) {
+    throw new Error(
+      `${paperId}: bad ${table} ref ${JSON.stringify(ref)} (expected an integer 0 <= i < ${table}.length)`
+    );
+  }
+  const length = Array.isArray(entries) ? entries.length : 0;
+  if ((ref as number) < 0 || (ref as number) >= length) {
+    throw new Error(
+      `${paperId}: bad ${table} ref ${JSON.stringify(ref)} (expected an integer 0 <= i < ${length})`
+    );
+  }
+  return (entries as unknown[])[ref as number];
+}
+
+/** Expand v002 integer evidence references into the v001 row shape. */
+export function expandRows(
+  rows: Row[],
+  evidence: EvidenceStore,
+  paperId: string
+): Row[] {
+  for (const row of rows) {
+    for (const pv of Object.values(row.provenance ?? {})) {
+      if ("sources" in pv && pv.sources !== undefined) {
+        if (!Array.isArray(pv.sources)) {
+          throw new Error(
+            `${paperId}: bad sources ref ${JSON.stringify(pv.sources)}`
+          );
+        }
+        pv.sources = (pv.sources as unknown[]).map((ref) =>
+          evidenceRef("sources", evidence.sources, ref, paperId)
+        ) as Row["provenance"][string]["sources"];
+      }
+      for (const component of pv.source_components ?? []) {
+        if ("sources" in component && component.sources !== undefined) {
+          if (!Array.isArray(component.sources)) {
+            throw new Error(
+              `${paperId}: bad sources ref ${JSON.stringify(component.sources)}`
+            );
+          }
+          component.sources = (component.sources as unknown[]).map((ref) =>
+            evidenceRef("sources", evidence.sources, ref, paperId)
+          ) as Row["provenance"][string]["sources"];
+        }
+      }
+      for (const key of ["reasoning", "derivation"] as const) {
+        if (key in pv && pv[key] !== undefined) {
+          pv[key] = evidenceRef(key, evidence[key], pv[key], paperId) as string;
+        }
+      }
+    }
+  }
+  return rows;
+}
+
+const formatVersions = new Map<string, Promise<string | undefined>>();
+
+function snapshotFormatVersion(runId: string): Promise<string | undefined> {
+  let version = formatVersions.get(runId);
+  if (!version) {
+    version = fetchManifest(runId).then((m) => m.snapshot_format_version);
+    version.catch(() => formatVersions.delete(runId));
+    formatVersions.set(runId, version);
+  }
+  return version;
+}
+
 export async function fetchPaperRows(
   runId: string,
   paperId: string
 ): Promise<Row[]> {
+  const version = await snapshotFormatVersion(runId);
+  if (version !== undefined && version !== "v001" && version !== "v002") {
+    throw new Error(`unsupported snapshot_format_version: ${version}`);
+  }
+  const rows = await jsonFetch<Row[]>(
     `${fixtureBasePath(runId)}/rows/${pathPart(paperId)}.json`
   );
+  if (version === "v002") {
+    const evidence = await jsonFetch<EvidenceStore>(
+      `${fixtureBasePath(runId)}/evidence/${pathPart(paperId)}.json`
+    );
+    return validatePaperRows(expandRows(rows, evidence, paperId), paperId);
+  }
   return validatePaperRows(rows, paperId);
 }
 
