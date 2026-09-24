@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ReviewTaskDetail, ReviewTasksDocument } from "../data/reviewIndex";
 import type { ProvSource } from "../types";
+import { fixtureP1Tasks, RUN, stored, T3 } from "./__fixtures__/reviewTaskFixtures";
 import { buildTaskDecisionActions } from "./reviewTaskDecisions";
 import {
   questionDetail,
@@ -38,6 +39,39 @@ function sectionedDoc(): { doc: ReviewTasksDocument; task: ReviewTaskDetail } {
       [3, 0],
     ],
     questions: [
+      {
+        field: "design",
+        value_text: "cohort",
+        header: 0,
+        values: [{ field: "design", value: "cohort", sources: [0], rows: [0, 1, 2] }],
+      },
+      {
+        field: "n_events",
+        value_text: "2",
+        spans: [[1, 1], [2, 2]],
+        values: [
+          { field: "n_events", value: 2, sources: [3, 4], reasoning: 0, derivation: 0, rows: [0] },
+          { field: "n_events", value: 2, sources: [3], reasoning: 1, rows: [1, 2] },
+        ],
+      },
+      {
+        field: "n_total",
+        value_text: "111",
+        header: 1,
+        values: [{ field: "n_total", value: 111, sources: [1], rows: [0] }],
+      },
+      {
+        field: "outcome",
+        value_text: "grade 3",
+        header: 1,
+        values: [{ field: "outcome", value: "grade 3", sources: [1], rows: [0] }],
+      },
+      {
+        field: "n_total",
+        value_text: "40",
+        header: 2,
+        values: [{ field: "n_total", value: 40, sources: [], rows: [1, 2] }],
+      },
     ],
     citations: [
       { location: "sections/a.md", label: "A", quote: "first quote", pages: [2], resolutions: { exact: 1 }, source: 1 },
@@ -75,6 +109,7 @@ describe("questions under their row headers", () => {
   it("each question sits under its row's header, or under 'In several rows', in file order", () => {
     const { doc, task } = sectionedDoc();
     const sections = taskQuestionSections(doc, task);
+    expect(sections.map((s) => [s.header?.text, s.header?.rows, s.questionIndexes])).toEqual([
       ["Study-wide", 3, [0]],
       ["In several rows", 0, [1]],
       ["Whole cohort · 111 patients", 1, [2, 3]],
@@ -99,12 +134,14 @@ describe("questions under their row headers", () => {
     expect(labels[1]).toBe("n events = 2");
     expect(labels.some((l) => l.includes("_"))).toBe(false);
     expect(labels.some((l) => l.startsWith("Should "))).toBe(false);
+    expect(questionLabel({ field: "n_total", value_text: "shortened…", values: [] })).toBe("n total = shortened…");
   });
 
   it("a task without headers keeps its questions in one unheaded section", () => {
     const doc = fixtureP1Tasks();
     const t3 = doc.tasks.find((t) => t.id === T3.id)!;
     const bare = { ...t3, headers: [] as [number, number][], questions: t3.questions.map((q) => ({ ...q, header: undefined })) };
+    expect(taskQuestionSections(doc, bare)).toEqual([{ header: null, questionIndexes: [0] }]);
   });
 });
 

@@ -110,6 +110,7 @@ export function revisionTag(
 ): { text: string; title: string } | null {
   if (typeof setRevision !== "number" || currentRevision === null || setRevision === currentRevision) return null;
   return {
+    text: "In/out labels reflect an earlier working set",
     title: `Answered at working-set revision ${setRevision}; the set is now at revision ${currentRevision}`,
   };
 }
@@ -117,4 +118,5 @@ export function revisionTag(
 export function excludedLensNote(member: WorkingSetMember): string | null {
   if (member.membership !== "excluded") return null;
   const reason = recordedReason(member);
+  return `This paper is outside the working set.${reason ? ` Recorded reason: “${reason}”.` : ""}`;
 }

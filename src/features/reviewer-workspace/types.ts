@@ -343,6 +343,7 @@ export type ExploreResponse = {
   evidence: ExploreEvidence[];
   /** True when the agent hit its turn budget before concluding. */
   truncated?: boolean;
+  /** Working-set revision the answer was given at. Older answers have none and get no tag. */
   set_revision?: number;
 };
 

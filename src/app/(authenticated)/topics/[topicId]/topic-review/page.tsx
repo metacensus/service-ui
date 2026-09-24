@@ -26,6 +26,7 @@ import {
   buildReviewLanding,
   decidedTaskHistory,
   resolveReviewScope,
+  REVIEW_LANDING_ALL,
   REVIEW_TASK_DEFAULT_FILTERS,
   type ReviewTaskRow,
 } from "@/features/reviewer-workspace/model/reviewTasks";
@@ -33,6 +34,10 @@ import type { ReviewTaskKind } from "@/features/reviewer-workspace/data/reviewIn
 import { resolveRunId } from "@/features/reviewer-workspace/data/runResolver";
 import { useReviewIndex } from "@/features/reviewer-workspace/hooks/useReviewIndex";
 import { useReviewState } from "@/features/reviewer-workspace/hooks/useReviewState";
+import {
+  useReviewSessionFlag,
+  useSessionValue,
+} from "@/features/reviewer-workspace/hooks/useSessionValue";
 import { useWorkingSet } from "@/features/reviewer-workspace/hooks/useWorkingSet";
 
 interface Props {
@@ -48,11 +53,15 @@ const TopicReview = ({ params }: Props) => {
   const [workingSetOn, setWorkingSetOn] = useReviewSessionFlag("useWorkingSet");
   const [includeNonAmbiguous, setIncludeNonAmbiguous] =
     useReviewSessionFlag("includeNonAmbiguous");
+  const [expansion, setExpansionValue] = useSessionValue(
+    readReviewExpansion,
+    writeReviewExpansion
   );
   const setExpansion = (
     part: keyof ReviewExpansion,
     kind: ReviewTaskKind,
     open: boolean
+  ) => setExpansionValue({ ...expansion, [part]: { ...expansion[part], [kind]: open } });
 
   const runId = resolveRunId(topicId);
   const { query: indexQuery, index, tasks } = useReviewIndex(runId);
@@ -63,6 +72,7 @@ const TopicReview = ({ params }: Props) => {
     comments,
     reviewerName,
     storageMode,
+    reviewSeed,
     setReviewerName,
     resetReviewState,
   } = useReviewState(topicId, runId);
@@ -94,6 +104,7 @@ const TopicReview = ({ params }: Props) => {
             actions,
             filters: shownFilters,
             includeNonAmbiguous,
+            seed: reviewSeed,
           })
         : null,
   );
@@ -107,6 +118,8 @@ const TopicReview = ({ params }: Props) => {
     landing?.sections.reduce((n, s) => n + s.ambiguous.length + s.confident.length, 0) ?? 0;
   const taskHref = (row: ReviewTaskRow) => unitHrefWithOrigin(base, row.task.id, origin);
   const decided = useMemo(
+    () => (landing ? decidedTaskHistory(landing.rows, actions, reviewSeed) : []),
+    [landing, actions, reviewSeed]
   );
 
   const filterBar = (

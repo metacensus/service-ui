@@ -1,3 +1,6 @@
+// Search over displayed raw and normalized field values, the printed wording
+// and the displayed label, composed with the Field and Review-status filters.
+// mismatch needs investigating with evidence.
 
 import { beforeAll, describe, expect, it } from "vitest";
 import {
@@ -24,6 +27,7 @@ const withExport = (name: string, body: () => void) =>
   return { rows, presentation: config.schema_presentation };
 }
 
+/** The mock-up's stored-plus-printed matcher, before the displayed-label addition. */
 function storedOnlySet(rows: Row[], query: string, presentation?: SchemaPresentation): Set<number> {
   const needle = query.trim().toLowerCase();
   const matched = new Set<number>();
@@ -67,6 +71,7 @@ function matchedSet(rows: Row[], query: string, presentation?: SchemaPresentatio
   return matched;
 }
 
+withExport("search over displayed values", () => {
   let rows: Row[] = [];
   let presentation: SchemaPresentation | undefined;
   });
@@ -101,6 +106,7 @@ function matchedSet(rows: Row[], query: string, presentation?: SchemaPresentatio
   });
 });
 
+withExport("literal matching", () => {
   let rows: Row[] = [];
   let presentation: SchemaPresentation | undefined;
   });
@@ -117,6 +123,7 @@ function matchedSet(rows: Row[], query: string, presentation?: SchemaPresentatio
   });
 });
 
+withExport("displayed labels", () => {
     expect(rows).toHaveLength(277);
     const diarrhea = matchedSet(rows, "diarrhea", presentation);
     expect(diarrhea.size).toBe(181);
@@ -131,6 +138,7 @@ function matchedSet(rows: Row[], query: string, presentation?: SchemaPresentatio
     for (const row of diarrhoea) expect(diarrhea).toContain(row.row_index);
     const neutropenia = matchedSet(rows, "neutropenia", presentation);
     expect(neutropenia.size).toBe(180);
+    // Label-only rows: matched by the displayed-label rule but not by the stored/printed matcher.
     const storedOnly = storedOnlySet(rows, "neutropenia", presentation);
     expect(storedOnly.size).toBe(147);
     const labelOnly = [...neutropenia].filter((index) => !storedOnly.has(index));
@@ -182,6 +190,7 @@ function matchedSet(rows: Row[], query: string, presentation?: SchemaPresentatio
   });
 });
 
+withExport("search composed with filters", () => {
   let rows: Row[] = [];
   let presentation: SchemaPresentation | undefined;
   });

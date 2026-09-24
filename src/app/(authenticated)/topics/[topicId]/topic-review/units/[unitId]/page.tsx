@@ -17,7 +17,12 @@ import ReviewTaskView from "@/features/reviewer-workspace/components/ReviewTaskV
 import { fetchSchemaSummary } from "@/features/reviewer-workspace/data/snapshot";
 import { resolveRunId } from "@/features/reviewer-workspace/data/runResolver";
 import { resolveReviewScope, reviewTaskRows } from "@/features/reviewer-workspace/model/reviewTasks";
+import {
+  useReviewIndex,
+  useReviewTasksDocument,
+} from "@/features/reviewer-workspace/hooks/useReviewIndex";
 import { useReviewState } from "@/features/reviewer-workspace/hooks/useReviewState";
+import { useReviewSessionFlag } from "@/features/reviewer-workspace/hooks/useSessionValue";
 import { reviewerWorkspaceQueryKeys } from "@/features/reviewer-workspace/hooks/useRunSnapshot";
 import { useWorkingSet } from "@/features/reviewer-workspace/hooks/useWorkingSet";
 
@@ -44,6 +49,7 @@ const TopicReviewUnit = ({ params }: Props) => {
     comments,
     reviewerName,
     storageMode,
+    reviewSeed,
     actionsQuery,
     setReviewerName,
     bulkUpsertActions,
@@ -58,10 +64,16 @@ const TopicReviewUnit = ({ params }: Props) => {
         : null,
     [index, workingSetReady, workingSetOn, workingSet.active]
   );
+  const task = useMemo(() => tasks?.find((t) => t.id === taskId) ?? null, [tasks, taskId]);
+  const inScope = task && scope?.paperIds.includes(task.paperId) ? task : null;
   const docQuery = useReviewTasksDocument(runId, inScope?.paperId ?? null);
   const detail = useMemo(
+    () => docQuery.data?.tasks.find((t) => t.id === taskId) ?? null,
     [docQuery.data, taskId]
   );
+  const queue = useMemo(
+    () => (tasks && scope ? reviewTaskRows(tasks, scope, actions, reviewSeed) : []),
+    [tasks, scope, actions, reviewSeed]
   );
   const schemaQuery = useQuery({
     queryKey: reviewerWorkspaceQueryKeys.schemaSummary(runId ?? "unresolved"),
@@ -109,6 +121,7 @@ const TopicReviewUnit = ({ params }: Props) => {
   if (indexQuery.isError) {
     return message("The review index could not be loaded, so this task can't be shown.", "error");
   }
+  if (tasks && !task) return message("This review task isn't in the review index.");
   if (workingSetOn && workingSet.status === "loading") return loading;
   if (workingSetOn && workingSet.status === "error") {
     return message(
@@ -116,7 +129,9 @@ const TopicReviewUnit = ({ params }: Props) => {
       "error"
     );
   }
+  if (scope && task && !inScope) {
     return message(
+      `This task's paper (${task.paperLabel}) isn't in the working set, so the task isn't shown. Add the paper in Data → Table, or turn off “Use working set” on the Review page.`
     );
   }
   if (docQuery.isError) {
@@ -136,10 +151,12 @@ const TopicReviewUnit = ({ params }: Props) => {
       doc={docQuery.data}
       detail={detail}
       task={inScope}
+      queue={queue}
       includeNonAmbiguous={includeNonAmbiguous}
       fieldTypes={fieldTypes}
       actions={actions}
       actionHistory={actionHistory}
+      reviewSeed={reviewSeed}
       comments={comments}
       reviewerName={reviewerName}
       setReviewerName={setReviewerName}

@@ -5,9 +5,15 @@ vi.mock("@/lib/indexdb", () => indexedDb);
 
 import { createLocalReviewerPersistence } from "../data/persistence";
 import { fixtureIndex, fixtureP1Tasks, RUN, T1 } from "./__fixtures__/reviewTaskFixtures";
+import { buildTaskDecisionActions, shouldAdvanceAfterDecision } from "./reviewTaskDecisions";
 import {
+  isDecided,
+  openQuestions,
   taskQuestionMembers,
+  taskQuestionStates,
+} from "./reviewTaskPage";
 import { reviewTasksFromIndex } from "./reviewTasks";
+import { clearedMembersFor, computeUnitProgress } from "./unitProgress";
 
 let adapterCount = 0;
 
@@ -20,10 +26,12 @@ function persistence() {
 
 const doc = fixtureP1Tasks();
 const t1 = doc.tasks[0];
+const t1Unit = reviewTasksFromIndex(fixtureIndex()).find((t) => t.id === T1.id)!.unit;
 
 describe("task questions", () => {
   beforeEach(() => indexedDb.get.mockReset());
 
+  it("a question's members agree with the index's task_list", () => {
     expect(taskQuestionMembers(t1)).toEqual([
       [
         { row_index: 0, field: "a" },
@@ -33,6 +41,7 @@ describe("task questions", () => {
     ]);
     const fromIndex = reviewTasksFromIndex(fixtureIndex()).filter((t) => t.paperId === "P1");
     for (const task of doc.tasks) {
+      expect(taskQuestionMembers(task).flat()).toEqual(fromIndex.find((t) => t.id === task.id)!.unit.members);
     }
   });
 });
@@ -50,6 +59,10 @@ describe("deciding checked questions writes exactly their members", () => {
     expect(saved).toHaveLength(2);
 
     // The unchecked question stays open, so the task is not decided.
+    const states = taskQuestionStates("P1", t1, saved);
+    expect(states.map(isDecided)).toEqual([true, false]);
+    expect(openQuestions(states)).toEqual([1]);
+    expect(computeUnitProgress(t1Unit, clearedMembersFor(saved))).toEqual({ cleared: false, clearedMembers: 2 });
     expect(shouldAdvanceAfterDecision("P1", t1, [], { action: "approve" }, [0])).toBe(false);
 
     // Deciding the last question decides the task, and the view may advance.
@@ -57,6 +70,8 @@ describe("deciding checked questions writes exactly their members", () => {
     await adapter.bulkUpsertActions(RUN, buildTaskDecisionActions(doc, t1, [1], { action: "approve" }, RUN, "Reviewer"));
     const after = await adapter.listActions(RUN);
     expect(after).toHaveLength(3);
+    expect(openQuestions(taskQuestionStates("P1", t1, after))).toEqual([]);
+    expect(computeUnitProgress(t1Unit, clearedMembersFor(after)).cleared).toBe(true);
   });
 
   it("whole-task approval is every question checked", () => {
@@ -73,6 +88,7 @@ describe("deciding checked questions writes exactly their members", () => {
     const flag = buildTaskDecisionActions(doc, t1, [1], { action: "flag", reason: "wrong row" }, RUN, "R");
     expect(flag.map((a) => [a.action, a.flag_reason, a.via_unit])).toEqual([["flag", "wrong row", T1.id]]);
     await adapter.bulkUpsertActions(RUN, flag);
+    expect(openQuestions(taskQuestionStates("P1", t1, await adapter.listActions(RUN)))).toEqual([0, 1]);
     expect(shouldAdvanceAfterDecision("P1", t1, [], { action: "flag" }, "all")).toBe(false);
 
     const correction = { value: 2, note: "table says 2" };
@@ -83,6 +99,7 @@ describe("deciding checked questions writes exactly their members", () => {
     const saved = await adapter.listActions(RUN);
     // bulkUpsertActions keeps the latest action per (paper, row, field).
     expect(saved.map((a) => a.action)).toEqual(["correct"]);
+    expect(openQuestions(taskQuestionStates("P1", t1, saved))).toEqual([0]);
   });
 
   it("a row with no recorded identity gets no expect_identity; other tasks are untouched", () => {

@@ -1,3 +1,4 @@
+import type { SchemaIndex } from "../model/schemaSelect";
 
 const INDEX_ERROR = "Could not load the paper index for this run.";
 

@@ -1,8 +1,10 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
+import { MembershipEditor, type MembershipEditorOutcome } from "../MembershipEditor";
 import { MembershipContext } from "./membershipContext";
 import {
+  FAILED_SAVE_MESSAGE,
   bubbleAriaLabel,
   doneMessage,
   editorAction,
@@ -65,18 +67,34 @@ export function MembershipBubble({
   function setEditorOpen(next: boolean) {
     setOpen(next);
     // An earlier "Done" must not sit beside this edit's outcome.
+    if (next) context?.onSaved(null);
     onEditorOpenChange?.(next);
   }
 
+  async function save(reason: string): Promise<MembershipEditorOutcome> {
+    if (!workingSet) return { ok: false, message: FAILED_SAVE_MESSAGE };
     const scope = triggerRef.current?.closest("[data-membership-scope]") ?? document;
+    const result = await workingSet.saveMembership(paperId, action.membership, reason.trim());
+    if (!result.ok) return { ok: false, message: saveErrorMessage(result.error) };
     const counts = workingSetCounts(result.workingSet ?? workingSet.workingSet!);
     const trigger = triggerRef.current;
     setEditorOpen(false);
     context?.onSaved(doneMessage(title, action.membership, counts));
     if (!trigger?.isConnected) focusVisibleBubble(paperId, scope);
+    return { ok: true };
   }
 
   return (
+    <MembershipEditor
+      open={open}
+      onOpenChange={setEditorOpen}
+      onConfirm={save}
+      idBase={paperId}
+      subject={title}
+      currentLine={editorCurrentLine(member)}
+      reasonRequired
+      confirmLabel={action.label}
+    >
       <button
         ref={triggerRef}
         type="button"
@@ -86,5 +104,6 @@ export function MembershipBubble({
         <span aria-hidden="true" data-membership-dot className={`box-border h-2.5 w-2.5 shrink-0 ${DOT_CLASS[membershipDot(member)]}`} />
         <span>{membershipShortLabel(member)}</span>
       </button>
+    </MembershipEditor>
   );
 }

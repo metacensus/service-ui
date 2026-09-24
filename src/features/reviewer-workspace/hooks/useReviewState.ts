@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLocalReviewerPersistence } from "../data/persistence";
+import { reviewSeedForRun } from "../model/rowStatus";
 import type {
   NewReviewComment,
   ReviewAction,
@@ -134,6 +135,7 @@ export function useReviewState(topicId: string, runId: string | null) {
 
   return {
     actions: actionsQuery.data ?? [],
+    /** The static seed baseline for this run, or null. Never stored. */
     actionHistory: actionHistoryQuery.data ?? [],
     comments: commentsQuery.data ?? [],
     reviewerName: reviewerNameQuery.data ?? null,

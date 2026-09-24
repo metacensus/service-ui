@@ -1,7 +1,18 @@
 // Data → Table selection: scope, group, category and item pickers over papers as rows; each row opens its study tree.
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MembershipEditor, type MembershipEditorOutcome } from "@/features/reviewer-workspace/components/MembershipEditor";
 import type { WorkingSetControls } from "@/features/reviewer-workspace/hooks/useWorkingSet";
+import {
+  batchSaveMessage,
+  canSelectAll,
+  canUnselectAll,
+  selectionConfirmLabel,
+  selectionCurrentLine,
+  selectionSubject,
+  tickedListed,
+  workingSetButton,
+} from "@/features/reviewer-workspace/model/workingSetControls";
 import {
   GROUPS,
   categoriesFor,
@@ -44,6 +55,7 @@ export const INITIAL_SELECT_STATE: SelectState = {
 };
 
 const ITEM_PREVIEW = 12;
+const TEXT_BUTTON_CLASS =
 
 /* --------------------------------------------------------------- helpers */
 
@@ -155,6 +167,10 @@ export default function SchemaSelect({
   customOrder: string[];
   workingSet: WorkingSetControls;
 }) {
+  // Ticks only select; the working set changes through the editor. A tick hidden by the filter is kept but ignored.
+  const [ticked, setTicked] = useState<ReadonlySet<string>>(() => new Set());
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const scoped = state.scope === "one" ? allPapers.filter((paper) => paper.paper_id === state.scopePaper) : allPapers;
   const group = state.group;
   const layerGroup = group === "Paper" ? null : (group as LayerGroup);
@@ -231,7 +247,35 @@ export default function SchemaSelect({
       expanded: toggled(current.expanded, id),
     }));
   const resultIds = results.map((entry) => entry.paper.paper_id);
+  const selectedIds = tickedListed(resultIds, ticked);
+  const button = workingSetButton(selectedIds, workingSet.active);
+  // aria-disabled, not disabled: focus returns here after a save that clears every tick.
+  const actionDisabled = selectedIds.length === 0 || saving;
+  const nameOf = new Map(results.map(({ paper }) => [paper.paper_id, paperName(paper)]));
 
+  const setTicks = (ids: string[], on: boolean) =>
+    setTicked((current) => {
+      const next = new Set(current);
+      for (const id of ids) {
+        if (on) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+
+  async function saveTicked(reason: string): Promise<MembershipEditorOutcome> {
+    const ids = selectedIds;
+    setSaving(true);
+    const result = await workingSet.saveMemberships(ids, button.membership, reason);
+    setSaving(false);
+    if (!result.ok) return { ok: false, message: batchSaveMessage(result.error, result.saved, result.attempted) };
+    setTicks(ids, false);
+    setEditorOpen(false);
+    return { ok: true };
+  }
+
+    setSaving(false);
+    if (!result.ok) return { ok: false, message: batchSaveMessage(result.error, result.saved, result.attempted) };
   return (
     <div className="pb-16">
       {/* scope */}
@@ -373,9 +417,30 @@ export default function SchemaSelect({
           </div>
         )}
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <div className="flex flex-col items-start">
               {results.length} {results.length === 1 ? "paper" : "papers"}
             </h2>
             {workingSet.status === "ready" && (
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <button
+                  type="button"
+                  disabled={!canSelectAll(resultIds, ticked)}
+                  onClick={() => setTicks(resultIds, true)}
+                  className={TEXT_BUTTON_CLASS}
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  disabled={!canUnselectAll(resultIds, ticked)}
+                  onClick={() => setTicks(resultIds, false)}
+                  className={TEXT_BUTTON_CLASS}
+                >
+                  Unselect all
+                </button>
+              </div>
+            )}
+          </div>
           {workingSet.status === "ready" && (
                 options={[
                   { value: "all", label: "All papers" },
@@ -413,14 +478,34 @@ export default function SchemaSelect({
               <option value="az">Sort: A–Z</option>
             </select>
             {workingSet.status === "ready" && (
+              <MembershipEditor
+                open={editorOpen}
+                onOpenChange={(next) => {
+                  if (!next || !actionDisabled) setEditorOpen(next);
+                }}
+                onConfirm={saveTicked}
+                idBase="table"
+                subject={selectionSubject(selectedIds.map((id) => nameOf.get(id) ?? id))}
+                currentLine={selectionCurrentLine(
+                  selectedIds,
+                  workingSet.active,
+                  selectedIds.length === 1 ? workingSet.members.get(selectedIds[0]) : undefined
+                )}
+                reasonRequired={false}
+                confirmLabel={selectionConfirmLabel(button.membership)}
+              >
                 <button
                   type="button"
+                  aria-disabled={actionDisabled}
                 >
                   {button.label}
                 </button>
+              </MembershipEditor>
             )}
             {workingSet.status === "ready" && (
+              <MembershipEditor
                 </button>
+              </MembershipEditor>
             )}
             {workingSet.status !== "loading" && (
                 {workingSet.status === "ready" ? `Working set ${workingSet.active.size}` : "Working set unavailable"}
@@ -436,13 +521,18 @@ export default function SchemaSelect({
         )}
         {results.map(({ paper, hits, findings }) => (
             {workingSet.status === "ready" ? (
+              <label className="grid h-10 w-8 shrink-0 cursor-pointer place-items-center">
                 <input
                   type="checkbox"
+                  checked={ticked.has(paper.paper_id)}
+                  onChange={(event) => setTicks([paper.paper_id], event.target.checked)}
+                  aria-label={`Select ${paperName(paper)}`}
                 />
               </label>
             ) : (
               <span className="grid h-10 w-8 shrink-0" aria-hidden />
             )}
+            {workingSet.status === "ready" && <WorkingSetIcon inSet={workingSet.active.has(paper.paper_id)} />}
             <button
               type="button"
               aria-expanded={isOpen.has(paper.paper_id)}
@@ -489,6 +579,19 @@ export default function SchemaSelect({
         ))}
       </div>
     </div>
+  );
+}
+
+function WorkingSetIcon({ inSet }: { inSet: boolean }) {
+  const label = inSet ? "In working set" : "Not in working set";
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={`box-border h-3 w-3 shrink-0 rounded-full border-2 ${
+      }`}
+    />
   );
 }
 

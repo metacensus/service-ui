@@ -5,12 +5,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fetchSchemaIndex } from "@/features/reviewer-workspace/data/schemaIndex";
 import {
   reviewerWorkspaceQueryKeys,
   useRunSnapshot,
 } from "@/features/reviewer-workspace/hooks/useRunSnapshot";
 import { useWorkingSet } from "@/features/reviewer-workspace/hooks/useWorkingSet";
+import { fetchNormalizationManifest } from "@/features/reviewer-workspace/model/schemaNormalization";
 import type { PaperMeta } from "@/features/reviewer-workspace/types";
+import {
+  type TableState,
+} from "@/features/reviewer-workspace/model/returnContext";
 import {
   categoriesFor,
   rowMatcher,
@@ -30,6 +35,8 @@ import SchemaSelect, {
 
 type DataWorkspaceProps = {
   topicId: string;
+  initialTable?: TableState;
+  onTableStateChange?: (state: TableState) => void;
 };
 
 export default function DataWorkspace({ topicId, initialTable: seed, onTableStateChange }: DataWorkspaceProps) {
@@ -45,8 +52,15 @@ export default function DataWorkspace({ topicId, initialTable: seed, onTableStat
     enabled: Boolean(runId),
   });
   const labelsQuery = useQuery({
+    queryKey: reviewerWorkspaceQueryKeys.normalizationManifest(runId ?? "unresolved"),
+    queryFn: () => fetchNormalizationManifest(runId!),
     enabled: Boolean(runId),
   });
+  // field:id → curated label; the stored labels show when the run has no manifest.
+  const curated = useMemo(
+    () => new Map((labelsQuery.data?.groups ?? []).map((group) => [`${group.field}:${group.id}`, group.label])),
+    [labelsQuery.data]
+  );
   const workingSet = useWorkingSet(topicId, runId);
 
   const index = indexQuery.data;

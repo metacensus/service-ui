@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { fetchSchemaIndex, schemaIndexUrl } from "./schemaIndex";
 
 
 function stubFetch(body: unknown, opts: { ok?: boolean; status?: number; jsonThrows?: boolean } = {}) {
@@ -28,6 +29,7 @@ const INDEX = {
 };
 
 describe("schema index URL", () => {
+  it("serves the index from its base", () => {
   });
 });
 

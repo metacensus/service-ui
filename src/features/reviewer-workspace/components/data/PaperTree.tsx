@@ -12,6 +12,7 @@ import {
   useRunSnapshot,
 } from "@/features/reviewer-workspace/hooks/useRunSnapshot";
 import {
+  DATA_WORKSPACE_STATUS_FILTERS,
   buildDataWorkspaceFieldOptionGroups,
   type DataWorkspaceFieldOptionGroup,
   type DataWorkspaceStatusFilter,
@@ -23,6 +24,10 @@ import {
   type TreeNode,
 } from "@/features/reviewer-workspace/model/drilldown/groupedFindings";
 import { orderByHighlight } from "@/features/reviewer-workspace/model/drilldown/highlightOrder";
+import {
+  hiddenResultFields,
+  hideUnhighlightedValues,
+} from "@/features/reviewer-workspace/model/drilldown/textHighlight";
 import { reviewStateFor } from "@/features/reviewer-workspace/model/rowStatus";
 import type {
   PaperMeta,
@@ -32,6 +37,8 @@ import type {
 import {
   parseSelectionParam,
   selectionParam,
+  type TableState,
+} from "@/features/reviewer-workspace/model/returnContext";
 import CleanEvidence from "./drilldown/CleanEvidence";
 import { CleanControls, CleanTree, PaperLine } from "./drilldown/CleanTree";
 import RowDetail from "./drilldown/RowDetail";
@@ -88,10 +95,29 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
     queryFn: () => fetchPaperRows(runId!, paperId),
     enabled: Boolean(runId),
   });
+  // Only the findings and result values with a text highlight; the fetched rows stay untouched.
+  const rows = useMemo(() => hideUnhighlightedValues(rowsQuery.data ?? []), [rowsQuery.data]);
   const rowsByIndex = useMemo(
     () => new Map(rows.map((row) => [row.row_index, row])),
     [rows]
   );
+  const fetchedByIndex = useMemo(
+    () => new Map((rowsQuery.data ?? []).map((row) => [row.row_index, row])),
+    [rowsQuery.data]
+  );
+  const hiddenFieldsOf = (rowIndex: number) => {
+    const fetched = fetchedByIndex.get(rowIndex);
+    return fetched ? hiddenResultFields(fetched) : [];
+  };
+  // Once the rows are in, a selection of a finding or value the rule hides opens nothing.
+  const selectionHidden =
+    selection?.kind === "row" &&
+    rowsQuery.data !== undefined &&
+    (!rowsByIndex.has(selection.rowIndex) || hiddenFieldsOf(selection.rowIndex).includes(selection.field));
+  const shownSelection = selectionHidden ? null : selection;
+  useEffect(() => {
+    if (selectionHidden) setSelection(null);
+  }, [selectionHidden]);
 
   const fieldGroups = useMemo(
     () =>
@@ -102,6 +128,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
     [presentation, schemaSummaryQuery.data?.fields]
   );
 
+  // Built from every shown row of the paper; filters only hide nodes (see CleanTree).
   const tree = useMemo(
     () =>
       rows.length > 0
@@ -196,6 +223,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
     // eslint-disable-next-line react-hooks/exhaustive-deps — mirror on user edits only; lastEmitted is a ref.
   }, [query, fieldFilter, statusFilter, selection, paperId, onStateChange]);
 
+  const selectedKeyText = selectionKey(shownSelection);
 
   const toggleNode = (key: string) =>
     setExpandedGroups((current) => {
@@ -215,6 +243,8 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
   const narrow = useNarrow();
   // Below 1400px the evidence card covers the tree, which stays mounted.
   const takeover = useNarrow("(max-width: 1399px)");
+  const overlay = takeover && Boolean(shownSelection);
+  const sideBySide = Boolean(shownSelection) && !takeover;
   useEffect(() => {
     if (!selection) return;
     const onKey = (event: KeyboardEvent) => {
@@ -302,6 +332,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
                   groupVaryingCount={node.projection?.varyingCount ?? 0}
                   presentation={presentation}
                   compact={narrow || sideBySide}
+                  hiddenFields={hiddenFieldsOf(row.row_index)}
                 />
               )}
             />
@@ -317,6 +348,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
             </p>
           )}
         </div>
+        {shownSelection && runId && (
           <aside
             className={
               overlay
@@ -326,6 +358,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
             <CleanEvidence
               runId={runId}
               paper={paper}
+              selection={shownSelection}
               rowsByIndex={rowsByIndex}
               presentation={presentation}
               activeSource={activeSource}
@@ -389,6 +422,7 @@ function PaperTreeMoreFilters({
               onStatusFilterChange(event.target.value as DataWorkspaceStatusFilter)
             }
           >
+            {DATA_WORKSPACE_STATUS_FILTERS.map((status) => (
               <option key={status} value={status}>
                 {status === "all"
                   ? "All statuses"

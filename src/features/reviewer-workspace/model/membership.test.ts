@@ -37,6 +37,7 @@ function member(overrides: Partial<WorkingSetMember> = {}): WorkingSetMember {
 const includedDefault = member({ membership: "active" });
 const includedManual = member({ membership: "active", decision_origin: "manual", reason: "In scope" });
 const includedAgent = member({ membership: "active", decision_origin: "agent_confirmed", reason: "Confirmed in chat" });
+const excludedManual = member({ decision_origin: "manual", reason: "Removed for the membership check" });
 const excludedAgent = member({ decision_origin: "agent_confirmed", reason: "Agent removed" });
 const excludedDefault = member();
 
@@ -112,6 +113,7 @@ describe("working-set summary", () => {
     expect(summaryText(counts)).toBe("1 / 3 papers included · 2 excluded");
   });
 
+  it("counts the all-excluded default seed", () => {
     const seed = workingSet(
       Array.from({ length: 43 }, (_, index) => member({ paper_id: `paper_${index}` })),
       0
@@ -136,10 +138,12 @@ describe("working-set summary", () => {
 describe("revisionTag", () => {
   it("tags an answer given at another revision", () => {
     expect(revisionTag(2, 3)).toEqual({
+      text: "In/out labels reflect an earlier working set",
       title: "Answered at working-set revision 2; the set is now at revision 3",
     });
   });
 
+  it("does not tag a current answer, an answer without a revision or an unread set", () => {
     expect(revisionTag(3, 3)).toBeNull();
     expect(revisionTag(undefined, 3)).toBeNull();
     expect(revisionTag(2, null)).toBeNull();
@@ -148,7 +152,9 @@ describe("revisionTag", () => {
 
 describe("excludedLensNote", () => {
   it("says the paper is outside the set, with a recorded reason when there is one", () => {
+    expect(excludedLensNote(excludedDefault)).toBe("This paper is outside the working set.");
     expect(excludedLensNote(excludedManual)).toBe(
+      "This paper is outside the working set. Recorded reason: “Removed for the membership check”."
     );
   });
 

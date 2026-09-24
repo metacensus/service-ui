@@ -9,13 +9,18 @@ import { Paper } from "../../../../types/Paper";
 import { getPaperVoteCount } from "@/functions/getPaperVoteCount";
 import { PaperMembership } from "./PaperLifecycleDetails";
 import CardIndicators from "../CardIndicators";
+import type { PapersReview } from "@/hooks/usePaperReviewProgress";
+import type { PapersMembership } from "@/hooks/usePapersMembership";
 
 interface Props {
   papers: Paper[];
   page: number;
   setPage: (page: number) => void;
+  review: PapersReview;
+  membership: PapersMembership;
 }
 
+const TopicPapersTableView = ({ papers, page, setPage, review, membership }: Props) => {
   const pathname = usePathname();
 
   const columns = useMemo(
@@ -43,6 +48,10 @@ interface Props {
   const rows = useMemo(
     () =>
       (papers &&
+        papers.map((paper) => {
+          // Placement is unknown while Review loads, so no membership badge then.
+          const stage = review.status === "loading" ? null : getPaperLifecycleStage(paper, review.isAdjudicated(paper));
+          return [
           {
             content: (
               <Link className="w-full" href={`${pathname}/${paper.id}`}>
@@ -83,12 +92,17 @@ interface Props {
           {
             content: (
               <div className="">
+                <p>{stage ?? "Loading…"}</p>
+                <PaperMembership membership={membership.membershipFor(paper)} stage={stage} />
               </div>
             ),
             className: "",
             columnId: "reviewers",
           },
+        ];
+        })) ||
       [],
+    [papers, pathname, review, membership]
   );
 
   return (

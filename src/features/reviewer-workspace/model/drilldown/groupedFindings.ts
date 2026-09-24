@@ -892,6 +892,7 @@ export function projectGroup(
 
 /**
  * Literal matching over the stored value, the paper's printed wording and the
+ * displayed label of a normalized value: the case-insensitive query
  * must be a literal substring of one of those three. Field names are never
  * searched. There is no synonym expansion beyond the displayed labels.
  */
@@ -913,6 +914,7 @@ export function rowMatchesQuery(
     const raw = rawLabelFor(row, field, presentation);
     if (raw && raw.toLowerCase().includes(needle)) return true;
   }
+  // The tree displays the normalized value through prettyValue, so
   // the query must also match that displayed label (e.g. "Diarrhea" for
   // stored `diarrhoea`, "Severe diarrhea, mucositis or neutropenia" for
   // `composite_dmn_severe_toxicity`). Added to the checks above, which stay

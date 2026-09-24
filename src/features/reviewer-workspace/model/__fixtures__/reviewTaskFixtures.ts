@@ -36,6 +36,13 @@ function task(
   };
 }
 
+export const T1 = task("P1", "inferred", "ambiguous", 1, 2, [[0, 0], [1, 0], [2, 1]]);
+export const T2 = task("P1", "inferred", "clean", 2, 1, [[0, 1]]);
+export const T3 = task("P1", "derived", "ambiguous", 3, 1, [[3, 2]]);
+export const T4 = task("P1", "verbatim", "clean", 4, 1, [[4, 0]]);
+export const U1 = task("P2", "derived", "ambiguous", 1, 1, [[0, 0]]);
+export const U2 = task("P2", "derived", "clean", 2, 2, [[1, 0], [2, 0]]);
+export const V1 = task("P3", "verbatim", "clean", 1, 1, [[0, 0]]);
 
 /** Display order across papers. */
 export const DISPLAY_ORDER = [T1, T2, T3, U1, U2, T4, V1].map((t) => t.id);
@@ -48,6 +55,9 @@ export function fixtureIndex(): ReviewIndex {
     JSON.stringify({
       run_id: RUN,
       papers: [
+        { paper_id: "P1", fields: ["a", "b", "c"], task_list: p1 },
+        { paper_id: "P2", fields: ["a"], task_list: p2 },
+        { paper_id: "P3", fields: ["x"], task_list: p3 },
       ],
     })
   ) as ReviewIndex;
@@ -66,6 +76,7 @@ export function fixtureP1Tasks(): ReviewTasksDocument {
   });
   const detail = (
     t: ReviewIndexTask,
+    questions: ReviewTaskDetail["questions"]
   ): ReviewTaskDetail => ({
     id: t.id,
     kind: t.kind,
@@ -102,6 +113,13 @@ export function fixtureP1Tasks(): ReviewTasksDocument {
       derivation: [],
     },
     tasks: [
+      detail(T1, [
+        { field: "a", value_text: "1", header: 0, values: [value("a", [1]), value("a", [0])] },
+        { field: "b", value_text: "1", header: 0, values: [value("b", [2])] },
+      ]),
+      detail(T2, [{ field: "b", value_text: "1", header: 0, values: [value("b", [0])] }]),
+      detail(T3, [{ field: "c", value_text: "1", header: 0, values: [value("c", [3])] }]),
+      detail(T4, [{ field: "a", value_text: "1", header: 0, values: [value("a", [4])] }]),
     ],
   };
 }

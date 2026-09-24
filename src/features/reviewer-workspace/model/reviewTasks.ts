@@ -1,3 +1,4 @@
+import type { StoredReviewAction, UnitMember } from "../types";
 import {
   REVIEW_TASK_KINDS,
   REVIEW_TASK_LEVELS,
@@ -5,8 +6,12 @@ import {
   type ReviewTaskKind,
   type ReviewTaskLevel,
 } from "../data/reviewIndex";
+import { resolveReview, type ReviewSeed } from "./rowStatus";
+import { REVIEW_TASK_KIND_HEADINGS, shortPaperId } from "./unitMeta";
 import {
   clearedMembersFor,
+  computeUnitProgress,
+  type DecisionUnit,
   type UnitProgress,
 } from "./unitProgress";
 
@@ -20,11 +25,14 @@ export type ReviewTask = {
   sourceLine: string;
   fieldCount: number;
   questionCount: number;
+  unit: DecisionUnit;
 };
 
 const KIND_RANK = new Map(REVIEW_TASK_KINDS.map((kind, i) => [kind, i]));
 const LEVEL_RANK = new Map(REVIEW_TASK_LEVELS.map((level, i) => [level, i]));
 
+/** The builder orders each paper this way; this orders across papers. */
+function compareReviewTasks(a: ReviewTask, b: ReviewTask): number {
   return (
     KIND_RANK.get(a.kind)! - KIND_RANK.get(b.kind)! ||
     LEVEL_RANK.get(a.level)! - LEVEL_RANK.get(b.level)! ||
@@ -50,7 +58,9 @@ export function reviewTasksFromIndex(index: ReviewIndex): ReviewTask[] {
         level: t.certainty,
         title: t.title,
         sourceLine: t.source_line,
+        fieldCount: new Set(t.members.map(([, fi]) => fi)).size,
         questionCount: t.question_count,
+        unit: { id: t.id, paper_id: paper.paper_id, members, member_count: members.length },
       });
     }
   }
@@ -67,10 +77,13 @@ export type ReviewScope = {
 export function resolveReviewScope(
   index: ReviewIndex,
   useWorkingSet: boolean,
+  active: ReadonlySet<string> | null
 ): ReviewScope {
   const all = index.papers.map((paper) => paper.paper_id);
   if (!useWorkingSet) {
+    return { paperIds: all, emptyWorkingSet: false };
   }
+  if (!active) {
     throw new Error(
       "Review scope needs the working set: it is not loaded, and Review never falls back to all papers."
     );
@@ -91,15 +104,20 @@ export type ReviewTaskRow = {
 export function reviewTaskRows(
   tasks: readonly ReviewTask[],
   scope: ReviewScope,
+  actions: StoredReviewAction[],
+  seed?: ReviewSeed | null
 ): ReviewTaskRow[] {
   const inScope = new Set(scope.paperIds);
+  const cleared = clearedMembersFor(actions, seed);
   return tasks
     .filter((task) => inScope.has(task.paperId))
+    .map((task) => ({ task, progress: computeUnitProgress(task.unit, cleared) }));
 }
 
 export type ReviewLandingStatusFilter = "all" | "open" | "decided";
 
 export const REVIEW_LANDING_ALL = "all";
+
 export type ReviewTaskFilters = {
   /** A paper id, or "all". */
   paperId: string;
@@ -118,6 +136,8 @@ export function filterReviewTaskRows(
   return rows.filter(
     (row) =>
       (filters.paperId === REVIEW_LANDING_ALL || row.task.paperId === filters.paperId) &&
+      !(filters.status === "open" && row.progress.cleared) &&
+      !(filters.status === "decided" && !row.progress.cleared)
   );
 }
 
@@ -142,6 +162,7 @@ export function reviewKindSections(
     return {
       kind,
       heading: REVIEW_TASK_KIND_HEADINGS[kind],
+      decided: counted.filter((row) => row.progress.cleared).length,
       total: counted.length,
       ambiguous,
       confident,
@@ -149,6 +170,7 @@ export function reviewKindSections(
   });
 }
 
+/** No wrap-around; with `afterTaskId`, the walk starts after it even when it is not queued. */
 export function nextUndecidedTask(
   rows: readonly ReviewTaskRow[],
   includeNonAmbiguous: boolean,
@@ -163,6 +185,7 @@ export function nextUndecidedTask(
       .slice(start)
       .find(
         (row) =>
+          !row.progress.cleared && (includeNonAmbiguous || row.task.level === "ambiguous")
       ) ?? null
   );
 }
@@ -193,6 +216,7 @@ export function computeReviewPanelStats(
     if (!includeNonAmbiguous && task.level !== "ambiguous") continue;
     total += 1;
     byKind[task.kind].total += 1;
+    if (row.progress.cleared) {
       made += 1;
       byKind[task.kind].made += 1;
     }
@@ -212,14 +236,26 @@ export function computeReviewPanelStats(
 export type DecidedTaskEntry = {
   row: ReviewTaskRow;
   action: StoredReviewAction["action"];
+  /** Decided by the simulated seed alone, with no real action. */
+  seeded?: true;
 };
 
 export function decidedTaskHistory(
   rows: readonly ReviewTaskRow[],
+  actions: readonly StoredReviewAction[],
+  seed?: ReviewSeed | null
 ): DecidedTaskEntry[] {
+  return rows
+    .filter((row) => row.progress.cleared)
+    .map((row) => {
+      let last: StoredReviewAction | null = null;
       for (const m of row.task.unit.members) {
+        const a = resolveReview(actions, row.task.paperId, m.row_index, m.field, seed).action;
         if (a && (!last || a.id > last.id)) last = a;
       }
+      return last
+        ? { row, action: last.action }
+        : { row, action: seed?.action ?? "approve", seeded: true as const };
     });
 }
 
@@ -240,9 +276,15 @@ export function buildReviewLanding(input: {
   actions: StoredReviewAction[];
   filters: ReviewTaskFilters;
   includeNonAmbiguous: boolean;
+  /** The seed baseline; none by default. */
+  seed?: ReviewSeed | null;
 }): ReviewLanding {
+  const rows = reviewTaskRows(input.tasks, input.scope, input.actions, input.seed);
+  const paperOptions = input.scope.paperIds.map((paperId) => ({
+    value: paperId,
     label: shortPaperId(paperId),
   }));
+  paperOptions.sort((a, b) => a.label.localeCompare(b.label) || (a.value < b.value ? -1 : 1));
   return {
     scope: input.scope,
     rows,
@@ -250,6 +292,8 @@ export function buildReviewLanding(input: {
       filterReviewTaskRows(rows, input.filters),
       input.includeNonAmbiguous
     ),
+    panel: computeReviewPanelStats(rows, input.scope, input.includeNonAmbiguous),
     next: nextUndecidedTask(rows, input.includeNonAmbiguous),
+    paperOptions,
   };
 }

@@ -4,6 +4,7 @@ import type {
   ReviewKindSection as ReviewKindSectionData,
   ReviewTaskRow as ReviewTaskRowData,
 } from "../model/reviewTasks";
+import { KIND_ACCENTS } from "../model/unitMeta";
 import ReviewTaskRow from "./ReviewTaskRow";
 
 type ReviewKindSectionProps = {
@@ -25,6 +26,7 @@ const ReviewKindSection = ({
 }: ReviewKindSectionProps) => {
   const { kind, heading, ambiguous, confident } = section;
   if (ambiguous.length + confident.length === 0) return null;
+  const accent = KIND_ACCENTS[kind];
   const row = (r: ReviewTaskRowData) => (
     <ReviewTaskRow key={r.task.id} row={r} href={taskHref(r)} />
   );

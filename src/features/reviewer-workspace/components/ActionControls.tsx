@@ -11,6 +11,8 @@ import type { CorrectedPayload } from "../types";
 type ActionControlsProps = {
   state: RowReviewState;
   reviewerName: string | null;
+  /** Checked questions of a task with several; each action applies to them. */
+  selectedCount?: number;
   fieldType?: string | null;
   originalValue: unknown;
   onApprove: () => Promise<unknown>;
@@ -20,9 +22,14 @@ type ActionControlsProps = {
 
 type OpenForm = "correct" | "flag" | null;
 
+// Approve / correct / flag for one value, or for the checked questions when
+// `selectedCount` is given (Correct… then needs exactly one). Buttons stay
+// disabled with a visible reason until reviewer identity exists; the latest
+// decision is always shown so re-deciding is explicit, never silent.
 const ActionControls = ({
   state,
   reviewerName,
+  selectedCount,
   fieldType,
   originalValue,
   onApprove,
@@ -36,8 +43,13 @@ const ActionControls = ({
   const [correctedNote, setCorrectedNote] = useState("");
   const [flagReason, setFlagReason] = useState("");
 
+  const multi = selectedCount !== undefined;
+  const k = selectedCount?.toLocaleString("en-US");
+  const canCorrect = !multi || selectedCount === 1;
   const hasReviewer = Boolean(reviewerName?.trim());
   const disabled = !hasReviewer || busy || selectedCount === 0;
+  const form: OpenForm =
+    (openForm === "correct" && !canCorrect) || selectedCount === 0 ? null : openForm;
 
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
@@ -56,17 +68,22 @@ const ActionControls = ({
   };
 
   return (
+    <div data-testid={multi ? "task-decision-controls" : undefined}>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           size="xs"
           variant="primary"
           disabled={disabled}
+          data-testid={multi ? "approve-selected" : undefined}
           onClick={() => void run(onApprove)}
         >
+          {multi ? `Approve ${k} selected` : "Approve"}
         </Button>
         <Button
           size="xs"
           variant="outline"
+          disabled={disabled || !canCorrect}
+          data-testid={multi ? "correct-selected" : undefined}
           onClick={() => setOpenForm(openForm === "correct" ? null : "correct")}
         >
           Correct…
@@ -75,24 +92,33 @@ const ActionControls = ({
           size="xs"
           variant="outline"
           disabled={disabled}
+          data-testid={multi ? "flag-selected" : undefined}
           onClick={() => setOpenForm(openForm === "flag" ? null : "flag")}
         >
+          {multi ? `Flag ${k} selected…` : "Flag…"}
         </Button>
         {state !== "open" && (
           <span
             className={`rounded-md px-2 py-0.5 text-xs font-bold ${stateChipClass(state)}`}
           >
+            {state}
           </span>
         )}
         {!hasReviewer && (
             Set your reviewer name to enable decisions.
           </span>
         )}
+        {hasReviewer && selectedCount === 0 && (
+            Check at least one question to decide.
+          </span>
+        )}
+        {hasReviewer && multi && selectedCount > 1 && (
             Correct… needs exactly one checked question.
           </span>
         )}
       </div>
 
+      {form === "correct" && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -143,6 +169,7 @@ const ActionControls = ({
         </form>
       )}
 
+      {form === "flag" && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -150,8 +177,13 @@ const ActionControls = ({
             void run(() => onFlag(flagReason.trim()));
           }}
         >
+          <label
+            htmlFor={multi ? "task-flag-reason" : "flag-reason"}
+          >
+            {multi ? "Why do the checked questions need attention?" : "Why does this need attention?"}
           </label>
           <Textarea
+            id={multi ? "task-flag-reason" : "flag-reason"}
             className="bg-white text-sm"
             rows={2}
             value={flagReason}
@@ -160,6 +192,7 @@ const ActionControls = ({
             autoFocus
           />
           <div className="flex gap-2">
+              {multi ? `Flag ${k} selected` : "Flag for follow-up"}
             </Button>
             <Button size="xs" variant="ghost" type="button" onClick={() => setOpenForm(null)}>
               Cancel

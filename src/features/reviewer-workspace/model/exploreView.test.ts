@@ -120,6 +120,8 @@ describe("stepLabel", () => {
     expect(stepLabel({ tool: "execute_sql", summary: "2 statements; 9 rows returned" })).toBe(
       "Evidence search · 2 search steps; 9 results reviewed"
     );
+    expect(stepLabel({ tool: "resolve_evidence", summary: "3 sources resolved" })).toBe(
+      "Source check · 3 sources resolved"
     );
   });
 });

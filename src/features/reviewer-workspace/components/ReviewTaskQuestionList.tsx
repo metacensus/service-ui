@@ -2,7 +2,9 @@
 
 import { Fragment, useMemo, useState } from "react";
 import type { ReviewTaskDetail, ReviewTasksDocument } from "../data/reviewIndex";
+import { count } from "../model/display";
 import {
+  openQuestions,
   questionLabel,
   questionRowCount,
   questionRowHeaders,
@@ -107,6 +109,7 @@ const ReviewTaskQuestionList = ({
 
   const questionItem = (i: number) => {
     const question = task.questions[i];
+    const state = states[i];
     const isFocus = focus === i;
     const label = questionLabel(question);
     const rows = questionRowCount(task, i);
@@ -170,6 +173,7 @@ const ReviewTaskQuestionList = ({
             type="button"
             data-testid="select-all"
             title="Checks every question not yet approved or corrected; a decided question is re-decided only by checking it on its own"
+            onClick={() => onCheckedChange(new Set(openQuestions(states)))}
           >
             Select all
           </button>
@@ -201,6 +205,7 @@ const ReviewTaskQuestionList = ({
         </p>
       )}
       <ol className="mt-2 flex max-h-96 flex-col overflow-y-auto">
+        {sections.map(({ header, questionIndexes }, s) => (
           <Fragment key={s}>
             {header && (
               <li
@@ -222,6 +227,7 @@ const ReviewTaskQuestionList = ({
                 )}
               </li>
             )}
+            {questionIndexes.map(questionItem)}
           </Fragment>
         ))}
       </ol>

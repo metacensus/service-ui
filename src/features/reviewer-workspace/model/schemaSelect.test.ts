@@ -1,3 +1,4 @@
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   categoriesFor,
   categoryLabel,
@@ -185,6 +186,7 @@ describe("categoryLabel", () => {
 });
 
 withIndex("export-backed HapB3 checks", () => {
+  // Read in beforeAll, not here: describe bodies run even when skipped.
   const paperById = (index: SchemaIndex, id: string) =>
     index.papers.find((paper) => paper.paper_id === id)!;
 
@@ -197,17 +199,21 @@ withIndex("export-backed HapB3 checks", () => {
       ).length;
     };
     expect(count("DPYD variants")).toBe(42);
+    expect(count("DPYD haplotypes & groups")).toBe(24);
     expect(count("Other genes")).toBe(19);
     expect(count("Phenotype markers")).toBe(13);
     expect(count("Other")).toBe(31);
   });
 
+  it("DPYD variants has 182 items corpus-wide: 29 shown", () => {
     const corpus = new Map<string, number>();
     for (const paper of index.papers) {
       const seen = new Set(Object.keys(paper.items.Variants.dpyd_variant ?? {}));
       for (const item of seen) corpus.set(item, (corpus.get(item) ?? 0) + 1);
     }
     const shown = [...corpus.values()].filter((n) => n > 1).length;
+    expect(corpus.size).toBe(182);
+    expect(shown).toBe(29);
   });
 
     const curated = new Map<string, string>();
@@ -226,5 +232,8 @@ withIndex("export-backed HapB3 checks", () => {
     const tagged = forPapers(withTag);
     expect(tagged).toHaveLength(8);
     const lee = paperById(index, "Lee_2016_26658227");
+    expect(lee.row_count).toBe(191);
+    expect(hapb3.reduce((sum, term) => sum + termCount(lee, term), 0)).toBe(12);
+    expect(withTag.reduce((sum, term) => sum + termCount(lee, term), 0)).toBe(29);
   });
 });

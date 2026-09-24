@@ -128,6 +128,7 @@ export function levelRank(level: FindingLevel): number {
   return level === "row" ? 0 : level === "table" ? 2 : 1;
 }
 
+/** Sorts each findings table's rows by level; sibling branches keep buildPaperTree's count order. */
 export function orderByHighlight(tree: TreeNode): TreeNode {
   const levels = new Map<Row, FindingLevel>();
   const levelCached = (row: Row) => {
@@ -139,6 +140,7 @@ export function orderByHighlight(tree: TreeNode): TreeNode {
     return level;
   };
   const reorder = (node: TreeNode): TreeNode => {
+    const children = node.children.map(reorder);
     let rows = node.rows;
     if (node.projection) {
       rows = node.rows
@@ -146,6 +148,7 @@ export function orderByHighlight(tree: TreeNode): TreeNode {
         .sort((a, b) => a.rank - b.rank || a.index - b.index)
         .map(({ row }) => row);
     }
+    return { ...node, rows, children };
   };
   return reorder(tree);
 }

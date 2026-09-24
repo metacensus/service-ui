@@ -1,3 +1,4 @@
+// Reviewer-facing labels and accents for task kinds.
 
 import type { ReviewTaskKind } from "../data/reviewIndex";
 
@@ -7,6 +8,7 @@ export const REVIEW_TASK_KIND_HEADINGS: Record<ReviewTaskKind, string> = {
   verbatim: "Verbatim",
 };
 
+export const KIND_ACCENTS: Record<ReviewTaskKind, { border: string; text: string; bar: string }> = {
 };
 
 export function shortPaperId(paperId: string): string {

@@ -2,17 +2,24 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "@/lib/next-navigation-compat";
+import type { ReviewSource, ReviewTaskDetail, ReviewTasksDocument } from "../data/reviewIndex";
 import { pdfUrl } from "../data/snapshot";
+import type { TaskDecision } from "../model/actionBuilders";
+import { count, displayValue } from "../model/display";
 import { unitHrefWithOrigin, type ReviewOrigin } from "../model/returnContext";
 import {
   buildTaskDecisionActions,
   shouldAdvanceAfterDecision,
 } from "../model/reviewTaskDecisions";
 import {
+  combinedState,
+  isDecided,
+  openQuestions,
   questionDetail,
   questionEvidence,
   taskDecisionHistory,
   taskFirstQuote,
+  taskQuestionMembers,
   taskQuestionStates,
 } from "../model/reviewTaskPage";
 import {
@@ -20,6 +27,8 @@ import {
   type ReviewTask,
   type ReviewTaskRow,
 } from "../model/reviewTasks";
+import type { ReviewSeed } from "../model/rowStatus";
+import { KIND_ACCENTS, REVIEW_TASK_KIND_HEADINGS } from "../model/unitMeta";
 import type {
   CorrectedPayload,
   NewReviewComment,
@@ -43,10 +52,13 @@ type ReviewTaskViewProps = {
   doc: ReviewTasksDocument;
   detail: ReviewTaskDetail;
   task: ReviewTask;
+  queue: readonly ReviewTaskRow[];
   includeNonAmbiguous: boolean;
   fieldTypes: ReadonlyMap<string, string | null>;
   actions: StoredReviewAction[];
   actionHistory: StoredReviewAction[];
+  /** The static seed baseline, resolved at read time; never stored. */
+  reviewSeed?: ReviewSeed | null;
   comments: ReviewComment[];
   reviewerName: string | null;
   setReviewerName: (name: string) => Promise<unknown>;
@@ -54,6 +66,7 @@ type ReviewTaskViewProps = {
   addComment: (comment: NewReviewComment) => Promise<unknown>;
 };
 
+// Mount with `key` = task id, so a new task starts with its undecided questions checked.
 const ReviewTaskView = ({
   runId,
   base,
@@ -62,10 +75,12 @@ const ReviewTaskView = ({
   doc,
   detail,
   task,
+  queue,
   includeNonAmbiguous,
   fieldTypes,
   actions,
   actionHistory,
+  reviewSeed = null,
   comments,
   reviewerName,
   setReviewerName,
@@ -77,13 +92,18 @@ const ReviewTaskView = ({
   const n = detail.questions.length;
   const single = n === 1;
   const states = useMemo(
+    () => taskQuestionStates(paperId, detail, actions, reviewSeed),
+    [paperId, detail, actions, reviewSeed]
   );
   const questionMembers = useMemo(() => taskQuestionMembers(detail), [detail]);
   const rowEntries = questionMembers.reduce((sum, members) => sum + members.length, 0);
   const decidedCount = states.filter(isDecided).length;
 
+  const [checked, setChecked] = useState<Set<number>>(() => new Set(openQuestions(states)));
+  const checkedIdx = [...checked].sort((a, b) => a - b);
   const checkedEntries = checkedIdx.reduce((sum, i) => sum + questionMembers[i].length, 0);
   const [focusIdx, setFocusIdx] = useState<number | null>(null);
+  const [activeQuote, setActiveQuote] = useState<ReviewSource | null>(null);
   const [singleRowsOpen, setSingleRowsOpen] = useState(false);
 
   const focus = focusIdx ?? 0;
@@ -91,14 +111,24 @@ const ReviewTaskView = ({
   const evidence =
     activeQuote ??
     (focusIdx !== null ? questionEvidence(doc, detail, focusIdx) : taskFirstQuote(doc, detail));
+  const pdfPath = evidence?.pdf ?? doc.evidence.sources.find((s) => s.pdf)?.pdf ?? null;
 
+  const taskState = combinedState(states);
 
   const oneChecked = checkedIdx.length === 1 ? checkedIdx[0] : null;
   const oneCheckedDetail = oneChecked !== null ? questionDetail(doc, detail, oneChecked) : null;
 
   const history = useMemo(
+    () =>
+      taskDecisionHistory(actions, actionHistory, detail.id, {
+        seed: reviewSeed,
+        paperId,
+        members: questionMembers.flat(),
+      }),
+    [actions, actionHistory, detail.id, reviewSeed, paperId, questionMembers]
   );
 
+  // A rejected save throws to the controls, which show it.
   const decide = async (decision: TaskDecision) => {
     const reviewer = reviewerName?.trim();
     const scope: readonly number[] | "all" = single ? "all" : checkedIdx;
@@ -116,11 +146,13 @@ const ReviewTaskView = ({
         return next;
       });
     }
+    if (shouldAdvanceAfterDecision(paperId, detail, before, decision, scope, reviewSeed)) {
       const next = nextUndecidedTask(queue, includeNonAmbiguous, detail.id);
       router.push(next ? unitHrefWithOrigin(base, next.task.id, origin) : backHref);
     }
   };
 
+  const accent = KIND_ACCENTS[detail.kind];
   const taskComments = comments.filter((comment) => comment.unit_id === detail.id);
 
   return (
@@ -162,6 +194,7 @@ const ReviewTaskView = ({
                       : ""
                   } (${count(rowEntries, "row entry", "row entries")}) · a decision covers the questions you check; the rest stay open.`}
             </p>
+            {single && detail.questions[0].spans && (
               <div data-testid="task-single-rows" className="-mx-2 mt-1">
                 <QuestionRowsToggle
                   doc={doc}
@@ -211,6 +244,7 @@ const ReviewTaskView = ({
                 <div
                   data-testid="task-focus-question"
                 >
+                  {`Should ${detail.questions[focus].field} = ${displayValue(detail.questions[focus].values[0].value)}?`}
                 </div>
               </div>
             </div>
@@ -240,8 +274,15 @@ const ReviewTaskView = ({
               <ActionControls
                 state={taskState}
                 reviewerName={reviewerName}
+                selectedCount={single ? undefined : checkedIdx.length}
                 fieldType={
+                  single
+                    ? (fieldTypes.get(detail.questions[0].field) ?? null)
+                    : oneChecked !== null
+                      ? (fieldTypes.get(detail.questions[oneChecked].field) ?? null)
+                      : null
                 }
+                originalValue={(single ? focusDetail : oneCheckedDetail)?.value ?? null}
                 onApprove={() => decide({ action: "approve" })}
                 onCorrect={(corrected: CorrectedPayload) => decide({ action: "correct", corrected })}
                 onFlag={(reason) => decide({ action: "flag", reason })}

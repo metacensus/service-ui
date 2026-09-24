@@ -1,3 +1,4 @@
+import { beforeAll, describe, expect, it } from "vitest";
 import type { Row, SchemaPresentation } from "../../types";
 import type { TreeOrder } from "./fieldMap";
 import { buildPaperTree, treeLeaves, type TreeNode } from "./groupedFindings";
@@ -181,13 +182,25 @@ describe("orderByHighlight", () => {
     expect(after[2]).toBe(before[3]);
   });
 
+  it("keeps sibling branches in the given order, equal counts included, whatever their row-level shares", () => {
+    const levels: FindingLevel[][] = [["table", "table"], ["table"], ["row"]];
     const root = fakeNode({
       rows: [],
       children: levels.map((group, i) => fakeNode({ key: `child-${i}`, rows: group.map((level) => rowAt(level)) })),
     });
+    // Shares 0, 0, 1: the equal-count pair child-1, child-2 still keeps its order.
+    expect(orderByHighlight(root).children.map((child) => child.key)).toEqual(["child-0", "child-1", "child-2"]);
   });
 
   it("never mutates the input tree", () => {
+    const rows = [rowAt("table"), rowAt("row")];
+    const leaf = fakeNode({ key: "leaf", rows, projection: {} as NonNullable<TreeNode["projection"]> });
+    const children = [leaf];
+    const reordered = orderByHighlight(fakeNode({ rows: [], children }));
+    expect(reordered.children[0].rows).toEqual([rows[1], rows[0]]);
+    expect(leaf.rows).toBe(rows);
+    expect(rows.map((row) => findingLevelOf(row))).toEqual(["table", "row"]);
+    expect(children).toEqual([leaf]);
   });
 });
 
@@ -210,12 +223,27 @@ const PAPERS = Object.keys(EXPECTED_LEVELS);
 // findings among the first 10, among the first 25, and the position of the
 // first row-level finding — for By variant and By outcome.
 const EXPECTED_STATS: Record<string, Record<TreeOrder, [number, number, number]>> = {
+  Boige_2016_26794347: { variant_first: [10, 15, 0], outcome_first: [10, 21, 0] },
+  Lee_2016_26658227: { variant_first: [10, 25, 0], outcome_first: [10, 25, 0] },
+  falvella_2015_25782327: { variant_first: [9, 22, 0], outcome_first: [9, 21, 0] },
+  Jennings_2013_24167597: { variant_first: [10, 23, 0], outcome_first: [2, 8, 0] },
+  Schwab_2008_18299612: { variant_first: [9, 22, 0], outcome_first: [10, 24, 0] },
+  Amstutz_2009_19530960: { variant_first: [9, 21, 0], outcome_first: [0, 0, 136] },
+  Kleibl_2009_19473056: { variant_first: [0, 0, 46], outcome_first: [0, 0, 46] },
+  froehlich_2015_24923815: { variant_first: [0, 0, 58], outcome_first: [2, 4, 0] },
+  Loganayagam_2013_23736036: { variant_first: [0, 13, 10], outcome_first: [0, 13, 10] },
+  Rosmarin_2015_24647007: { variant_first: [1, 3, 0], outcome_first: [1, 2, 0] },
 };
 
 const D949V = [53, 55, 57, 59, 61, 63, 65];
 const V732I = [52, 54, 56, 58, 60, 62, 64];
+const BOIGE_VARIANT_FIRST12 = [54, 56, 58, 60, 62, 64, 66, 69, 72, 52, 76, 99];
+const BOIGE_VARIANT_D949V_POS = [22, 12, 13, 14, 15, 16, 17];
+const BOIGE_OUTCOME_FIRST12 = [62, 154, 156, 157, 158, 159, 160, 161, 162, 163, 155, 63];
+const BOIGE_OUTCOME_D949V_POS = [146, 47, 65, 101, 83, 11, 29];
 
 withExport("highlight order export-backed", () => {
+  // Read in beforeAll, not here: describe bodies run even when skipped.
   const cache = new Map<string, { rows: Row[]; presentation?: SchemaPresentation }>();
 
   function reorderedSequence(paperId: string, order: TreeOrder): number[] {
@@ -256,9 +284,29 @@ withExport("highlight order export-backed", () => {
     }
   });
 
+  it("orders every node's sibling branches by finding count, largest first", () => {
+    const visit = (node: TreeNode, label: string) => {
+      const counts = node.children.map((child) => child.rows.length);
+      for (let i = 1; i < counts.length; i += 1) {
+        expect(counts[i], `${label} ${node.key} ${counts.join(",")}`).toBeLessThanOrEqual(counts[i - 1]);
+      }
+      for (const child of node.children) visit(child, label);
+    };
     for (const paperId of PAPERS) {
       for (const order of ["variant_first", "outcome_first"] as const) {
         const { rows, presentation } = paper(paperId);
+      }
+    }
+  });
+
+  it("Lee by variant: the FOLFOX branch precedes its No drug given sibling", () => {
+    const { rows, presentation } = paper("Lee_2016_26658227");
+    expect(regimens.map((child) => [child.field, child.valueText, child.rows.length])).toEqual([
+      ["fp_exposure_id", "folfox", 242],
+      ["fp_exposure_id", "no drug exposure", 4],
+    ]);
+  });
+
   it("Boige Table 3: V732I rows are row-level, D949V rows are table-level", () => {
     const { rows } = paper("Boige_2016_26794347");
     const byIndex = new Map(rows.map((row) => [row.row_index, row]));

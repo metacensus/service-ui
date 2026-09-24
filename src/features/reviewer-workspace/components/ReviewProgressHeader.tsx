@@ -2,6 +2,9 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { REVIEW_TASK_KINDS } from "../data/reviewIndex";
+import { fmt } from "../model/display";
+import type { ReviewPanelStats } from "../model/reviewTasks";
+import { KIND_ACCENTS, REVIEW_TASK_KIND_HEADINGS } from "../model/unitMeta";
 
 type ReviewProgressHeaderProps = {
   panel: ReviewPanelStats;
@@ -38,6 +41,7 @@ const ReviewProgressHeader = ({
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {REVIEW_TASK_KINDS.map((kind) => {
             const progress = panel.byKind[kind];
+            const accent = KIND_ACCENTS[kind];
             const pct = progress.total
               ? Math.round((progress.made / progress.total) * 100)
               : 0;

@@ -5,6 +5,7 @@ export const REVIEW_SESSION_KEYS: Record<ReviewSessionFlag, string> = {
   includeNonAmbiguous: "metacensus:review-include-non-ambiguous",
 };
 
+const REVIEW_SESSION_DEFAULTS: Record<ReviewSessionFlag, boolean> = {
   useWorkingSet: true,
   includeNonAmbiguous: false,
 };

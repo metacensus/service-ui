@@ -7,8 +7,12 @@ import TopicPapersTableView from "@/components/partials/topics/TopicPapersTableV
 import MyDrawer from "@/components/shared/Drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { fetchAllTopicPapers } from "@/functions/fetchAllTopicPapers";
 import { useFetchData } from "@/hooks/useFetchData";
+import { usePaperReviewProgress } from "@/hooks/usePaperReviewProgress";
+import { usePapersMembership } from "@/hooks/usePapersMembership";
 import { routes } from "@/lib/routes";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Paper } from "../../../../../../types/Paper";
 import { Topic } from "../../../../../../types/Topic";
@@ -26,11 +30,22 @@ const TopicPapers = ({ params }: Props) => {
 
   const [page, setPage] = useState(1);
 
+  // The table pages; the grid shows every paper in the topic.
+  const queryBody = { topicId, page, limit: 10 };
   const { data } = useFetchData<typeof queryBody, Paper[]>(
     routes.api.paper,
     [`topics-papers-${topicId}`],
     "POST",
+    queryBody,
+    { enabled: activeView === "table" }
   );
+  const { data: allPapers } = useQuery({
+    queryKey: [`topics-papers-${topicId}`, "all"],
+    queryFn: () => fetchAllTopicPapers(topicId),
+    enabled: activeView === "grid",
+  });
+  const review = usePaperReviewProgress(topicId);
+  const membership = usePapersMembership(topicId);
 
   const papers = useMemo(() => {
     if (data) {
@@ -54,9 +69,11 @@ const TopicPapers = ({ params }: Props) => {
             <div className="flex gap-2 mb-2 md:mb-0">
               <IconCard
                 active={activeView === "grid"}
+                onClick={() => setActiveView("grid")}
               />
               <IconCard
                 active={activeView === "table"}
+                onClick={() => setActiveView("table")}
               />
             </div>
             {/* {activeView === "table" && (
@@ -79,8 +96,11 @@ const TopicPapers = ({ params }: Props) => {
           </Button>
         </div>
       </div>
+      {activeView === "grid" && allPapers && (
+        <TopicPapersColumnView papers={allPapers} review={review} membership={membership} />
       )}
       {activeView === "table" && papers && (
+        <TopicPapersTableView papers={papers} page={page} setPage={setPage} review={review} membership={membership} />
       )}
       {createPaperOpen && (
         <MyDrawer

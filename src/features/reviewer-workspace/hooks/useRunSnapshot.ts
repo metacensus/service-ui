@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { resolveRunId } from "../data/runResolver";
 import {
   fetchDemoConfig,
@@ -18,6 +19,8 @@ export const reviewerWorkspaceQueryKeys = {
     ["reviewer-workspace", runId, "schema-summary"] as const,
   demoConfig: (runId: string) =>
     ["reviewer-workspace", runId, "demo-config"] as const,
+  normalizationManifest: (runId: string) =>
+    ["reviewer-workspace", runId, "normalization"] as const,
   paperRows: (runId: string, paperId: string) =>
     ["reviewer-workspace", runId, "rows", paperId] as const,
   reviewState: (runId: string, topicId: string) =>
@@ -50,6 +53,8 @@ export const reviewerWorkspaceQueryKeys = {
     ] as const,
   schemaIndex: (runId: string) =>
     ["reviewer-workspace", runId, "schema-index"] as const,
+  workingSet: (runId: string, topicId: string) =>
+    ["reviewer-workspace", runId, "working-set", topicId] as const,
 };
 
 export function useRunSnapshot(topicId: string) {

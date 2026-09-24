@@ -7,6 +7,11 @@ import type {
   SchemaPresentation,
 } from "../types";
 
+export const fmt = (n: number) => n.toLocaleString("en-US");
+
+export const count = (n: number, one: string, many: string) =>
+  `${fmt(n)} ${n === 1 ? one : many}`;
+
 export function displayValue(
   value: unknown,
   provenance?: ProvenanceEntry | null

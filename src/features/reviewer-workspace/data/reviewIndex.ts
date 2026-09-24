@@ -20,6 +20,8 @@ export type ReviewIndexTask = {
   title: string;
   source_line: string;
   question_count: number;
+  /** Question by question, rows ascending. */
+  members: [rowIndex: number, fieldIndex: number][];
 };
 
 export type ReviewIndexPaper = {
@@ -49,9 +51,12 @@ export type ReviewTaskHeader = {
 
 export type ReviewTaskQuestion = {
   field: string;
+  value_text: string;
   basis?: string;
+  /** Index into the task's `headers`. */
   header?: number;
   /** [header index, rows under it] for a question "In several rows". */
+  spans?: [header: number, rows: number][];
   values: ReviewTaskValue[];
 };
 
@@ -84,10 +89,13 @@ export type ReviewTaskDetail = {
   certainty: ReviewTaskLevel;
   title: string;
   source_line: string;
+  headers: [header: number, rows: number][];
   shared_context?: string;
   questions: ReviewTaskQuestion[];
   citations: ReviewTaskCitation[];
 };
+
+export type ReviewSource = ProvSource & { pdf?: string };
 
 export type ReviewTasksDocument = {
   paper_id: string;
@@ -96,6 +104,7 @@ export type ReviewTasksDocument = {
   /** Row identity by row index (as a string key): `expect_identity`. */
   rows: Record<string, Identity | null>;
   evidence: {
+    sources: ReviewSource[];
     reasoning: string[];
     derivation: string[];
   };
@@ -114,6 +123,10 @@ export class ReviewIndexNotFoundError extends Error {
   }
 }
 
+function reviewIndexBaseUrl(runId: string): string {
+  const base =
+    (import.meta.env.VITE_REVIEWER_INDEX_BASE_URL as string | undefined)?.replace(/\/+$/, "") ||
+  return `${base}/${encodeURIComponent(runId)}`;
 }
 
 export function reviewIndexUrl(runId: string): string {
@@ -140,6 +153,7 @@ function invalid(where: string, what: string): never {
 
 const isIndex = (x: unknown, length: number) =>
   Number.isInteger(x) && (x as number) >= 0 && (x as number) < length;
+const isNatural = (x: unknown) => Number.isInteger(x) && (x as number) >= 0;
 
 function assertTaskHead(
   task: Record<string, unknown>,
@@ -186,11 +200,13 @@ export function validateReviewIndex(value: unknown, runId: string): ReviewIndex 
       if (!task || typeof task !== "object") invalid(pid, "malformed task");
       const where = `${pid}:${String(task.id)}`;
       assertTaskHead(task as unknown as Record<string, unknown>, where);
+      if (!isNatural(task.question_count)) invalid(where, "question_count must be a count");
       if (!Array.isArray(task.members)) invalid(where, "members must be an array");
       for (const member of task.members) {
         if (
           !Array.isArray(member) ||
           member.length !== 2 ||
+          !isNatural(member[0]) ||
           !isIndex(member[1], nFields)
         ) {
           invalid(where, `malformed member ${JSON.stringify(member)}`);
@@ -248,24 +264,48 @@ export function validateReviewTasks(
     if (
       !Array.isArray(task.headers) ||
       !task.headers.every(
+        (h) => Array.isArray(h) && isIndex(h[0], nHeaders) && isNatural(h[1])
       )
     ) {
       invalid(where, "headers must be [header index, rows] pairs");
     }
+    if (!Array.isArray(task.questions)) invalid(where, "questions must be an array");
     for (const question of task.questions) {
+      if (
+        !question ||
+        typeof question.field !== "string" ||
+        typeof question.value_text !== "string" ||
+        !Array.isArray(question.values) ||
+        question.values.length === 0
+      ) {
         invalid(where, "malformed question");
       }
+      if (question.header != null && !isIndex(question.header, task.headers.length)) {
+        invalid(where, `question header ${JSON.stringify(question.header)} out of range`);
       }
+      if (
+        question.spans != null &&
+        (!Array.isArray(question.spans) ||
+          !question.spans.every(
+            (s) => Array.isArray(s) && isIndex(s[0], task.headers.length) && isNatural(s[1])
+          ))
+      ) {
+        invalid(where, `question spans ${JSON.stringify(question.spans)} out of range`);
       }
+      if (!question.values.every((v) => v?.field === question.field)) {
         invalid(where, `question ${question.field} holds a value of another field`);
       }
+      for (const value of question.values) {
         if (
           !Array.isArray(value.rows) ||
+          !value.rows.every(isNatural) ||
           !Array.isArray(value.sources) ||
           !value.sources.every((i) => isIndex(i, nSources)) ||
           (value.reasoning != null && !isIndex(value.reasoning, nReasoning)) ||
           (value.derivation != null && !isIndex(value.derivation, nDerivation))
         ) {
+          invalid(where, `malformed value of ${value.field}`);
+        }
       }
     }
     if (

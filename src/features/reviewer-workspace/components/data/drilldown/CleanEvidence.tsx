@@ -109,6 +109,7 @@ function SourceCard({
   note?: string;
   onSelect: () => void;
 }) {
+  // Multi-source captions follow the Chat and Review page pattern
   // (`Source i of N · {location} · article page {page}`); a single source
   // keeps the mock-up's caption. The rest (resolution words, cell, note) is
   // unchanged.

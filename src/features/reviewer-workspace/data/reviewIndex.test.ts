@@ -75,7 +75,12 @@ describe("validateReviewTasks", () => {
     expect(() => validateReviewTasks(fixtureP1Tasks(), "P2")).toThrow("paper_id");
   });
 
+  it("rejects questions that do not hold their values, and bad references", () => {
     const cases: [(doc: ReturnType<typeof fixtureP1Tasks>) => void, string][] = [
+      [(d) => (d.tasks[0].questions[0].values[1].field = "b"), "holds a value of another field"],
+      [(d) => (d.tasks[0].questions[1].values = []), "malformed question"],
+      [(d) => (d.tasks[0].questions[0].values[0].sources = [5]), "malformed value"],
+      [(d) => (d.tasks[0].questions[0].values[0].reasoning = 3), "malformed value"],
       [(d) => (d.tasks[0].questions[0].header = 4), "out of range"],
       [(d) => (d.tasks[0].citations[0].source = 2), "malformed citations"],
     ];
@@ -85,7 +90,29 @@ describe("validateReviewTasks", () => {
       expect(() => validateReviewTasks(doc, "P1")).toThrow(message);
     }
   });
+
+  it("rejects a question header that indexes the paper's headers but not the task's", () => {
     const doc = fixtureP1Tasks();
+    doc.headers.push({ text: "Another row", detail: "", full: "", state: "row" });
+    expect(() => validateReviewTasks(doc, "P1")).not.toThrow();
+    doc.tasks[0].questions[0].header = 1;
+    expect(() => validateReviewTasks(doc, "P1")).toThrow("out of range");
+  });
+
+  it("rejects a spans header outside the task's headers", () => {
     const doc = fixtureP1Tasks();
+    doc.headers.push({ text: "Another row", detail: "", full: "", state: "row" });
+    const question = doc.tasks[0].questions[0];
+    delete question.header;
+    question.spans = [[0, 1], [1, 1]];
+    expect(() => validateReviewTasks(doc, "P1")).toThrow("out of range");
+  });
+
+  it("rejects malformed spans with the validator's error", () => {
     const doc = fixtureP1Tasks();
+    const question = doc.tasks[0].questions[0];
+    delete question.header;
+    question.spans = [[0, -1]];
+    expect(() => validateReviewTasks(doc, "P1")).toThrow("question spans [[0,-1]] out of range");
+  });
 });

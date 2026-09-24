@@ -26,6 +26,7 @@ export default function RowDetail({
   groupVaryingCount,
   presentation,
   compact = false,
+  hiddenFields,
 }: {
   paper: PaperMeta;
   row: Row;
@@ -36,6 +37,8 @@ export default function RowDetail({
   presentation?: SchemaPresentation;
   /** Narrow container (phone, or evidence pane open): one column, narrower labels. */
   compact?: boolean;
+  /** Fields the text-highlight rule hid: left out of the list and of the empty-field count. */
+  hiddenFields?: readonly string[];
 }) {
   const [showEmpty, setShowEmpty] = useState(false);
   const detail = useMemo(() => {
@@ -61,6 +64,8 @@ export default function RowDetail({
   // normalized value is missing).
   const printedOf = (field: string) =>
     presentation?.reported_value_fields?.[field] ?? null;
+  const shownAsOwnLine = (field: string) =>
+    !normalizedOf(field, presentation) && !hiddenFields?.includes(field);
   const presentOne = (field: string) =>
     isPopulated(row, field) || Boolean(row.provenance[field]?.extraction_certainty);
   const present = (field: string) => {

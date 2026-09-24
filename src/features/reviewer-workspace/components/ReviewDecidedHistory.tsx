@@ -28,6 +28,7 @@ const ReviewDecidedHistory = ({ entries, taskHref }: ReviewDecidedHistoryProps) 
           data-testid="decided-history-list"
         >
           {entries.length === 0 && <li className="py-1">No tasks decided yet.</li>}
+          {entries.map(({ row, action, seeded }) => (
             <li key={row.task.id} className="py-1 [overflow-wrap:anywhere]">
               <Link
                 href={taskHref(row)}

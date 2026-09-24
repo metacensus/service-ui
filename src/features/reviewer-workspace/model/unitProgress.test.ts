@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReviewUnit, StoredReviewAction } from "../types";
+import { clearedMembersFor, computeUnitProgress } from "./unitProgress";
 
 const unit: ReviewUnit = {
   id: "unit-1",
@@ -37,14 +38,17 @@ function action(
 describe("computeUnitProgress", () => {
   it("only clears members with approved or corrected decisions", () => {
     expect(
+      computeUnitProgress(unit, clearedMembersFor([action("approve", 0), action("flag", 1)]))
     ).toEqual({ cleared: false, clearedMembers: 1 });
 
     expect(
+      computeUnitProgress(unit, clearedMembersFor([action("approve", 0), action("correct", 1)]))
     ).toEqual({ cleared: true, clearedMembers: 2 });
   });
 
   it("does not count actions from another paper", () => {
     const otherPaper = { ...action("approve", 0), paper_id: "paper-2" };
+    expect(computeUnitProgress(unit, clearedMembersFor([otherPaper]))).toEqual({
       cleared: false,
       clearedMembers: 0,
     });
