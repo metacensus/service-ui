@@ -75,3 +75,8 @@ export function writeChatSession(storage: () => Pick<Storage, "setItem">, key: s
     // Keep going without persistence.
   }
 }
+
+/** An empty conversation under a new Explore session id, so the server's SQL session starts fresh. */
+export function newChatSession(randomId: () => string = () => crypto.randomUUID()): ChatSession {
+  return { sessionId: randomId(), turns: [], active: null };
+}

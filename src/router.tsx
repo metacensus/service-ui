@@ -44,6 +44,7 @@ import {
 
 // Topic layout — ports `app/(authenticated)/topics/[topicId]/layout.tsx`.
 import PageHeader from "@/components/partials/PageHeader";
+import TopicFlowNav from "@/components/partials/topics/TopicFlowNav";
 import { PushRecentlyViewedTopic } from "@/app/(authenticated)/topics/[topicId]/PushRecentlyViewedTopic";
 
 // ---------------------------------------------------------------------------
@@ -103,6 +104,7 @@ const topicLayoutRoute = createRoute({
     return (
       <>
         <PageHeader pageName="topics" id={topicId} titleProp="name" />
+        <TopicFlowNav topicId={topicId} />
         <PushRecentlyViewedTopic topicId={topicId} />
         <Outlet />
       </>

@@ -6,12 +6,16 @@ import {
   canSelectAll,
   canUnselectAll,
   cleanReason,
+  clearWorkingSetCurrentLine,
+  clearWorkingSetRequest,
   membershipChanges,
   selectionConfirmLabel,
   selectionCurrentLine,
   selectionSubject,
   tickedListed,
+  viewFilter,
   workingSetButton,
+  workingSetViewLabel,
 } from "./workingSetControls";
 
 
@@ -138,5 +142,49 @@ describe("the Table editor text", () => {
     expect(batchSaveMessage(new WorkingSetSaveError("/m", 409, "stale_revision"), 3, 43)).toBe(
       "Only 3 of 43 changes were saved. It now shows what was saved; try again."
     );
+  });
+});
+
+describe("working-set table view", () => {
+  const rows = LISTED.map((paper_id) => ({ paper_id }));
+
+  it("'All papers' keeps every row in order", () => {
+    expect(viewFilter(rows, (row) => row.paper_id, "all", active)).toEqual(rows);
+  });
+
+  it("'Working set only' keeps only active papers, in list order", () => {
+    expect(viewFilter(rows, (row) => row.paper_id, "workingSet", new Set())).toEqual([]);
+  });
+
+  it("labels the view with the working-set size", () => {
+    expect(workingSetViewLabel(active)).toBe("Working set (2)");
+    expect(workingSetViewLabel(new Set())).toBe("Working set (0)");
+  });
+});
+
+describe("clear working set", () => {
+  it("removes every active paper, not just the listed ones", () => {
+    expect(clearWorkingSetRequest(active)).toEqual({
+      membership: "excluded",
+      reason: "Working set cleared in Data → Table",
+    });
+  });
+
+  it("keeps a typed reason, cleaned", () => {
+    expect(clearWorkingSetRequest(new Set(["a"]), "  starting\nover ").reason).toBe("starting over");
+  });
+
+  it("each cleared paper becomes one recorded removal", () => {
+    const active = new Set(["a", "b"]);
+    const { paperIds, membership, reason } = clearWorkingSetRequest(active, "reset");
+    expect(membershipChanges(paperIds, membership, active, reason)).toEqual([
+      { paperId: "a", membership: "excluded", reason: "reset" },
+      { paperId: "b", membership: "excluded", reason: "reset" },
+    ]);
+  });
+
+  it("describes what will be removed", () => {
+    expect(clearWorkingSetCurrentLine(new Set(["a"]))).toBe("Current: 1 paper in the working set — all will be removed");
+    expect(clearWorkingSetCurrentLine(new Set(["a", "b"]))).toBe("Current: 2 papers in the working set — all will be removed");
   });
 });

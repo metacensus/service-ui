@@ -51,9 +51,12 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
     papersBody
   );
 
+  // Open consensus statements are the votable props.
   const votableProps = useMemo(
     () =>
       (props ?? []).filter(
+        // is never an open action; only statements are voted on here.
+        (p) => p.type === "Statement" && (!p.conclusion || p.conclusion === "open")
       ),
     [props]
   );
@@ -75,6 +78,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
     if (!userId) return [];
     const result: ActionItem[] = [];
 
+    // (1) — vote-based: surface statements the user hasn't voted on yet.
     // Wait for the votes query before guessing, so we don't flash items the
     // user has already handled.
     if (votedPropIds !== undefined) {
@@ -90,6 +94,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
       });
     }
 
+    // (2) & (3) — paper-based: derived from paper status + the user's votes.
     const numericUserId = Number(userId);
     (papers ?? []).forEach((paper) => {
       if (paper.status === "Pending Approval") {

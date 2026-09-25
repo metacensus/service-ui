@@ -77,4 +77,33 @@ export function batchSaveMessage(error: unknown, saved: number, attempted: numbe
     ? saveErrorMessage(error)
     : `Only ${saved} of ${attempted} changes were saved. It now shows what was saved; try again.`;
 }
+
+/** Data → Table's row filter: every paper, or only those in the working set. */
+export type TableView = "all" | "workingSet";
+
+export function viewFilter<T>(entries: T[], idOf: (entry: T) => string, view: TableView, active: ReadonlySet<string>): T[] {
+  return view === "workingSet" ? entries.filter((entry) => active.has(idOf(entry))) : entries;
+}
+
+export function workingSetViewLabel(active: ReadonlySet<string>): string {
+  return `Working set (${active.size})`;
+}
+
+const CLEAR_REASON = "Working set cleared in Data → Table";
+
+/**
+ * "Clear working set" removes every active paper through the same per-paper
+ * remove path, so each removal is recorded in history. The papers are sorted
+ * so the save order is stable.
+ */
+export function clearWorkingSetRequest(
   active: ReadonlySet<string>,
+  typedReason = ""
+): { paperIds: string[]; membership: WorkingSetMembership; reason: string } {
+  return { paperIds: [...active].sort(), membership: "excluded", reason: cleanReason(typedReason) || CLEAR_REASON };
+}
+
+export function clearWorkingSetCurrentLine(active: ReadonlySet<string>): string {
+  const n = active.size;
+  return `Current: ${n} ${n === 1 ? "paper" : "papers"} in the working set — all will be removed`;
+}

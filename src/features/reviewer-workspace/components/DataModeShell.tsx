@@ -51,6 +51,8 @@ const DataModeShell = ({
       to: ".",
       search: { mode: "table" },
       replace: true,
+      // Search-param-only update: keep the reader's scroll position.
+      resetScroll: false,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps — one-shot seed consumption.
   }, [seedPending]);
@@ -63,6 +65,8 @@ const DataModeShell = ({
       to: ".",
       search: (prev: Record<string, unknown>) => ({ ...prev, mode: next }),
       replace: true,
+      // Search-param-only update: keep the reader's scroll position.
+      resetScroll: false,
     });
   };
 
@@ -82,6 +86,8 @@ const DataModeShell = ({
         return { ...next, ...params };
       },
       replace: true,
+      // Search-param-only update: keep the reader's scroll position.
+      resetScroll: false,
     });
   }, [mode, tableMounted, seedPending, tableSearch, navigate]);
 

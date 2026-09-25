@@ -1,7 +1,9 @@
 "use client";
 
+import { FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, Check, ChevronRight, FileSearch, Loader2, Quote, Sparkles } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { fetchData } from "@/hooks/useFetchData";
@@ -22,6 +24,7 @@ import {
   stepLabel,
   valueSources,
 } from "../../model/exploreView";
+import { chatSessionKey, newChatSession, readChatSession, writeChatSession } from "../../model/chatSession";
 import { excludedLensNote, revisionTag } from "../../model/membership";
 import { MembershipBubble } from "./MembershipBubble";
 import { MembershipContext } from "./membershipContext";
@@ -34,9 +37,44 @@ import type {
 } from "../../types";
 
 const prompts = [
+  "Which papers include any tests for any of the hapb3 variants?",
   "Compare effect estimates for c.2846A>T across studies.",
   "Where are the weakest extractions that could change a toxicity conclusion?",
 ];
+
+// The API answers in one response, so these stages are paced on the client:
+// they show the request is still moving, not which tool is running. The last
+// stage holds until the answer lands.
+export const PROGRESS_STAGES = [
+  "Reading your question",
+  "Searching the extraction tables",
+  "Cross-checking findings across papers",
+  "Locating supporting source passages",
+  "Writing the answer",
+];
+export const PROGRESS_STAGE_MS = 6000;
+
+function ProgressStages() {
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    if (stage >= PROGRESS_STAGES.length - 1) return;
+    const timer = setTimeout(() => setStage((current) => current + 1), PROGRESS_STAGE_MS);
+    return () => clearTimeout(timer);
+  }, [stage]);
+  return (
+    <ol className="mt-3 space-y-1.5 text-left text-sm" aria-live="polite">
+      {PROGRESS_STAGES.map((label, index) => (
+        <li
+          key={label}
+          aria-current={index === stage ? "step" : undefined}
+        >
+          {index < stage ? <Check className="h-3.5 w-3.5" /> : index === stage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <span className="h-3.5 w-3.5" />}
+          {label}{index === stage ? "…" : ""}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]';
@@ -288,6 +326,9 @@ function EvidenceAnswer({ response, onSelect }: {
 
 const browserSessionStorage = () => window.sessionStorage;
 
+/** Tailwind `xl`: chat and source lens sit side by side in fixed-height panes. */
+const isTwoColumn = () => window.matchMedia("(min-width: 1280px)").matches;
+
 const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
   // `resolveRunId` is a synchronous env lookup. Reading the run id off
   // `useRunSnapshot` would start four snapshot queries this view never uses.
@@ -314,7 +355,9 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
   // conversation, Explore session and open source for this topic and run.
   const storageKey = runId ? chatSessionKey(topicId, runId) : null;
   const [restored] = useState(() => (storageKey ? readChatSession(browserSessionStorage, storageKey) : null));
+  const [sessionId, setSessionId] = useState(() => restored?.sessionId ?? crypto.randomUUID());
   const sourceLensRef = useRef<HTMLElement>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [question, setQuestion] = useState("");
@@ -331,9 +374,32 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
     if (storageKey) writeChatSession(browserSessionStorage, storageKey, { sessionId, turns, active });
   }, [storageKey, sessionId, turns, active]);
 
+  // Without this a second answer renders below the fold and the screen looks
+  // unchanged. Two columns: scroll the transcript pane only, never the page.
+  // One column: the transcript grows with the page, so bring its end into view.
   useEffect(() => {
     if (turns.length === 0 && !loading) return;
+    const transcript = transcriptRef.current;
+    if (!transcript) return;
+    if (isTwoColumn()) transcript.scrollTo({ top: transcript.scrollHeight, behavior: "smooth" });
+    else transcriptEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [turns.length, loading]);
+
+  // Open on the newest answer: pin the transcript to its end whenever the pane
+  // becomes visible (first render, a restored session, or a switch back from
+  // Table, since Chat stays mounted behind `hidden`).
+  useLayoutEffect(() => {
+    const transcript = transcriptRef.current;
+    if (!transcript || typeof ResizeObserver === "undefined") return;
+    let wasVisible = false;
+    const observer = new ResizeObserver(() => {
+      const visible = transcript.clientHeight > 0;
+      if (visible && !wasVisible) transcript.scrollTop = transcript.scrollHeight;
+      wasVisible = visible;
+    });
+    observer.observe(transcript);
+    return () => observer.disconnect();
+  }, []);
   const source = useMemo<ProvSource | null>(() => active ? ({
     quote: active.quote ?? "",
     location: active.location ?? "",
@@ -376,10 +442,24 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
     }
   }
 
+  // A fresh session id makes the server start a new SQL session; the storage
+  // effect above then overwrites the saved conversation with the empty one.
+  function startNewChat() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    const fresh = newChatSession();
+    setSessionId(fresh.sessionId);
+    setTurns(fresh.turns);
+    setActive(fresh.active);
+    setLoading(false);
+    setError(null);
     setMembershipStatus(null);
+  }
+
   function selectEvidence(evidence: Evidence) {
     setActive(evidence);
     window.requestAnimationFrame(() => {
+      if (!isTwoColumn()) {
         sourceLensRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     });
@@ -404,7 +484,23 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
           <WorkingSetSummary workingSet={workingSet} titleFor={titleFor} status={membershipStatus} />
         </div>
 
+        {/* Two columns: one fixed-height pane pair, so the transcript scrolls
+            inside itself and the source lens stays beside it. One column: the
+            page scrolls as before. */}
+        <div className="mt-5 grid min-h-[680px] grid-cols-1 overflow-hidden rounded-lg border bg-white shadow-sm xl:h-[calc(100vh-2rem)] xl:min-h-[560px] xl:grid-cols-[minmax(0,0.9fr)_minmax(520px,1.1fr)]">
+          <section className="flex min-h-[620px] flex-col border-b xl:min-h-0 xl:border-b-0 xl:border-r">
+            <div className="flex items-center justify-end border-b px-4 py-2">
+              <button
+                type="button"
+                onClick={startNewChat}
+                disabled={turns.length === 0 && !loading}
+              >
+                Clear chat
+              </button>
+            </div>
             <div
+              ref={transcriptRef}
+              className="min-h-0 flex-1 overflow-auto overscroll-contain p-5"
               role="log"
               aria-live="polite"
               aria-busy={loading}
@@ -467,6 +563,7 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
               })}
               {loading && (
                 <div className={`mx-auto flex max-w-sm flex-col items-center text-center ${turns.length ? "py-12" : "py-24"}`}>
+                  <ProgressStages />
                 </div>
               )}
               <div ref={transcriptEndRef} />

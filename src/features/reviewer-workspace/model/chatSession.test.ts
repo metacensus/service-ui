@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ExploreEvidence } from "../types";
 import {
   chatSessionKey,
+  newChatSession,
   parseChatSession,
   readChatSession,
   serializeChatSession,
@@ -90,9 +91,30 @@ describe("readChatSession / writeChatSession", () => {
     expect(() => writeChatSession(full, "k", session)).not.toThrow();
   });
 });
+
+describe("newChatSession", () => {
+  it("starts empty under a new session id", () => {
+    const fresh = newChatSession(() => "4f1c6a3e-0000-4000-8000-000000000002");
+    expect(fresh).toEqual({ sessionId: "4f1c6a3e-0000-4000-8000-000000000002", turns: [], active: null });
+    expect(fresh.sessionId).not.toBe(session.sessionId);
+  });
+
+  it("defaults to a random UUID per call", () => {
+    const a = newChatSession();
+    const b = newChatSession();
+    expect(a.sessionId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(a.sessionId).not.toBe(b.sessionId);
+  });
+
+  it("overwrites the stored conversation when written over it", () => {
     const store = new Map<string, string>();
     const storage = () => ({
       getItem: (key: string) => store.get(key) ?? null,
       setItem: (key: string, value: string) => void store.set(key, value),
     });
     writeChatSession(storage, "k", session);
+    const fresh = newChatSession(() => "fresh-id");
+    writeChatSession(storage, "k", fresh);
+    expect(readChatSession(storage, "k")).toEqual({ sessionId: "fresh-id", turns: [], active: null });
+  });
+});

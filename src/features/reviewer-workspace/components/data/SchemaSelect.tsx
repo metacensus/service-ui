@@ -1,5 +1,7 @@
 // Data → Table selection: scope, group, category and item pickers over papers as rows; each row opens its study tree.
 
+import { useId, useMemo, useState, type ReactNode } from "react";
+import { Check, ChevronDown, ChevronRight, Info, Search, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MembershipEditor, type MembershipEditorOutcome } from "@/features/reviewer-workspace/components/MembershipEditor";
 import type { WorkingSetControls } from "@/features/reviewer-workspace/hooks/useWorkingSet";
@@ -7,11 +9,16 @@ import {
   batchSaveMessage,
   canSelectAll,
   canUnselectAll,
+  clearWorkingSetCurrentLine,
+  clearWorkingSetRequest,
   selectionConfirmLabel,
   selectionCurrentLine,
   selectionSubject,
   tickedListed,
+  viewFilter,
   workingSetButton,
+  workingSetViewLabel,
+  type TableView,
 } from "@/features/reviewer-workspace/model/workingSetControls";
 import {
   GROUPS,
@@ -99,6 +106,42 @@ function Segmented<T extends string>({
   );
 }
 
+/** A light "i" beside a control; hover or keyboard focus shows one sentence on what it does. Escape hides it. */
+function InfoTip({ label, text }: { label: string; text: string }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <span className="relative inline-flex" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        aria-label={`About ${label}`}
+        aria-describedby={open ? id : undefined}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setOpen(false);
+        }}
+      >
+        <Info className="h-4 w-4" aria-hidden />
+      </button>
+      {open && (
+        <span
+          id={id}
+          role="tooltip"
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+const INFO = {
+  view: "Show every paper, or only the papers currently in your working set.",
+  combine: "With two or more terms picked, Any shows papers matching at least one; All shows only papers matching every term.",
+  findings: "When you expand a paper, show only the findings that match your selected terms, or all of that paper's findings.",
+};
+
 function StepLabel({ n, children }: { n: number; children: ReactNode }) {
   return (
       {children}
@@ -171,6 +214,10 @@ export default function SchemaSelect({
   const [ticked, setTicked] = useState<ReadonlySet<string>>(() => new Set());
   const [editorOpen, setEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
+  // Filters rows only; the selection, combine and findings controls keep their meaning.
+  const [view, setView] = useState<TableView>("all");
+  const effectiveView: TableView = workingSet.status === "ready" ? view : "all";
   const scoped = state.scope === "one" ? allPapers.filter((paper) => paper.paper_id === state.scopePaper) : allPapers;
   const group = state.group;
   const layerGroup = group === "Paper" ? null : (group as LayerGroup);
@@ -239,6 +286,9 @@ export default function SchemaSelect({
       findings: (a, b) => b.findings - a.findings || b.paper.row_count - a.paper.row_count,
       az: (a, b) => name(a).localeCompare(name(b)),
     };
+    const shown = viewFilter(scored, (entry) => entry.paper.paper_id, effectiveView, workingSet.active);
+    return shown.sort(sorters[state.sort]); // stable: demo order breaks ties
+  }, [customOrder, effectiveView, scoped, state.combine, state.sort, terms, workingSet.active]);
 
   const isOpen = new Set(state.expanded);
   const toggleOpen = (id: string) =>
@@ -251,6 +301,7 @@ export default function SchemaSelect({
   const button = workingSetButton(selectedIds, workingSet.active);
   // aria-disabled, not disabled: focus returns here after a save that clears every tick.
   const actionDisabled = selectedIds.length === 0 || saving;
+  const clearDisabled = workingSet.active.size === 0 || saving;
   const nameOf = new Map(results.map(({ paper }) => [paper.paper_id, paperName(paper)]));
 
   const setTicks = (ids: string[], on: boolean) =>
@@ -274,8 +325,16 @@ export default function SchemaSelect({
     return { ok: true };
   }
 
+  async function clearWorkingSet(reason: string): Promise<MembershipEditorOutcome> {
+    const request = clearWorkingSetRequest(workingSet.active, reason);
+    setSaving(true);
+    const result = await workingSet.saveMemberships(request.paperIds, request.membership, request.reason);
     setSaving(false);
     if (!result.ok) return { ok: false, message: batchSaveMessage(result.error, result.saved, result.attempted) };
+    setClearOpen(false);
+    return { ok: true };
+  }
+
   return (
     <div className="pb-16">
       {/* scope */}
@@ -442,9 +501,21 @@ export default function SchemaSelect({
             )}
           </div>
           {workingSet.status === "ready" && (
+            <div className="inline-flex items-center gap-1">
+              <Segmented
+                label="Papers shown"
+                value={view}
                 options={[
                   { value: "all", label: "All papers" },
+                  { value: "workingSet", label: workingSetViewLabel(workingSet.active) },
+                ]}
+                onChange={setView}
+              />
+              <InfoTip label="Papers shown" text={INFO.view} />
+            </div>
+          )}
           {terms.length > 1 && (
+            <div className="inline-flex items-center gap-1">
               <Segmented
                 label="Combine selections"
                 value={state.combine}
@@ -454,8 +525,11 @@ export default function SchemaSelect({
                 ]}
                 onChange={(combine) => setState((current) => ({ ...current, combine }))}
               />
+              <InfoTip label="Combine selections" text={INFO.combine} />
+            </div>
           )}
           {terms.length > 0 && (
+            <div className="inline-flex items-center gap-1">
               <Segmented
                 label="Findings shown in open papers"
                 value={state.onlySelection ? "sel" : "all"}
@@ -465,6 +539,8 @@ export default function SchemaSelect({
                 ]}
                 onChange={(value) => setState((current) => ({ ...current, onlySelection: value === "sel" }))}
               />
+              <InfoTip label="Findings shown in open papers" text={INFO.findings} />
+            </div>
           )}
           <div className="flex flex-wrap items-center gap-2 md:ml-auto">
             <select
@@ -504,6 +580,22 @@ export default function SchemaSelect({
             )}
             {workingSet.status === "ready" && (
               <MembershipEditor
+                open={clearOpen}
+                onOpenChange={(next) => {
+                  if (!next || !clearDisabled) setClearOpen(next);
+                }}
+                onConfirm={clearWorkingSet}
+                idBase="table-clear"
+                subject="whole working set"
+                currentLine={clearWorkingSetCurrentLine(workingSet.active)}
+                reasonRequired={false}
+                confirmLabel="Clear working set"
+              >
+                <button
+                  type="button"
+                  aria-disabled={clearDisabled}
+                >
+                  Clear working set
                 </button>
               </MembershipEditor>
             )}
@@ -518,6 +610,12 @@ export default function SchemaSelect({
       {/* results */}
       <div className="mt-3 overflow-hidden rounded-lg border bg-white shadow-sm">
         {results.length === 0 && (
+            {effectiveView === "workingSet" && workingSet.active.size === 0
+              ? "The working set is empty."
+              : terms.length === 0
+                ? "No papers in the working set."
+                : `No ${effectiveView === "workingSet" ? "working-set " : ""}papers contain ${state.combine === "all" ? "all of" : "any of"} the selection.`}
+          </p>
         )}
         {results.map(({ paper, hits, findings }) => (
             {workingSet.status === "ready" ? (
