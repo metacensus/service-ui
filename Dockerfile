@@ -6,6 +6,7 @@
 # the Node/esbuild build under QEMU emulation for each target — esbuild's Go
 # binary crashes under emulation ("lfstack.push"), and it would be needlessly
 # slow. Only the Caddy runtime stage below varies per target architecture.
+FROM --platform=$BUILDPLATFORM node:26-alpine AS builder
 WORKDIR /app
 
 # Install dependencies against the committed lockfile for reproducible builds.
