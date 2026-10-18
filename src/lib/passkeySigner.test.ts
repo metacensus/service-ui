@@ -1,0 +1,4 @@
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();

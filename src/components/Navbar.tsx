@@ -1,6 +1,7 @@
 import { ToastAction } from "@radix-ui/react-toast";
 import { useToast } from "@/hooks/use-toast";
 import { usePathname, useRouter } from "@/lib/next-navigation-compat";
+import { LOGIN_PATH } from "@/lib/session";
 
   const pathName = usePathname();
   const router = useRouter();
@@ -8,6 +9,7 @@ import { usePathname, useRouter } from "@/lib/next-navigation-compat";
 
 
       await del("recentlyViewedTopics");
+      router.push(LOGIN_PATH);
     } catch (error) {
       console.error(error);
       toast({

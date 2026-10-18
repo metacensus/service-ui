@@ -1,3 +1,4 @@
+import { LOGIN_PATH } from "@/lib/session";
 
 export default function NotFoundPage() {
   const pathname = useLocation({ select: (l) => l.pathname });

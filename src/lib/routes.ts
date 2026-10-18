@@ -1,3 +1,5 @@
+import { apiPrefix } from "@metacensus/api";
+
 // Single backend URL surface. Every backend call the UI makes goes through
 // `/metacensus/api/v1/*` as a relative path; the reverse proxy in front of the
 // SPA is what routes that prefix to whichever API backs the environment. This

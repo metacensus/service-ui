@@ -14,6 +14,7 @@ import { pageHead } from "@/lib/head";
 import queryClient from "@/lib/queryClient";
 import { routes } from "@/lib/routes";
 import type { Topic } from "../types/Topic";
+import { LOGIN_PATH } from "@/lib/session";
 
 import LogIn from "@/app/(marketing)/log-in/page";
 import SignUp from "@/app/(marketing)/sign-up/page";
@@ -131,6 +132,7 @@ const indexRoute = createRoute({
 
 const logInRoute = createRoute({
   getParentRoute: () => rootRoute,
+  path: LOGIN_PATH,
   head: () =>
     pageHead({
       title: "Log in",
