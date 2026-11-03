@@ -14,6 +14,7 @@ type StatementVoteProps = {
   prop: Prop;
 };
 
+const StatementVote = ({ topicId, prop }: StatementVoteProps) => {
   const [openDrawer, setOpenDrawer] = useState(false);
 
   const { userId } = useGetUserId();

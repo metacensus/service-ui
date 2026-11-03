@@ -118,12 +118,14 @@ const TopicConsensusStatementTable = ({
 
           {
             content: (
+              <StatementVote topicId={topicId} prop={statement} />
             ),
             className: "",
             columnId: "vote",
           },
         ])) ||
       [],
+    [contributors, sortedStatements, topicId]
   );
 
   return (

@@ -267,6 +267,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
 
         return fetch(routes.api.paperCreate, {
           method: "POST",
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             title: paper.title,
             url: paper.availablefromurl,

@@ -7,12 +7,17 @@ import { styles } from "@/styles";
 import Link from "@/components/shared/Link";
 import { useEffect, useMemo, useState } from "react";
 import { Topic } from "../../../types/Topic";
+import AsyncSection from "../shared/AsyncSection";
 import TableSimple from "../shared/TableSimple";
 import TextBubble from "../shared/TextBubble";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 
 const RecentlyReviewedTopics = () => {
+  const topicsQuery = useFetchData<undefined, Topic[]>(routes.api.topic, [
+    "topics",
+  ]);
+  const topics = topicsQuery.data;
 
   const [recentlyViewedTopics, setRecentlyViewedTopics] = useState<Topic[]>([]);
 
@@ -114,6 +119,11 @@ const RecentlyReviewedTopics = () => {
     [recentlyViewedTopics]
   );
   return (
+    <AsyncSection
+      query={topicsQuery}
+      isEmpty={() => false}
+      empty={null}
+      loading={
         <Card className="p-1 xl:p-12 mt-4">
           <TableSimple
             columns={columns}
@@ -132,6 +142,10 @@ const RecentlyReviewedTopics = () => {
             tableTitle="Recently Viewed Topics"
           />
         </Card>
+      }
+      error={<div>Error loading data: {topicsQuery.error?.message}</div>}
+    >
+      {() => (
         <div className="mt-8">
           {recentlyViewedTopics.length > 0 ? (
             <Card className="p-2 xl:p-12 mt-4">
@@ -157,6 +171,8 @@ const RecentlyReviewedTopics = () => {
             </Card>
           )}
         </div>
+      )}
+    </AsyncSection>
   );
 };
 

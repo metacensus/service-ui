@@ -33,6 +33,7 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
+      const headers = getAuthHeaders();
       const response = await fetch(`${routes.api.topic}/${topicId}/prop`, {
         method: "POST",
         headers,

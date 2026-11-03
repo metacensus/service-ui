@@ -114,6 +114,7 @@ const EditProtocol = ({
               protocolId: protocol.id,
             };
 
+            const headers = getAuthHeaders();
 
             const editProtocol = await fetch(routes.api.protocolEdit, {
               method: "POST",

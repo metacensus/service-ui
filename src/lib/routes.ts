@@ -15,20 +15,43 @@ import { apiPrefix } from "@metacensus/api";
 export const routes = {
   api: {
     // Auth / identity
+    user: apiPrefix + "/user",
 
     // Topics
+    topic: apiPrefix + "/topic",
+    topicById: (topicId: string) => `${apiPrefix}/topic/${topicId}`,
+    topicProtocol: (topicId: string) =>
+      `${apiPrefix}/topic/${topicId}/protocol`,
+    topicMyVotes: (topicId: string) => `${apiPrefix}/topic/${topicId}/my-votes`,
     workingSet: (topicId: string, runId: string) =>
     workingSetMembership: (topicId: string, runId: string) =>
 
     // Taxonomy
+    domain: apiPrefix + "/domain",
+    category: apiPrefix + "/category",
 
     // Papers
+    paper: apiPrefix + "/paper",
+    paperCreate: apiPrefix + "/paper/create",
+    paperLookup: apiPrefix + "/paper/lookup",
     paperPresignedUrl: (paperId: string) =>
+      `${apiPrefix}/paper/${paperId}/presigned-url`,
 
     // Protocols
+    protocol: apiPrefix + "/protocol",
+    protocolCreate: apiPrefix + "/protocol/create",
+    protocolEdit: apiPrefix + "/protocol/edit",
+    protocolTemplate: apiPrefix + "/protocol-template",
+    protocolElement: apiPrefix + "/protocol-element",
 
     // Extraction
+    extraction: apiPrefix + "/extraction",
+    extractionCreate: apiPrefix + "/extraction/create",
+    extractionEdit: apiPrefix + "/extraction/edit",
+    extractionReview: apiPrefix + "/extraction-review",
 
     // Literature search
+    litSearch: apiPrefix + "/lit-search",
+    litSearchAbstract: (id: string) => `${apiPrefix}/lit-search/${id}/abstract`,
   },
 };

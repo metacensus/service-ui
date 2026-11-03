@@ -81,6 +81,7 @@ const PropVoting = ({
     }
 
     if (window.confirm("Are you sure you want to cast your vote?")) {
+      const headers = getAuthHeaders();
 
       const request = await fetch(
         `${routes.api.topic}/${topicId}/prop/${propId}/vote`,
@@ -254,6 +255,7 @@ const PropVoting = ({
         </div>
       )}
 
+      {votingOption && (
         <>
           <div className="grid gap-2">
             <div className="text-sm">
@@ -277,6 +279,7 @@ const PropVoting = ({
               type="button"
               className="gap-2 px-2 py-1"
               onClick={handleSubmitVote}
+              disabled={!votingOption}
             >
               <span className="text-sm">Cast Vote</span>
             </Button>

@@ -31,6 +31,7 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
+      const headers = getAuthHeaders();
       const response = await fetch(`${routes.api.topic}/${topicId}/prop`, {
         method: "POST",
         headers,

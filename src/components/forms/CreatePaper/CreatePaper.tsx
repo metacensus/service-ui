@@ -112,6 +112,7 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
     setPmidLookupLoading(true);
 
     try {
+      const headers = getAuthHeaders();
       const { data } = await axios.get(routes.api.paperLookup, {
         params: { pmid },
         headers: Object.fromEntries(headers),
@@ -188,6 +189,7 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
     );
 
     try {
+      await axios.post(routes.api.paperCreate, formData);
 
       await queryClient.invalidateQueries({
         queryKey: [`topics-papers-${topicId}`],

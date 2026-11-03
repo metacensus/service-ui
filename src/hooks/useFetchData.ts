@@ -14,6 +14,7 @@ export const fetchData = async <TBody, UResponse>(
   method?: AllowedMethods,
   body?: TBody
 ): Promise<UResponse> => {
+  const headers = getAuthHeaders();
   const requestInit: RequestInit = {
     method: method || "GET",
     headers,

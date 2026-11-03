@@ -1,5 +1,6 @@
 "use client";
 
+import AsyncSection from "@/components/shared/AsyncSection";
 import TableSimple from "@/components/shared/TableSimple";
 import TopicFilterOption from "@/components/shared/TopicFilterOption";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,10 @@ import { Contributor } from "../../../../types/Contributor";
 import UserAvatar from "../UserAvatar";
 
 const ContributorsTable = () => {
+  const contributorsQuery = useFetchData<undefined, Contributor[]>(
     ["users"]
   );
+  const data = contributorsQuery.data;
 
   const contributors = useMemo(() => {
     if (data) {
@@ -74,6 +77,8 @@ const ContributorsTable = () => {
     [contributors]
   );
 
+  const table = <TableSimple columns={columns} rows={rows} tableTitle="" />;
+
   return (
     <div className="w-full flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between w-full mt-6">
@@ -97,6 +102,11 @@ const ContributorsTable = () => {
           </Button>
         </div>
       </div>
+      <AsyncSection
+        query={contributorsQuery}
+        isEmpty={() => false}
+        empty={null}
+        loading={
           <TableSimple
             columns={columns}
             rows={[
@@ -114,6 +124,11 @@ const ContributorsTable = () => {
             ]}
             tableTitle=""
           />
+        }
+        error={table}
+      >
+        {() => table}
+      </AsyncSection>
       {/* <TablePagination
         decrementIds={decrementIds}
         incrementIds={incrementIds}

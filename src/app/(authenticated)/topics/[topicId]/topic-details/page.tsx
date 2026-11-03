@@ -3,6 +3,7 @@
 import TopicAdministrators from "@/components/partials/topics/TopicAdministrators";
 import TopicDetailsCard from "@/components/partials/topics/TopicDetailsCard";
 import TopicProtocolCard from "@/components/partials/topics/TopicProtocolCard";
+import AsyncSection from "@/components/shared/AsyncSection";
 import { Card } from "@/components/ui/card";
 import { useFetchData } from "@/hooks/useFetchData";
 import { cn } from "@/lib/utils";
@@ -21,10 +22,12 @@ const TopicDetails = ({ params }: Props) => {
   const { topicId: topicIdEncoded } = params;
   const topicId = topicIdEncoded; // TanStack Router already decodes path params
 
+  const topicQuery = useFetchData<undefined, Topic>(
     `${routes.api.topic}/${topicId}`,
     [`topic-details-${topicId}`]
   );
 
+  const topic = topicQuery.data || null;
 
   const administrators = useMemo(() => {
     if (topic && topic.topicAdmins) {
@@ -42,6 +45,15 @@ const TopicDetails = ({ params }: Props) => {
 
   return (
     <div className="flex flex-col">
+      <AsyncSection
+        query={topicQuery}
+        isEmpty={(topic) => !topic}
+        empty={null}
+        loading={<div>Loading...</div>}
+        error={<div>Error: {topicQuery.error?.message}</div>}
+      >
+        {(topic) => <TopicDetailsCard topic={topic} />}
+      </AsyncSection>
       <div className="flex flex-col xl:flex-row xl:gap-6">
         {topic && (
           <TopicProtocolCard

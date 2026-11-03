@@ -2,6 +2,7 @@
 
 import CreateConsensusStatement from "@/components/forms/CreateConsensusStatement/CreateConsensusStatement";
 import TopicConsensusStatementTable from "@/components/partials/topics/TopicConsensusStatements";
+import AsyncSection from "@/components/shared/AsyncSection";
 import MyDrawer from "@/components/shared/Drawer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,10 +25,12 @@ const TopicConsensusStatements = ({ params }: Props) => {
 
   const [page, setPage] = useState(1);
 
+  const propsQuery = useFetchData<undefined, Prop[]>(
     `${routes.api.topic}/${topicId}/prop`,
     [`statements-${topicId}`],
     "GET"
   );
+  const props = propsQuery.data;
 
   const statements = useMemo(() => {
     if (props && props.length > 0) {
@@ -44,8 +47,15 @@ const TopicConsensusStatements = ({ params }: Props) => {
 
   return (
     <div className="mt-6">
+      <AsyncSection
+        query={propsQuery}
+        isEmpty={() => false}
+        empty={null}
+        loading={<div>Loading...</div>}
+        error={
           <Card className="p-6 h-full">
             <div className="flex flex-col gap-2">
+              <p>Error loading data: {propsQuery.error?.message}</p>
               <p>
                 Could not load the statements for this topic. Please try again
                 later.
@@ -57,6 +67,10 @@ const TopicConsensusStatements = ({ params }: Props) => {
               </Link>
             </div>
           </Card>
+        }
+      >
+        {() => (
+          <>
             <div className="flex flex-col md:flex-row md:items-center justify-end w-full">
               <div className="mt-4 md:mt-0 flex items-start">
                 <Button
@@ -78,6 +92,9 @@ const TopicConsensusStatements = ({ params }: Props) => {
                 topicId={topicId}
               />
             )}
+          </>
+        )}
+      </AsyncSection>
       {createStatementOpen && (
         <MyDrawer
           open={createStatementOpen}

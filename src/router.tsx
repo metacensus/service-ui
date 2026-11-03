@@ -7,10 +7,12 @@ import {
 } from "@tanstack/react-router";
 
 import { Toaster } from "@/components/ui/toaster";
+import { apiClient } from "@/lib/apiClient";
 import Providers from "@/app/providers";
 import { DocumentHead } from "@/components/DocumentHead";
 import { fetchData } from "@/hooks/useFetchData";
 import { pageHead } from "@/lib/head";
+import { getPasskey } from "@/lib/passkey";
 import queryClient from "@/lib/queryClient";
 import { routes } from "@/lib/routes";
 import type { Topic } from "../types/Topic";
@@ -68,9 +70,13 @@ const authenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "authenticated",
   beforeLoad: async () => {
+    if (await apiClient.resume()) return;
+    queryClient.clear();
+    throw redirect({ to: LOGIN_PATH });
   },
   component: () => (
     <>
+      <Navbar />
       <div className="min-h-screen bg-background font-sans antialiased mx-6 xl:mx-24 my-8">
         <Outlet />
       </div>
@@ -151,6 +157,7 @@ const signUpRoute = createRoute({
       description:
         "Create a MetaCensus account to start a topic, turn papers into source-linked evidence, and vote on consensus statements.",
     }),
+  loader: () => getPasskey().catch(() => undefined),
   component: SignUp,
 });
 

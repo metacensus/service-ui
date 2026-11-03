@@ -36,6 +36,7 @@ const CreateTopic = ({ setOpen }: CreateTopicProps) => {
 
   const { mutate: createNetworkTopic } = useMutation({
     mutationFn: async (data: CreateTopicInputs) => {
+      const networkHeaders = getAuthHeaders();
       const createTopicRequest = await fetch(routes.api.topic, {
         method: "POST",
         headers: networkHeaders,

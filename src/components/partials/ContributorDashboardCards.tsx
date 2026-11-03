@@ -1,5 +1,6 @@
 "use client";
 
+import AsyncSection from "@/components/shared/AsyncSection";
 import { useFetchData } from "@/hooks/useFetchData";
 import { routes } from "@/lib/routes";
 import { styles } from "@/styles";
@@ -49,6 +50,7 @@ const DashboardCard = ({ title, count, items }: DashboardCardProps) => {
 
 const ContributorDashboardCards = () => {
   const topicsQueryBody = { limit: 4, page: 1 };
+  const topicsQuery = useFetchData<typeof topicsQueryBody, Topic[]>(
     routes.api.topic,
     ["topics"],
     "GET",
@@ -56,8 +58,18 @@ const ContributorDashboardCards = () => {
   );
 
   return (
+    <AsyncSection
+      query={topicsQuery}
+      isEmpty={(topics) => !topics}
+      empty={null}
+      loading={<LoadingCard />}
+      error={topicsQuery.error && <ErrorCard error={topicsQuery.error} />}
+      className="flex flex-col 2xl:flex-row w-full gap-4 mt-8"
+    >
+      {(topics) => (
         <DashboardCard title="Topics" count={topics.length} items={topics} />
       )}
+    </AsyncSection>
   );
 };
 

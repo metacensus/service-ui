@@ -35,6 +35,7 @@ The app runs on Vite's default port (http://localhost:5173). The dev server stan
 in for the consumer's reverse proxy, so relative paths behave as they do in
 production:
 
+- `/metacensus/*` → the MetaCensus API, [service-api-standard](https://github.com/metacensus/service-api-standard) or [service-api-chain](https://github.com/metacensus/service-api-chain) (defaults to `http://localhost:3001`)
 
 ## Scripts
 

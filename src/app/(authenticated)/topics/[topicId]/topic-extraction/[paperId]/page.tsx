@@ -70,6 +70,7 @@ const TopicExtraction = ({
   ) => {
     if (viewOnly) return;
 
+    const headers = getAuthHeaders();
 
     if (!isEditMode) {
       const update = await fetch(routes.api.extractionCreate, {

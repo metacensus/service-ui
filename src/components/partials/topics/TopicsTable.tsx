@@ -1,5 +1,6 @@
 "use client";
 
+import AsyncSection from "@/components/shared/AsyncSection";
 import TablePagination from "@/components/shared/TablePagination";
 import TextBubble from "@/components/shared/TextBubble";
 import { useFetchData } from "@/hooks/useFetchData";
@@ -13,6 +14,7 @@ import TableSimple from "../../shared/TableSimple";
 const TopicsTable = () => {
   const [page, setPage] = useState(1);
 
+  const topicsQuery = useFetchData<undefined, Topic[]>(
     routes.api.topic,
     ["topics"],
     "GET",
@@ -28,6 +30,7 @@ const TopicsTable = () => {
     clearOnDefault: true,
   });
 
+  const topics = (topicsQuery.data || []).filter((topic) => {
     return topic.name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -140,6 +143,11 @@ const TopicsTable = () => {
     [topics]
   );
   return (
+    <AsyncSection
+      query={topicsQuery}
+      isEmpty={() => false}
+      empty={null}
+      loading={
         <TableSimple
           columns={columns}
           rows={[
@@ -156,6 +164,10 @@ const TopicsTable = () => {
           ]}
           tableTitle="Loading Topics..."
         />
+      }
+      error={<div>Error loading data: {topicsQuery.error?.message}</div>}
+    >
+      {() => (
         <div className="w-full flex flex-col gap-2">
           <TableSimple columns={columns} rows={rows} tableTitle="" />
           <TablePagination
@@ -167,6 +179,8 @@ const TopicsTable = () => {
             }}
           />
         </div>
+      )}
+    </AsyncSection>
   );
 };
 

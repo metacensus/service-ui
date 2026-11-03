@@ -16,6 +16,7 @@ RUN npm ci
 COPY . .
 
 # The SPA calls the API with relative /metacensus/* paths and lets whatever
+# same origin.
 RUN npm run build
 
 # --- Runner stage: host the static bundle with Caddy (no routing, no API proxy) ---

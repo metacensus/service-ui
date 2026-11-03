@@ -140,6 +140,7 @@ const CreateCustomProtocol = ({
               },
             };
 
+            const headers = getAuthHeaders();
             const createTopic = await fetch(routes.api.protocolCreate, {
               method: "POST",
               headers,
