@@ -5,6 +5,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import React from "react";
 import ReactDOM from "react-dom/client";
 
+import { del } from "@/lib/indexdb";
 import { router } from "./router";
 
 const rootElement = document.getElementById("root")!;
@@ -14,3 +15,4 @@ ReactDOM.createRoot(rootElement).render(
     <RouterProvider router={router} />
   </React.StrictMode>
 );
+
