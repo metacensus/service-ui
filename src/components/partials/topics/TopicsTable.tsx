@@ -11,6 +11,9 @@ import { useMemo, useState } from "react";
 import { Topic } from "../../../../types/Topic";
 import TableSimple from "../../shared/TableSimple";
 
+// TextBubble supplies the padding.
+const PILL = "mr-2 bg-secondary w-fit rounded-lg";
+
 const TopicsTable = () => {
   const [page, setPage] = useState(1);
 
@@ -38,22 +41,27 @@ const TopicsTable = () => {
     () => [
       {
         content: <span>Topic</span>,
+        className: "text-lg",
         columnId: "topic",
       },
       {
         content: <span>Domain</span>,
+        className: "text-lg",
         columnId: "domain",
       },
       {
         content: <span>Category</span>,
+        className: "text-lg",
         columnId: "categories",
       },
       {
         content: <span>Admins</span>,
+        className: "text-lg",
         columnId: "admins",
       },
       {
         content: <span>Contributors</span>,
+        className: "text-lg",
         columnId: "contributors",
       },
       { content: <span></span>, className: "", columnId: "actions" },
@@ -73,6 +81,7 @@ const TopicsTable = () => {
                 >
                   {topic.name}
                 </Link>
+                <span className="text-muted-foreground text-sm line-clamp-3">
                   {topic.description}
                 </span>
               </span>
@@ -81,8 +90,11 @@ const TopicsTable = () => {
             columnId: "paper",
           },
           {
+            content: topic.domain?.name && (
               <TextBubble
+                text={topic.domain.name}
                 color="gray"
+                className={PILL}
               />
             ),
             className: "",
@@ -96,6 +108,7 @@ const TopicsTable = () => {
                     key={index}
                     text={item?.category?.name}
                     color="gray"
+                    className={PILL}
                   />
                 ))}
               </div>
@@ -112,6 +125,7 @@ const TopicsTable = () => {
                     key={index}
                     text={item.admin.name}
                     color="gray"
+                    className={PILL}
                   />
                 ))}
               </div>
@@ -127,6 +141,7 @@ const TopicsTable = () => {
                     key={index}
                     text={item.contributor.name}
                     color="gray"
+                    className={PILL}
                   />
                 ))}
               </div>
@@ -154,6 +169,7 @@ const TopicsTable = () => {
             [
               {
                 content: (
+                  <span className="flex items-center space-x-2 text-muted-foreground text-xl">
                     Loading...
                   </span>
                 ),

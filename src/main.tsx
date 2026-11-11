@@ -1,3 +1,4 @@
+// library-ui fonts.css lacks the 600 that font-semibold renders at.
 import "@fontsource/inter/600.css";
 import "./app/globals.css";
 

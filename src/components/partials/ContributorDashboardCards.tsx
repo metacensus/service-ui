@@ -36,6 +36,7 @@ const DashboardCard = ({ title, count, items }: DashboardCardProps) => {
           {items.map((item: Topic) => (
             <Link key={item.id} href={`/topics/${item.id}/topic-dashboard`}>
               <p
+                className="mt-4 text-sm bg-secondary rounded-lg py-1 px-2 inline-block max-w-full md:overflow-hidden md:text-ellipsis md:whitespace-nowrap"
                 key={item.id}
               >
                 {item.name}

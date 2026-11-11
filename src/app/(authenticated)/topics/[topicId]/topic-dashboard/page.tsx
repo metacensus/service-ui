@@ -43,6 +43,7 @@ const TopicsDashboard = ({ params }: Props) => {
   const topicsQuery = useFetchData<undefined, Topic[]>(routes.api.topic, [
     "topics",
   ]);
+  const topic = topicsQuery.data?.find((item) => item.id === topicId) || null;
 
   const propsQuery = useFetchData<undefined, Prop[]>(
     `${routes.api.topic}/${topicId}/prop`,
@@ -80,6 +81,7 @@ const TopicsDashboard = ({ params }: Props) => {
   const [editProtocolOpen, setEditProtocolOpen] = useState(false);
   const [createQuestionOpen, setCreateQuestionOpen] = useState(false);
 
+  const skeleton = (
     <div className="flex flex-col w-full gap-4 mt-8">
       <Skeleton className="h-48 rounded-xl" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -94,6 +96,7 @@ const TopicsDashboard = ({ params }: Props) => {
     </div>
   );
 
+  const dashboard = (
     <div className="flex flex-col w-full">
       <div className="mt-2 w-full flex justify-end items-center gap-2">
         <TopicActionItems topicId={topicId} />
@@ -128,6 +131,7 @@ const TopicsDashboard = ({ params }: Props) => {
               {INVESTIGATIONAL_APPROACHES.map((approach) => (
                 <li
                   key={approach}
+                  className="rounded-md bg-mc-tint-purple-fill px-2.5 py-1 text-sm font-medium text-mc-tint-purple-ink"
                 >
                   {approach}
                 </li>
@@ -145,6 +149,7 @@ const TopicsDashboard = ({ params }: Props) => {
               }
               loading={<Skeleton className="h-10 w-48 rounded-lg" />}
               error={
+                <p className="text-xs text-mc-alert-ink">
                   Could not load the protocol for this topic.
                 </p>
               }
@@ -248,11 +253,27 @@ const TopicsDashboard = ({ params }: Props) => {
       )}
     </div>
   );
+
+  return (
+    <AsyncSection
+      query={topicsQuery}
+      isEmpty={() => false}
+      empty={null}
+      loading={skeleton}
+      error={
+        <div className="flex flex-col w-full items-center gap-2 py-24 text-center">
+          <p className="text-lg font-semibold">
             Could not load this topic
           </p>
+          <p className="text-sm text-muted-foreground">
             The request failed. Reload the page to try again.
           </p>
         </div>
+      }
+    >
+      {() => dashboard}
+    </AsyncSection>
+  );
 };
 
 export default TopicsDashboard;

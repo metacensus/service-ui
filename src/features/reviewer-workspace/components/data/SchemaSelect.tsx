@@ -5,6 +5,7 @@ import { Check, ChevronDown, ChevronRight, Info, Search, X } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MembershipEditor, type MembershipEditorOutcome } from "@/features/reviewer-workspace/components/MembershipEditor";
 import type { WorkingSetControls } from "@/features/reviewer-workspace/hooks/useWorkingSet";
+import { demoLabel, orderFeatured } from "@/features/reviewer-workspace/model/drilldown/demoLabels";
 import {
   batchSaveMessage,
   canSelectAll,
@@ -20,6 +21,7 @@ import {
   workingSetViewLabel,
   type TableView,
 } from "@/features/reviewer-workspace/model/workingSetControls";
+import type { RunLabels } from "@/features/reviewer-workspace/types";
 import {
   GROUPS,
   categoriesFor,
@@ -53,6 +55,7 @@ export type SelectState = {
 
 export const INITIAL_SELECT_STATE: SelectState = {
   scope: "all",
+  scopePaper: "",
   group: "Variants",
   selection: {},
   combine: "any",
@@ -63,6 +66,7 @@ export const INITIAL_SELECT_STATE: SelectState = {
 
 const ITEM_PREVIEW = 12;
 const TEXT_BUTTON_CLASS =
+  "text-sm font-medium text-muted-foreground underline-offset-2 enabled:hover:text-foreground enabled:hover:underline disabled:cursor-default disabled:text-mc-ink-secondary";
 
 /* --------------------------------------------------------------- helpers */
 
@@ -85,6 +89,7 @@ function Segmented<T extends string>({
   badge?: (value: T) => number;
 }) {
   return (
+    <div role="group" aria-label={label} className="inline-flex max-w-full flex-wrap gap-1 rounded-md bg-secondary p-1 text-sm">
       {options.map((option) => {
         const count = badge?.(option.value) ?? 0;
         return (
@@ -94,6 +99,7 @@ function Segmented<T extends string>({
             aria-pressed={value === option.value}
             onClick={() => onChange(option.value)}
             className={`inline-flex h-8 items-center gap-1.5 rounded px-3 font-medium transition-colors ${
+              value === option.value ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {option.label}
@@ -121,6 +127,7 @@ function InfoTip({ label, text }: { label: string; text: string }) {
         onKeyDown={(event) => {
           if (event.key === "Escape") setOpen(false);
         }}
+        className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Info className="h-4 w-4" aria-hidden />
       </button>
@@ -128,6 +135,7 @@ function InfoTip({ label, text }: { label: string; text: string }) {
         <span
           id={id}
           role="tooltip"
+          className="absolute left-1/2 top-full z-30 mt-1 w-64 -translate-x-1/2 rounded-md border bg-white px-3 py-2 text-xs leading-5 text-foreground shadow-lg"
         >
           {text}
         </span>
@@ -144,6 +152,8 @@ const INFO = {
 
 function StepLabel({ n, children }: { n: number; children: ReactNode }) {
   return (
+    <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+      <span className="grid h-5 w-5 place-items-center rounded-full bg-secondary text-[11px] text-foreground">{n}</span>
       {children}
     </div>
   );
@@ -177,6 +187,8 @@ function Chip({
         chosen
           ? color
             ? ""
+            : "border-foreground bg-white text-foreground"
+          : "bg-white text-foreground hover:border-mc-ink-secondary hover:bg-secondary/50"
       }`}
     >
       {chosen && color && <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color.dot }} />}
@@ -191,6 +203,7 @@ function Chip({
 
 export default function SchemaSelect({
   index,
+  labels,
   curated,
   state,
   setState,
@@ -201,15 +214,19 @@ export default function SchemaSelect({
   workingSet,
 }: {
   index: SchemaIndex;
+  labels: RunLabels;
   curated: Map<string, string>;
   state: SelectState;
   setState: (update: (state: SelectState) => SelectState) => void;
   terms: Term[];
   colorOf: (term: Term) => TermColor;
   renderPaper: (paperId: string) => ReactNode;
+  /** Featured paper ids: listed first, badged, and the custom sort; unlisted papers follow A–Z. */
   customOrder: string[];
   workingSet: WorkingSetControls;
 }) {
+  const allPapers = useMemo(() => orderFeatured(index.papers, customOrder), [index.papers, customOrder]);
+  const badgeOf = (paperId: string) => (customOrder.includes(paperId) ? labels.featured_badge : undefined);
   // Ticks only select; the working set changes through the editor. A tick hidden by the filter is kept but ignored.
   const [ticked, setTicked] = useState<ReadonlySet<string>>(() => new Set());
   const [editorOpen, setEditorOpen] = useState(false);
@@ -221,7 +238,9 @@ export default function SchemaSelect({
   const scoped = state.scope === "one" ? allPapers.filter((paper) => paper.paper_id === state.scopePaper) : allPapers;
   const group = state.group;
   const layerGroup = group === "Paper" ? null : (group as LayerGroup);
+  const categories = layerGroup ? categoriesFor(labels, layerGroup, scoped, curated) : [];
   const chosen = layerGroup ? state.selection[layerGroup] ?? {} : {};
+  const tag = labels.tag_variant;
   const termByKey = new Map(terms.map((term) => [term.key, term]));
 
   const papersWith = (category: CategoryDef, item?: string) =>
@@ -346,6 +365,9 @@ export default function SchemaSelect({
             { value: "all", label: "All papers" },
             { value: "one", label: "One paper" },
           ]}
+          onChange={(scope) =>
+            setState((current) => ({ ...current, scope, scopePaper: current.scopePaper || allPapers[0]?.paper_id || "" }))
+          }
         />
         {state.scope === "one" && (
           <select
@@ -403,6 +425,7 @@ export default function SchemaSelect({
               picked={state.selection.Paper ?? []}
               colorFor={(id) => colorOfKey(`Paper|${id}`)}
               onToggle={(id) => update((selection) => ({ ...selection, Paper: toggled(selection.Paper ?? [], id) }))}
+              badgeOf={badgeOf}
             />
           </div>
         )}
@@ -419,14 +442,25 @@ export default function SchemaSelect({
                 papers={scoped}
                 corpus={allPapers}
                 picked={chosen[category.key] ?? []}
+                labels={labels}
                 curated={curated}
                 colorFor={(item) => colorOfKey(`${layerGroup}|${category.key}|${item}`)}
                 onToggle={(item) => toggleItem(category.key, item)}
                 tagOffer={
+                  tag &&
                   layerGroup === "Variants" &&
+                  category.key !== tag.category &&
+                  (chosen[category.key] ?? []).some((item) => tag.offered_for.includes(item))
                     ? {
+                        name: tag.name,
+                        under: tag.values.map((value) => demoLabel(labels, "entity_locus_type", value) ?? value),
+                        label: itemLabel(labels, "Variants", "tag", tag.item, curated),
                         papers: scoped.filter((paper) =>
+                          Object.values(paper.items.Variants ?? {}).some((items) => (items[tag.item] ?? 0) > 0)
                         ).length,
+                        included: (state.selection.Variants?.[tag.category] ?? []).includes(tag.item),
+                        color: colorOfKey(`Variants|${tag.category}|${tag.item}`),
+                        onToggle: () => toggleItem(tag.category, tag.item),
                       }
                     : undefined
                 }
@@ -470,6 +504,7 @@ export default function SchemaSelect({
             <button
               type="button"
               onClick={() => setState((current) => ({ ...current, selection: {} }))}
+              className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               Clear
             </button>
@@ -477,6 +512,7 @@ export default function SchemaSelect({
         )}
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <div className="flex flex-col items-start">
+            <h2 className="text-lg font-semibold text-foreground">
               {results.length} {results.length === 1 ? "paper" : "papers"}
             </h2>
             {workingSet.status === "ready" && (
@@ -600,6 +636,7 @@ export default function SchemaSelect({
               </MembershipEditor>
             )}
             {workingSet.status !== "loading" && (
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium tabular-nums text-foreground">
                 {workingSet.status === "ready" ? `Working set ${workingSet.active.size}` : "Working set unavailable"}
               </span>
             )}
@@ -610,6 +647,7 @@ export default function SchemaSelect({
       {/* results */}
       <div className="mt-3 overflow-hidden rounded-lg border bg-white shadow-sm">
         {results.length === 0 && (
+          <p className="px-4 py-6 text-sm text-muted-foreground">
             {effectiveView === "workingSet" && workingSet.active.size === 0
               ? "The working set is empty."
               : terms.length === 0
@@ -618,6 +656,8 @@ export default function SchemaSelect({
           </p>
         )}
         {results.map(({ paper, hits, findings }) => (
+          <div key={paper.paper_id} className="border-b last:border-b-0">
+          <div className={`flex items-center gap-2 pl-2 md:pl-3 ${isOpen.has(paper.paper_id) ? "bg-secondary/50" : ""}`}>
             {workingSet.status === "ready" ? (
               <label className="grid h-10 w-8 shrink-0 cursor-pointer place-items-center">
                 <input
@@ -625,6 +665,7 @@ export default function SchemaSelect({
                   checked={ticked.has(paper.paper_id)}
                   onChange={(event) => setTicks([paper.paper_id], event.target.checked)}
                   aria-label={`Select ${paperName(paper)}`}
+                  className="h-4 w-4"
                 />
               </label>
             ) : (
@@ -635,8 +676,10 @@ export default function SchemaSelect({
               type="button"
               aria-expanded={isOpen.has(paper.paper_id)}
               onClick={() => toggleOpen(paper.paper_id)}
+              className="group flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left transition-colors hover:bg-secondary/50 md:pr-4"
             >
               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
+                <span className="min-w-0 break-words text-[15px] font-semibold text-foreground">{paperName(paper)}</span>
                 {hits.length > 0 && (
                   <span className="flex flex-wrap items-center gap-1" aria-label="Contains">
                     {hits.map(({ term, count }) => (
@@ -649,11 +692,16 @@ export default function SchemaSelect({
                     ))}
                   </span>
                 )}
+                {badgeOf(paper.paper_id) && (
+                  <span className="rounded-md bg-mc-tint-purple-fill px-1.5 py-0.5 text-[11px] font-semibold text-mc-tint-purple-ink ring-1 ring-inset ring-mc-line-accent">
+                    {badgeOf(paper.paper_id)}
                   </span>
                 )}
               </span>
+              <span className="shrink-0 text-right text-xs tabular-nums text-muted-foreground">
                 {terms.length > 0 ? (
                   <>
+                    <span className="font-semibold text-foreground">{findings}</span>
                     <span className="hidden sm:inline"> of {paper.row_count} findings</span>
                     <span className="sm:hidden">/{paper.row_count}</span>
                   </>
@@ -665,6 +713,7 @@ export default function SchemaSelect({
                 )}
               </span>
               <ChevronRight
+                className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:text-foreground ${
                   isOpen.has(paper.paper_id) ? "rotate-90" : ""
                 }`}
                 aria-hidden
@@ -672,6 +721,7 @@ export default function SchemaSelect({
             </button>
           </div>
           {isOpen.has(paper.paper_id) && (
+            <div className="border-t bg-secondary/50">{renderPaper(paper.paper_id)}</div>
           )}
           </div>
         ))}
@@ -680,6 +730,7 @@ export default function SchemaSelect({
   );
 }
 
+/** Shape and colour both differ: a filled disc is in, a hollow ring is out. */
 function WorkingSetIcon({ inSet }: { inSet: boolean }) {
   const label = inSet ? "In working set" : "Not in working set";
   return (
@@ -688,6 +739,7 @@ function WorkingSetIcon({ inSet }: { inSet: boolean }) {
       aria-label={label}
       title={label}
       className={`box-border h-3 w-3 shrink-0 rounded-full border-2 ${
+        inSet ? "border-mc-fill-solid bg-mc-fill-solid" : "border-mc-alert-border bg-white"
       }`}
     />
   );
@@ -717,6 +769,7 @@ function ItemPanel({
   category,
   papers,
   picked,
+  labels,
   curated,
   colorFor,
   onToggle,
@@ -730,13 +783,26 @@ function ItemPanel({
   /** All papers: the single-paper rule counts papers corpus-wide, whatever the scope. */
   corpus: PaperIndex[];
   picked: string[];
+  labels: RunLabels;
   curated: Map<string, string>;
   colorFor: (item: string) => TermColor | undefined;
   onToggle: (item: string) => void;
   onClear: () => void;
+  tagOffer?: {
+    name: string;
+    /** Categories the tag's term matches under. */
+    under: string[];
+    label: string;
+    papers: number;
+    included: boolean;
+    color?: TermColor;
+    onToggle: () => void;
+  };
 }) {
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
+  // Items seen in only one paper are mostly normalization noise.
+  const hideSingles = group === "Variants" && category.key === labels.single_paper_hidden_category;
   const corpusPapers = useMemo(
     () => (hideSingles ? itemStats(corpus, group, category.values) : new Map<string, { papers: number }>()),
     [category, corpus, group, hideSingles]
@@ -744,7 +810,9 @@ function ItemPanel({
   const allItems = useMemo(
     () =>
       [...itemStats(papers, group, category.values).entries()]
+        .map(([id, counts]) => ({ id, label: itemLabel(labels, group, category.key, id, curated), ...counts }))
         .sort((a, b) => b.papers - a.papers || b.findings - a.findings || a.label.localeCompare(b.label)),
+    [category, curated, group, labels, papers]
   );
   const items = hideSingles ? allItems.filter((item) => (corpusPapers.get(item.id)?.papers ?? 0) > 1) : allItems;
 
@@ -756,18 +824,23 @@ function ItemPanel({
   const pickedOutsidePreview = allItems.filter((item) => picked.includes(item.id) && !shown.includes(item));
 
   return (
+    <div className="mt-4 rounded-md border bg-secondary/50 p-3">
       <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center">
         <StepLabel n={3}>
+          <span className="normal-case tracking-normal text-foreground">{category.label}</span>
         </StepLabel>
+        <span className="-mt-2 text-xs text-muted-foreground md:mt-[-0.5rem]">
           {picked.length === 0 ? (
             "Any item. Pick items to narrow."
           ) : (
+            <button type="button" onClick={onClear} className="underline-offset-2 hover:text-foreground hover:underline">
               {picked.length} picked · back to any item
             </button>
           )}
         </span>
         {items.length > ITEM_PREVIEW && (
           <div className="relative md:-mt-2 md:ml-auto md:w-64">
+            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden />
             <input
               aria-label={`Search ${category.label}`}
               value={query}
@@ -792,13 +865,17 @@ function ItemPanel({
             onClick={() => onToggle(item.id)}
           />
         ))}
+        {matching.length === 0 && <span className="text-sm text-muted-foreground">No items match “{query.trim()}”.</span>}
       </div>
       {tagOffer && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-sm text-foreground">
+          <span>Often typed by its {tagOffer.name} instead:</span>
           <Chip
             label={`${tagOffer.included ? "" : "+ "}${tagOffer.label}`}
             count={tagOffer.papers}
             chosen={tagOffer.included}
             color={tagOffer.color}
+            title={`Adds the ${tagOffer.name} as its own selection, under ${tagOffer.under.join(" or ")}`}
             onClick={tagOffer.onToggle}
           />
         </div>
@@ -807,6 +884,7 @@ function ItemPanel({
         <button
           type="button"
           onClick={() => setShowAll((value) => !value)}
+          className="mt-2 text-sm font-medium text-mc-ink-accent hover:underline"
         >
           {showAll ? "Show the most frequent only" : `Show all ${items.length}`}
         </button>
@@ -822,11 +900,13 @@ function PaperPicker({
   picked,
   colorFor,
   onToggle,
+  badgeOf,
 }: {
   papers: PaperIndex[];
   picked: string[];
   colorFor: (paperId: string) => TermColor | undefined;
   onToggle: (paperId: string) => void;
+  badgeOf: (paperId: string) => string | undefined;
 }) {
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
@@ -842,13 +922,16 @@ function PaperPicker({
           <button
             type="button"
           >
+            <span className={picked.length ? "" : "text-muted-foreground"}>
               {picked.length === 0 ? "Select papers" : `${picked.length} ${picked.length === 1 ? "paper" : "papers"} selected`}
             </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[min(24rem,calc(100vw-2rem))] p-0">
           <div className="border-b p-2">
             <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden />
               <input
                 aria-label="Find papers"
                 autoFocus
@@ -861,6 +944,7 @@ function PaperPicker({
           <div role="listbox" aria-multiselectable className="max-h-80 overflow-y-auto py-1">
             {shown.map((paper) => {
               const on = picked.includes(paper.paper_id);
+              const badge = badgeOf(paper.paper_id);
               const color = colorFor(paper.paper_id);
               return (
                 <button
@@ -869,14 +953,19 @@ function PaperPicker({
                   role="option"
                   aria-selected={on}
                   onClick={() => onToggle(paper.paper_id)}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-secondary/50"
                 >
                   <span
+                    style={on ? { backgroundColor: color?.dot ?? "var(--mc-ink)" } : undefined}
                   >
                     {on && <Check className="h-3 w-3" aria-hidden />}
                   </span>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{paperName(paper)}</span>
+                  {badge && <span className="shrink-0 text-[11px] font-semibold text-mc-ink-accent">{badge}</span>}
                 </button>
               );
             })}
+            {shown.length === 0 && <p className="px-3 py-2 text-sm text-muted-foreground">No papers match.</p>}
           </div>
         </PopoverContent>
       </Popover>

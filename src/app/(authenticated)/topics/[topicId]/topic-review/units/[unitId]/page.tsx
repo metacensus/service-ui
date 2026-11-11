@@ -50,6 +50,7 @@ const TopicReviewUnit = ({ params }: Props) => {
     reviewerName,
     storageMode,
     reviewSeed,
+    reviewSeedPending,
     actionsQuery,
     setReviewerName,
     bulkUpsertActions,
@@ -104,6 +105,8 @@ const TopicReviewUnit = ({ params }: Props) => {
         data-testid="task-page-message"
         className={
           tone === "error"
+            ? "mt-6 mc-notice text-sm"
+            : "mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground"
         }
       >
         {text}
@@ -134,6 +137,7 @@ const TopicReviewUnit = ({ params }: Props) => {
       `This task's paper (${task.paperLabel}) isn't in the working set, so the task isn't shown. Add the paper in Data → Table, or turn off “Use working set” on the Review page.`
     );
   }
+  if (!inScope || docQuery.isPending || actionsQuery.isPending || reviewSeedPending) return loading;
   if (docQuery.isError) {
     return message("This paper's review tasks could not be loaded, so this task can't be shown.", "error");
   }

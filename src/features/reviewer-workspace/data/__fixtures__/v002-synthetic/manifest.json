@@ -1,0 +1,5 @@
+{
+  "run_id": "v002-fixture",
+  "snapshot_format_version": "v002",
+  "papers": [{ "paper_id": "Paper_A", "row_count": 2 }]
+}

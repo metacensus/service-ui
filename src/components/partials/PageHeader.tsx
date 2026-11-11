@@ -28,7 +28,10 @@ const PageHeader = ({ pageName, id, titleProp }: PageHeaderProps) => {
   }, [topic, titleProp]);
 
   const status = useMemo(() => {
+    if (topic?.status) {
+      const color = statusMap[topic.status] || "gray";
 
+      return <TextBubble text={topic.status} color={color} />;
     }
     return null;
   }, [topic]);
@@ -56,9 +59,11 @@ const PageHeader = ({ pageName, id, titleProp }: PageHeaderProps) => {
       <div className="flex flex-row space-x-2">
         <Link
           href={`/${pageName}`}
+          className="xl:text-2xl text-mc-ink-accent font-bold capitalize cursor-pointer"
         >
           {pageName} /{" "}
         </Link>
+        <div className="xl:text-2xl font-bold">
           {`${title}`}
         </div>
       </div>

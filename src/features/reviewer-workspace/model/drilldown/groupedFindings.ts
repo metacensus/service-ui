@@ -19,6 +19,7 @@ import { rawLabelFor } from "@/features/reviewer-workspace/model/display";
 import type { RowReviewState } from "@/features/reviewer-workspace/model/rowStatus";
 import type {
   Row,
+  RunLabels,
   SchemaPresentation,
 } from "@/features/reviewer-workspace/types";
 import { prettyValue } from "./displayLabel";
@@ -47,6 +48,8 @@ import {
 } from "./fieldMap";
 
 /** Display label for a field; the field name itself stays visible in detail. */
+export function fieldLabel(labels: RunLabels, field: string): string {
+  const override = labels.field_labels[field];
   if (override) return override;
   // Raw-only fields drop the "Raw" suffix; the field name stays in tooltips.
   return humanizeDataWorkspaceField(field).replace(/ Raw$/, "");
@@ -142,6 +145,7 @@ function withNormalized(priority: string[], presentation?: SchemaPresentation): 
 }
 
 export function buildPartner(
+  labels: RunLabels,
   row: Row,
   field: string,
   presentation?: SchemaPresentation
@@ -154,6 +158,7 @@ export function buildPartner(
   if (text === displayText(row, field)) return null;
   return {
     field: partner.field,
+    label: fieldLabel(labels, partner.field),
     text,
     role: partner.role,
   };
@@ -233,6 +238,7 @@ export type SharedChip = {
 };
 
 export function buildSharedChips(
+  labels: RunLabels,
   rows: Row[],
   sharedFields: string[],
   varyingFields: string[],
@@ -261,6 +267,7 @@ export function buildSharedChips(
     if (partnerRef && sharedSet.has(partnerRef.field)) {
       // Both halves agree across the whole group: one chip carries both.
       consumed.add(partnerRef.field);
+      partner = buildPartner(labels, rows[0], field, presentation);
     } else if (partnerRef && varyingSet.has(partnerRef.field)) {
       const forms = new Set(
         rows.map((row) => valueKey(dataWorkspaceFieldValue(row, partnerRef.field)))
@@ -273,6 +280,7 @@ export function buildSharedChips(
 
     chips.push({
       field,
+      label: fieldLabel(labels, field),
       text: displayText(rows[0], field),
       partner,
       note,
@@ -299,6 +307,7 @@ export type PaperContext = {
 };
 
 export function buildPaperContext(
+  labels: RunLabels,
   rows: Row[],
   presentation?: SchemaPresentation
 ): PaperContext {
@@ -309,6 +318,7 @@ export function buildPaperContext(
     const missing = citationAgreement.absent.includes(field);
     return {
       field,
+      label: fieldLabel(labels, field),
       text: consistent
         ? displayText(rows[0], field)
         : missing
@@ -322,6 +332,7 @@ export function buildPaperContext(
   const candidates = [...PAPER_LEVEL_CANDIDATES];
   const agreement = agreementOver(rows, candidates);
   const lifted = buildSharedChips(
+    labels,
     rows,
     agreement.shared,
     agreement.varying,
@@ -331,6 +342,7 @@ export function buildPaperContext(
   );
   const exceptions = agreement.varying.map((field) => ({
     field,
+    label: fieldLabel(labels, field),
     distinct: agreement.distinct.get(field) ?? 0,
   }));
 
@@ -483,14 +495,17 @@ export type GroupProjection = {
 };
 
 function buildCell(
+  labels: RunLabels,
   row: Row,
   field: string,
   presentation?: SchemaPresentation
 ): Cell {
   return {
     field,
+    label: fieldLabel(labels, field),
     text: cellText(row, field),
     populated: isPopulated(row, field),
+    partner: buildPartner(labels, row, field, presentation),
   };
 }
 
@@ -498,9 +513,11 @@ function numberText(row: Row, field: string): string {
   return displayText(row, field);
 }
 
+function buildResult(labels: RunLabels, row: Row, presentation?: SchemaPresentation): ResultLine[] {
   const lines: ResultLine[] = [];
   const measureType = dataWorkspaceFieldValue(row, RESULT_FIELDS.measureType);
   const measureLabel =
+    labels.measure_labels[String(measureType)] ??
     (measureType ? readableToken(String(measureType)) : "Effect");
 
   if (isPopulated(row, RESULT_FIELDS.estimate)) {
@@ -592,6 +609,7 @@ function numberText(row: Row, field: string): string {
       id: field,
       muted: false,
       atoms: [
+        { kind: "label", text: fieldLabel(labels, field) },
         {
           kind: "value",
           field,
@@ -699,6 +717,7 @@ function resultSignature(lines: ResultLine[]): string {
 }
 
 export function projectGroup(
+  labels: RunLabels,
   group: FindingGroup,
   presentation: SchemaPresentation | undefined,
   paperLifted: Set<string>,
@@ -784,6 +803,7 @@ export function projectGroup(
   const overflowFields = distinguishingCandidates.slice(DISTINGUISHING_COLUMN_LIMIT);
 
   const sharedChips = buildSharedChips(
+    labels,
     rows,
     agreement.shared.filter((field) => !paperLifted.has(field)),
     agreement.varying,
@@ -792,17 +812,23 @@ export function projectGroup(
   );
 
   const projections: RowProjection[] = rows.map((row) => {
+    const identity = identityField ? buildCell(labels, row, identityField, presentation) : null;
     const comparison =
       showComparisonColumn &&
       COMPARISON_FIELDS.group !== identityField &&
       !comparisonMirrorsIdentity
+        ? buildCell(labels, row, COMPARISON_FIELDS.group, presentation)
         : null;
     const reference = showComparisonColumn
+      ? buildCell(labels, row, COMPARISON_FIELDS.reference, presentation)
       : null;
     const comparisonType = varying.has(COMPARISON_FIELDS.type)
+      ? buildCell(labels, row, COMPARISON_FIELDS.type, presentation)
       : null;
     const distinguishing = distinguishingFields.map((field) =>
+      buildCell(labels, row, field, presentation)
     );
+    const result = buildResult(labels, row, presentation);
     const signature = [
       identity?.text ?? "",
       comparison?.text ?? "",
@@ -858,6 +884,7 @@ export function projectGroup(
           ? `Same summary as ${others} — differs in ${named
               .map(
                 (field) =>
+                  `${fieldLabel(labels, field)} = ${cellText(projection.row, field)}`
               )
               .join("; ")}${differing.length > named.length ? ` (+${differing.length - named.length} more fields)` : ""}`
           : `Every extracted field is identical to ${others}. Both records are kept; open the detail to compare provenance.`;
@@ -870,6 +897,7 @@ export function projectGroup(
     sharedOverflow: sharedChips.slice(SHARED_STRIP_LIMIT),
     identityField,
     identityLabel: identityField
+      ? fieldLabel(labels, identityField)
       : "Finding",
     showComparisonColumn,
     comparisonMirrorsIdentity,
@@ -897,6 +925,7 @@ export function projectGroup(
  * searched. There is no synonym expansion beyond the displayed labels.
  */
 export function rowMatchesQuery(
+  labels: RunLabels,
   row: Row,
   query: string,
   presentation?: SchemaPresentation
@@ -922,6 +951,7 @@ export function rowMatchesQuery(
   for (const fieldName of allFieldNames([row])) {
     if (!isPopulated(row, fieldName)) continue;
     const label = prettyValue(
+      labels,
       displayText(row, fieldName),
       fieldName,
       dataWorkspaceFieldValue(row, fieldName)
@@ -937,6 +967,7 @@ export function rowMatchesQuery(
  * built from the complete row set — this only narrows what is displayed.
  */
 export function matchedRowIndexes(
+  labels: RunLabels,
   rows: Row[],
   filters: {
     query: string;
@@ -948,6 +979,7 @@ export function matchedRowIndexes(
 ): Set<number> {
   const matched = new Set<number>();
   for (const row of rows) {
+    if (!rowMatchesQuery(labels, row, filters.query, presentation)) continue;
     if (!dataWorkspaceRowMatchesField(row, filters.fieldFilter)) continue;
     if (filters.statusFilter !== "all") {
       const targets = dataWorkspaceFieldStatusTargets(row, filters.fieldFilter);
@@ -1111,6 +1143,7 @@ const EMPTY_KEY = "∅";
  * filters only hide nodes, they never reshape the tree.
  */
 export function buildTieredTree(
+  labels: RunLabels,
   rows: Row[],
   presentation: SchemaPresentation | undefined,
   paperLifted: Set<string>,
@@ -1205,6 +1238,7 @@ export function buildTieredTree(
         split: null,
         children: [],
         projection: projectGroup(
+          labels,
           findingGroup,
           presentation,
           new Set([...paperLifted, ...shownAbove]),
@@ -1218,6 +1252,7 @@ export function buildTieredTree(
     const chips = depth === 0
       ? []
       : buildSharedChips(
+          labels,
           group,
           agreement.shared.filter((field) => !paperLifted.has(field) && field !== node.field),
           [],
@@ -1282,10 +1317,13 @@ function paperLiftedOf(paperContext: ReturnType<typeof buildPaperContext> | null
 }
 
 export function buildPaperTree(
+  labels: RunLabels,
   rows: Row[],
   presentation: SchemaPresentation | undefined,
   order: TreeOrder
 ): TreeNode {
+  const paperContext = rows.length > 0 ? buildPaperContext(labels, rows, presentation) : null;
+  return buildTieredTree(labels, rows, presentation, paperLiftedOf(paperContext), order);
 }
 
 export function treeLeaves(node: TreeNode): TreeNode[] {

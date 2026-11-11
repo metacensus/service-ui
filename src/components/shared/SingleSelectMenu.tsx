@@ -1,6 +1,8 @@
 import useOnClickOutside from "@/hooks/useOnClickOutside";
 import { cn } from "@/lib/utils";
+import { styles } from "@/styles";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useId, useRef, useState } from "react";
 import DropdownMenu from "./DropdownMenu";
 
 type SingleSelectProps = {
@@ -27,6 +29,8 @@ const SingleSelectMenu = ({
   label,
 }: SingleSelectProps) => {
   const ref = useRef(null);
+  const id = useId();
+  const Chevron = open ? ChevronUp : ChevronDown;
   const [query, setQuery] = useState("");
 
   const selectedId = selectedItem?.id || null;
@@ -38,12 +42,30 @@ const SingleSelectMenu = ({
   });
 
   return (
+    <div ref={ref} className="flex flex-col gap-1">
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
+      <button
+        type="button"
+        id={id}
+        aria-expanded={open}
+        className={cn(
+          styles.focusRing
+        )}
         onClick={() => setOpen(!open)}
       >
         <span
           className={cn(
+            "pl-2 text-sm",
+            selectedId ? "font-medium" : "text-muted-foreground"
           )}
         >
+          {options.find((option) => option.id === Number(selectedId))?.name ||
+            placeholder}
+        </span>
+        <Chevron className="ml-auto mr-4 w-5 h-5 text-muted-foreground" />
+      </button>
       {open && (
         <DropdownMenu
           name={name}

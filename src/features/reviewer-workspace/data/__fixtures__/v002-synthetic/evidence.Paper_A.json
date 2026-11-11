@@ -1,0 +1,11 @@
+{
+  "snapshot_format_version": "v002",
+  "paper_id": "Paper_A",
+  "sources": [
+    { "quote": "quote 0", "location": "loc 0", "page": 1 },
+    { "quote": "quote 1", "location": "loc 1", "page": 2 },
+    { "quote": "quote 2", "location": "loc 2", "page": 3 }
+  ],
+  "reasoning": ["reasoning 0"],
+  "derivation": ["derivation 0"]
+}

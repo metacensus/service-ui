@@ -29,6 +29,7 @@ import { useFetchData } from "@/hooks/useFetchData";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { FieldError, Notice } from "@metacensus/library-ui";
 import clsx from "clsx";
 import { format } from "date-fns";
 import { Dispatch, FC, SetStateAction, useMemo, useState } from "react";
@@ -323,6 +324,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
               value={fieldType}
               onValueChange={(value) => setFieldType(value)}
             >
+              <SelectTrigger id="field-type" aria-label="Field" className="sm:w-[200px]">
                 <SelectValue placeholder="Select Field" />
               </SelectTrigger>
               <SelectContent>
@@ -335,6 +337,8 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
             </Select>
             {currentlySelectedTermFieldType === "string" && (
               <Input
+                id="field-term"
+                aria-label="Search term for the field"
                 className="flex-2"
                 name="field-term"
                 placeholder="Enter a search term"
@@ -423,6 +427,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
                 className="rounded-r-none"
                 onClick={updateSearchTerm}
                 type="button"
+                variant="secondary"
               >
                 {watch("searchTerm") ? addWith : "AND"}
               </Button>
@@ -430,8 +435,10 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
+                    className="rounded-l-none -ml-px px-3"
                     disabled={!watch("searchTerm")}
                     type="button"
+                    variant="secondary"
                   >
                   </Button>
                 </DropdownMenuTrigger>
@@ -459,9 +466,25 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
 
           <div className="flex gap-4">
             <div className="grid gap-1 flex-1">
+              <Textarea
+                id="search-term"
+                aria-label="Search Term"
+                aria-invalid={!!errors.searchTerm}
+                aria-describedby={
+                  errors.searchTerm ? "search-term-error" : undefined
+                }
+                placeholder="Search Term"
+                {...register("searchTerm")}
+              />
+              {errors.searchTerm && (
+                <FieldError id="search-term-error">
+                  {errors.searchTerm.message}
+                </FieldError>
+              )}
             </div>
           </div>
           <div>
+            <Button variant="secondary" className="gap-2" type="submit">
               <span>Search</span>
             </Button>
           </div>
@@ -471,6 +494,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
       <div className="prose mt-4">
         {isFetching && <p>Loading...</p>}
 
+        {status === "error" && <Notice>Error fetching data</Notice>}
         {status === "success" && !papers.length && <p>No results found</p>}
       </div>
 
@@ -539,8 +563,12 @@ const PaperListItem = ({
   return (
     <li className="prose max-w-full flex gap-4 prose-h4:mt-0">
       <div>
+        <input
+          id={`paper-${paper.uid}`}
           type="checkbox"
+          aria-label={paper.title}
           checked={isCheckboxChecked}
+          className="size-6"
           onChange={() => {
             togglePaperUid(paper.uid);
           }}
@@ -560,6 +588,7 @@ const PaperListItem = ({
             <TextBubble color="gray" key={index} text={author.name} />
           ))}
         </div>
+        <p className="text-xs text-muted-foreground">
           {paper.fulljournalname}. {paper.epubdate} {paper.essn}.{" "}
           {paper.elocationid}. {paper.pubtype.join(",")} {paper.epubdate}.
           <br />
@@ -578,6 +607,7 @@ const AbstractText: FC<{ abstract?: string | null }> = ({ abstract }) => {
     <div className="grid lg:flex justify-between items-baseline">
       <p
         className={clsx(
+          "text-xs text-muted-foreground",
           isExpanded ? "hover:line-clamp-none" : "line-clamp-2"
         )}
       >

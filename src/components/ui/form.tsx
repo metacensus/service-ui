@@ -12,6 +12,8 @@ import {
   useFormContext,
 } from "react-hook-form"
 
+import { FieldError } from "@metacensus/library-ui"
+
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
@@ -90,10 +92,12 @@ const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => {
+  const { formItemId } = useFormField()
 
   return (
     <Label
       ref={ref}
+      className={className}
       htmlFor={formItemId}
       {...props}
     />
@@ -140,6 +144,11 @@ const FormDescription = React.forwardRef<
 })
 FormDescription.displayName = "FormDescription"
 
+const FormMessage = ({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) => {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message) : children
 
@@ -148,8 +157,11 @@ FormDescription.displayName = "FormDescription"
   }
 
   return (
+    <FieldError id={formMessageId} className={className} {...props}>
       {body}
+    </FieldError>
   )
+}
 
 export {
   useFormField,

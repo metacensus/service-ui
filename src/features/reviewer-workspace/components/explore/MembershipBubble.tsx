@@ -18,9 +18,13 @@ import {
 
 // Shape carries the origin; colour only reinforces it.
 const DOT_CLASS: Record<MembershipDot, string> = {
+  "included-default": "rounded-full border border-solid border-mc-fill-solid bg-mc-fill-solid",
+  "included-recorded": "rounded-[2px] border border-dashed border-mc-line-accent bg-mc-line-accent",
+  "excluded-recorded": "rounded-full border-2 border-solid border-mc-alert-border bg-white",
 };
 
 const BUBBLE_CLASS =
+  "inline-flex items-center gap-1.5 rounded-full border bg-white px-2 py-0.5 align-middle text-[11px] font-bold leading-4 text-foreground";
 
 /** After a save moves a bubble (e.g. between summary lists), focus the one now shown. */
 function focusVisibleBubble(paperId: string, scope: ParentNode) {
@@ -57,6 +61,7 @@ export function MembershipBubble({
 
   if (unavailable) {
     return (
+      <button type="button" disabled className={`${BUBBLE_CLASS} cursor-default text-muted-foreground`}>
         {!workingSet || workingSet.status === "loading" ? "Checking…" : "Selection unavailable"}
       </button>
     );
@@ -100,6 +105,7 @@ export function MembershipBubble({
         type="button"
         data-membership-paper={paperId}
         aria-label={bubbleAriaLabel(title, member)}
+        className={`${BUBBLE_CLASS} cursor-pointer hover:border-mc-line-accent hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1`}
       >
         <span aria-hidden="true" data-membership-dot className={`box-border h-2.5 w-2.5 shrink-0 ${DOT_CLASS[membershipDot(member)]}`} />
         <span>{membershipShortLabel(member)}</span>

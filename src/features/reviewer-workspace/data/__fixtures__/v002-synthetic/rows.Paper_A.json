@@ -1,0 +1,37 @@
+[
+  {
+    "row_index": 0,
+    "identity": {},
+    "fields": { "total_n": 10, "outcome": "outcome-a" },
+    "provenance": {
+      "total_n": {
+        "type": "paper",
+        "sources": [0, 1, 0],
+        "derivation_kind": "verbatim",
+        "extraction_certainty": "clean"
+      },
+      "outcome": {
+        "type": "derived",
+        "sources": [2],
+        "source_components": [{ "label": "c", "value": 1, "sources": [1] }],
+        "reasoning": 0,
+        "derivation": 0,
+        "derivation_kind": "derived",
+        "extraction_certainty": "clean"
+      }
+    }
+  },
+  {
+    "row_index": 1,
+    "identity": {},
+    "fields": { "total_n": 10 },
+    "provenance": {
+      "total_n": {
+        "type": "paper",
+        "sources": [0],
+        "derivation_kind": "verbatim",
+        "extraction_certainty": "clean"
+      }
+    }
+  }
+]

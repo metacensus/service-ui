@@ -52,6 +52,7 @@ const ReviewLandingFilters = ({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
+            <Label className="text-xs text-muted-foreground">Paper</Label>
             <Select
               value={filters.paperId}
               onValueChange={(paperId) => update({ paperId })}
@@ -71,6 +72,7 @@ const ReviewLandingFilters = ({
           </div>
 
           <div>
+            <Label className="text-xs text-muted-foreground">Status</Label>
             <Select
               value={filters.status}
               onValueChange={(status) =>
@@ -91,8 +93,11 @@ const ReviewLandingFilters = ({
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <label className="flex cursor-pointer items-center gap-1.5 text-foreground">
             <input
               type="checkbox"
+              className="h-4 w-4"
               checked={useWorkingSet}
               onChange={(event) => onUseWorkingSet(event.target.checked)}
             />

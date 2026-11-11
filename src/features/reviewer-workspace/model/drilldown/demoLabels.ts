@@ -1,6 +1,16 @@
+// Readable labels for stored IDs: the run's authored labels first, then generic
+// rules for variant tokens and grade thresholds. Anything unmatched shows as stored.
 
+import type { DemoConfig, RunLabels } from "@/features/reviewer-workspace/types";
 
+export const featuredPapers = (config: DemoConfig | null | undefined, labels: RunLabels): string[] =>
+  config?.featured_papers ?? labels.featured_papers ?? [];
+
+/** Featured papers first, in the configured order; the rest keep theirs. */
+export function orderFeatured<T extends { paper_id: string }>(papers: T[], featured: string[]): T[] {
   const rank = (id: string) => {
+    const index = featured.indexOf(id);
+    return index === -1 ? featured.length : index;
   };
   return papers
     .map((paper, index) => ({ paper, index }))
@@ -15,6 +25,8 @@ const hgvs = (tail: string) =>
   tail.toUpperCase().replace(/INS|DEL|DUP/g, (m) => m.toLowerCase());
 
 /** One variant token: "dpyd_c1905+1g>a" → "DPYD c.1905+1G>A", "tymp_rs11479" → "TYMP rs11479". */
+function variant(labels: RunLabels, token: string): string | undefined {
+  const known = labels.id_labels.entity_id?.[token];
   if (known) return known;
   if (/^rs\d+$/.test(token)) return token;
   let m = /^([a-z0-9]+)_(rs\d+)$/.exec(token);
@@ -29,17 +41,22 @@ const hgvs = (tail: string) =>
 const list = (parts: string[]) =>
   parts.length <= 2 ? parts.join(" or ") : `${parts.slice(0, -1).join(", ")} or ${parts[parts.length - 1]}`;
 
+function entity(labels: RunLabels, id: string): string | undefined {
+  const direct = variant(labels, id);
   if (direct) return direct;
   let m = /^compound_(.+)$/.exec(id);
   if (m) {
+    const parts = m[1].split("__").map((token) => variant(labels, token));
     if (parts.every(Boolean)) return parts.join(" + ");
   }
   m = /^group_any_of_(.+)$/.exec(id);
   if (m) {
+    const parts = m[1].split("__").map((token) => variant(labels, token));
     if (parts.every(Boolean)) return `Any of ${list(parts as string[])}`;
   }
   m = /^group_wild_type_for_(.+)$/.exec(id);
   if (m) {
+    const parts = m[1].split("__").map((token) => variant(labels, token));
     if (parts.every(Boolean)) return `Wild type for ${parts.join(", ")}`;
   }
   m = /^set_test_gene_([a-z0-9]+)$/.exec(id);
@@ -65,7 +82,10 @@ function grade(id: string): string | undefined {
 }
 
 /** A readable label for a stored ID, or undefined to show it as stored. */
+export function demoLabel(labels: RunLabels, field: string, stored: string): string | undefined {
+  const written = labels.id_labels[field]?.[stored];
   if (written) return written;
+  if (field === "entity_id") return entity(labels, stored);
   if (field === "grade_threshold_id") return grade(stored);
   return undefined;
 }

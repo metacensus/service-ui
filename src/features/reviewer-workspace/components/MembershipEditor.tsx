@@ -47,10 +47,13 @@ export function MembershipEditorPanel({
 }: MembershipEditorPanelProps) {
   return (
     <>
+      <h3 id={`membership-editor-${idBase}`} className="text-[13px] font-bold text-foreground">
         Paper selection — {subject}
       </h3>
+      <p className="mt-1.5 text-xs leading-5 text-foreground">{currentLine}</p>
       <label
         htmlFor={`membership-reason-${idBase}`}
+        className="mt-2 block text-[11px] font-extrabold uppercase text-muted-foreground"
       >
         {reasonRequired ? "Reason (required)" : "Reason (optional)"}
       </label>
@@ -63,7 +66,9 @@ export function MembershipEditorPanel({
         value={reason}
         onChange={(event) => onReasonChange(event.target.value)}
         rows={3}
+        className="mc-control mt-1 resize-y text-[13px]"
       />
+      <div role="alert" className="mt-1.5 min-h-0 text-xs text-mc-alert-ink">
         {error}
       </div>
       <div className="mt-2.5 flex gap-2">
@@ -71,12 +76,14 @@ export function MembershipEditorPanel({
           type="button"
           onClick={onConfirm}
           disabled={pending}
+          className="mc-button mc-button-primary min-h-10 flex-1 text-[13px] font-bold"
         >
           {confirmLabel}
         </button>
         <button
           type="button"
           onClick={onCancel}
+          className="mc-button mc-button-secondary min-h-10 flex-1 text-[13px] font-bold"
         >
           Cancel
         </button>
@@ -159,6 +166,7 @@ export function MembershipEditor({
               triggerRef.current?.focus({ preventScroll: true });
           }}
           data-membership-editor
+          className="z-[60] w-[min(320px,calc(100vw-2rem))] rounded-lg border border-border bg-white p-3.5 text-left text-[13px] shadow-[0_8px_24px_rgba(0,0,0,0.15)] outline-none"
         >
           <MembershipEditorPanel
             {...text}

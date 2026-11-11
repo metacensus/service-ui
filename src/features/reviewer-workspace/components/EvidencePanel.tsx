@@ -87,6 +87,7 @@ const EvidencePanel = ({
           a real page number (some rows carry page 0).
         */}
         {pdfHighlightPage != null && !isPageOnly ? (
+          <span className="ml-auto text-xs text-muted-foreground">
             PDF page {pdfHighlightPage}
             {source?.page != null &&
             source.page > 0 &&
@@ -95,6 +96,7 @@ const EvidencePanel = ({
               : ""}
           </span>
         ) : source?.page != null ? (
+          <span className="ml-auto text-xs text-muted-foreground">
             page {source.page}
           </span>
         ) : null}
@@ -103,17 +105,21 @@ const EvidencePanel = ({
       {tab === "pdf" && (
         <div className="relative flex-1 overflow-auto">
           {pdfState === "available" && isPageOnly && (
+            <div className="border-b bg-secondary px-3 py-2 text-xs text-foreground">
               {source?.resolution === "not_resolved_for_demo"
                 ? "This paper was not pre-highlighted for the demo. Showing the cited page; the quote remains available in Source text."
                 : "An exact highlight could not be resolved for this value. Showing the cited page; the quote remains available in Source text."}
             </div>
           )}
           {pdfState === "checking" && (
+            <div className="p-6 text-sm text-muted-foreground">Checking PDF…</div>
           )}
           {pdfState === "missing" && (
             <div className="p-6">
+              <p className="text-sm font-medium text-foreground">
                 PDF is not available in this snapshot.
               </p>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">
                 The extracted source file and citation remain available in the
                 Source text tab. No PDF viewer was opened for the missing asset.
               </p>
@@ -122,6 +128,7 @@ const EvidencePanel = ({
           {pdfState === "available" && (
             <Suspense
               fallback={
+                <div className="p-6 text-sm text-muted-foreground">Loading PDF…</div>
               }
             >
               <ViewPDF
@@ -162,6 +169,7 @@ const TabButton = ({
     type="button"
     onClick={onClick}
     className={`rounded-sm px-3 py-1 text-xs font-bold ${
+      active ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-mc-ink-accent"
     }`}
   >
     {children}
@@ -206,6 +214,7 @@ const BundleView = ({
 
   if (!location) {
     return (
+      <p className="text-sm text-muted-foreground">
         This value has no cited source location.
       </p>
     );
@@ -221,9 +230,11 @@ const BundleView = ({
   }
   if (error) {
     return (
+      <p className="text-sm text-muted-foreground">Could not load {location}.</p>
     );
   }
   if (text === null) {
+    return <p className="text-sm text-muted-foreground">Loading source…</p>;
   }
 
   const table = parseBundleTable(text);
@@ -246,12 +257,14 @@ const BundleImage = ({
 
   return (
     <figure>
+      <div className="overflow-auto rounded-md border bg-secondary p-2">
         <img
           src={src}
           alt={alt}
           className="max-h-[70vh] max-w-full rounded-sm object-contain"
         />
       </div>
+      <figcaption className="mt-2 break-all font-mono text-xs text-muted-foreground">
         {location}
       </figcaption>
     </figure>
@@ -266,6 +279,7 @@ const BundleMarkdown = ({ text, quote }: { text: string; quote: string }) => {
   return (
     <>
       {missingQuote && (
+        <div className="mb-3 rounded-md border bg-secondary px-3 py-2 text-xs text-foreground">
           Cited quote was not found in this source file. Showing the full
           source text without a highlight.
         </div>
@@ -275,13 +289,16 @@ const BundleMarkdown = ({ text, quote }: { text: string; quote: string }) => {
           <div className="text-xs font-bold uppercase text-yellow-900">
             Cited passage
           </div>
+          <mark className="mt-2 block bg-yellow-200 text-sm leading-6 text-foreground">
             {quote.trim()}
           </mark>
         </div>
       )}
       <details open={missingQuote || !quote.trim()} className="mt-4">
+        <summary className="cursor-pointer text-sm font-bold text-foreground">
           Surrounding source text
         </summary>
+        <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
           {segments.map((segment, i) =>
             segment.mark ? (
               <mark key={i} className="rounded-sm bg-yellow-200 px-0.5">
@@ -318,6 +335,7 @@ const BundleTable = ({
   return (
     <div className="overflow-x-auto">
       {table.title && (
+        <div className="mb-2 text-xs font-bold text-foreground">{table.title}</div>
       )}
       <table className="w-full border-collapse text-xs">
         {headers.length > 0 && (
@@ -326,6 +344,7 @@ const BundleTable = ({
               {headers.map((header, i) => (
                 <th
                   key={i}
+                  className="border-b bg-secondary px-2 py-1 text-left font-bold text-foreground"
                 >
                   {header}
                 </th>
@@ -341,6 +360,7 @@ const BundleTable = ({
                 {row.map((value, ci) => {
                   const cellHit = rowHit && ci === cited.colIndex;
                   return (
+                    <td key={ci} className="border-b px-2 py-1 text-foreground">
                       {cellHit ? (
                         <mark className="rounded-sm bg-yellow-200 px-0.5">
                           {value}

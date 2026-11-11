@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import manifest from "./__fixtures__/v002-synthetic/manifest.json";
+import rowsJson from "./__fixtures__/v002-synthetic/rows.Paper_A.json";
+import evidenceJson from "./__fixtures__/v002-synthetic/evidence.Paper_A.json";
 import { expandRows, fetchPaperRows, validatePaperRows } from "./snapshot";
 import type { Row } from "../types";
 
+const PAPER = "Paper_A";
 const RUN = "v002-fixture";
 const V001_RUN = "v001-fixture";
 
@@ -30,6 +34,7 @@ beforeEach(() => {
 });
 
 describe("v002 snapshot reader", () => {
+  it("expands the fixture's evidence references", async () => {
     const urls = stubFetch((url) => {
       if (url.endsWith("/manifest.json")) return manifest;
       if (url.includes(`/rows/${PAPER}.json`)) return rowsJson;
@@ -37,6 +42,14 @@ describe("v002 snapshot reader", () => {
       throw new Error(`unexpected fetch: ${url}`);
     });
     const rows = await fetchPaperRows(RUN, PAPER);
+    const { sources } = evidenceJson;
+    const { total_n, outcome } = rows[0].provenance;
+    expect(total_n.sources).toEqual([sources[0], sources[1], sources[0]]);
+    expect(outcome.sources).toEqual([sources[2]]);
+    expect(outcome.source_components?.[0].sources).toEqual([sources[1]]);
+    expect(outcome.reasoning).toBe("reasoning 0");
+    expect(outcome.derivation).toBe("derivation 0");
+    expect(rows[1].provenance.total_n.sources).toEqual([sources[0]]);
     expect(urls.some((u) => u.includes(`/evidence/${PAPER}.json`))).toBe(true);
   });
 

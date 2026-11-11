@@ -53,19 +53,23 @@ const TopicConsensusStatementTable = ({
             </Button>
           </div>
         ),
+        className: "text-lg",
         columnId: "statements",
       },
       {
         content: <span>Author</span>,
+        className: "text-lg",
         columnId: "author",
       },
 
       {
         content: <span>Current Votes</span>,
+        className: "text-lg",
         columnId: "votes",
       },
       {
         content: <span>Vote</span>,
+        className: "text-lg",
         columnId: "vote",
       },
     ];

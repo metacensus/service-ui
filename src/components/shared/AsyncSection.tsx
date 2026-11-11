@@ -45,6 +45,7 @@ const AsyncSection = <T,>({
   const content = () => {
     if (query.isPending) {
       if (query.failureCount > 0) {
+        return <p className="text-xs text-muted-foreground">Still trying to load this…</p>;
       }
       return loading ?? <Skeleton className="h-20 rounded-xl" />;
     }
@@ -52,6 +53,7 @@ const AsyncSection = <T,>({
     if (query.isError) {
       return (
         error ?? (
+          <p className="text-xs text-mc-alert-ink">
             Could not load this section. Please try again later.
           </p>
         )

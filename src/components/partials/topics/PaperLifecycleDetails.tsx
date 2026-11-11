@@ -47,6 +47,8 @@ export default function PaperLifecycleDetails({ paper, review, membership }: {
     <section aria-label="Lifecycle status" className="space-y-3">
       <h2 className="font-semibold">Lifecycle status</h2>
       <p className="font-medium">{stage}</p>
+      {!adjudicated && <p className="text-xs text-muted-foreground">Seeded placement (simulated).</p>}
+      <p className="text-sm text-muted-foreground">
         {review.status === "loading" ? "Loading review progress…"
           : review.status === "unavailable" ? "Review progress is unavailable; the stage follows the stored status."
           : progress ? `${progress.decided} / ${progress.total} review tasks decided.`
@@ -54,6 +56,7 @@ export default function PaperLifecycleDetails({ paper, review, membership }: {
       </p>
       {showsWorkingSetMembership(stage) && <>
         <PaperMembership membership={membership.membershipFor(paper)} stage={stage} />
+        <p className="text-xs text-muted-foreground">Working-set membership does not affect lifecycle or review completion.</p>
       </>}
     </section>
     {progress && <section className="space-y-3" aria-label="Required review tasks">
@@ -66,6 +69,8 @@ export default function PaperLifecycleDetails({ paper, review, membership }: {
     <section className="space-y-3 break-words" aria-label="Details">
       <h2 className="font-semibold">Details</h2>
       <p>{paper.title}</p>
+      <p className="text-sm text-muted-foreground">{paper.authors?.join(", ")}</p>
+      {paper.description && <p className="text-sm text-muted-foreground">{paper.description}</p>}
       <p className="text-sm whitespace-pre-wrap">{paper.abstract || "No abstract available."}</p>
       {paper.doi && <p className="text-sm">DOI: {paper.doi}</p>}
       {paper.pmid && <p className="text-sm">PMID: {paper.pmid}</p>}
@@ -92,6 +97,8 @@ function TierDetails({ label, tier, rows, seeded }: {
     </summary>
     {open && <div className="mt-3 space-y-3 text-sm">
       {ambiguous.map(row => <TaskEntry key={row.task.id} row={row} seeded={seeded.has(row.task.id)} />)}
+      {!ambiguous.length && <p className="text-muted-foreground">No ambiguous items.</p>}
+      <details className="rounded bg-secondary p-2" onToggle={event => setConfidentOpen(event.currentTarget.open)}>
         <summary className={cn(styles.focusRing, "cursor-pointer")}>Confident extractions ({clean.length})</summary>
         {confidentOpen && <div className="ml-3 mt-3 space-y-3 border-l-2 pl-3">
           {clean.map(row => <TaskEntry key={row.task.id} row={row} seeded={seeded.has(row.task.id)} />)}
@@ -105,7 +112,9 @@ function TaskEntry({ row, seeded }: { row: ReviewTaskRow; seeded: boolean }) {
   const { task, progress } = row;
   return <div className="border-b pb-2 break-words">
     <p className="font-medium">{REVIEW_TASK_KIND_HEADINGS[task.kind]} · {task.title}</p>
+    {task.sourceLine && <p className="text-xs text-muted-foreground">{task.sourceLine}</p>}
     <p className="text-xs">
+      <span className={progress.cleared ? "text-green-800" : "text-muted-foreground"}>{progress.cleared ? "Decided" : "Open"}</span>
       {seeded && <span className="text-amber-800"> · seeded (simulated)</span>}
     </p>
   </div>;

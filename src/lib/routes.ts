@@ -24,7 +24,9 @@ export const routes = {
       `${apiPrefix}/topic/${topicId}/protocol`,
     topicMyVotes: (topicId: string) => `${apiPrefix}/topic/${topicId}/my-votes`,
     workingSet: (topicId: string, runId: string) =>
+      `${apiPrefix}/topic/${topicId}/runs/${runId}/working-set`,
     workingSetMembership: (topicId: string, runId: string) =>
+      `${apiPrefix}/topic/${topicId}/runs/${runId}/working-set/membership`,
 
     // Taxonomy
     domain: apiPrefix + "/domain",
@@ -32,6 +34,7 @@ export const routes = {
 
     // Papers
     paper: apiPrefix + "/paper",
+    paperAccept: (paperId: string) => `${apiPrefix}/paper/${paperId}/accept`,
     paperCreate: apiPrefix + "/paper/create",
     paperLookup: apiPrefix + "/paper/lookup",
     paperPresignedUrl: (paperId: string) =>
@@ -49,9 +52,15 @@ export const routes = {
     extractionCreate: apiPrefix + "/extraction/create",
     extractionEdit: apiPrefix + "/extraction/edit",
     extractionReview: apiPrefix + "/extraction-review",
+    exploreQuery: apiPrefix + "/explore/query",
 
     // Literature search
     litSearch: apiPrefix + "/lit-search",
     litSearchAbstract: (id: string) => `${apiPrefix}/lit-search/${id}/abstract`,
+  },
+
+  // The demo's own authored data, served beside the API but outside its contract.
+  demo: {
+    labels: (runId: string) => `/metacensus/demo/labels/${runId}.json`,
   },
 };

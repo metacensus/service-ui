@@ -5,12 +5,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NO_LABELS } from "@/features/reviewer-workspace/data/snapshot";
 import { fetchSchemaIndex } from "@/features/reviewer-workspace/data/schemaIndex";
 import {
   reviewerWorkspaceQueryKeys,
   useRunSnapshot,
 } from "@/features/reviewer-workspace/hooks/useRunSnapshot";
 import { useWorkingSet } from "@/features/reviewer-workspace/hooks/useWorkingSet";
+import { featuredPapers } from "@/features/reviewer-workspace/model/drilldown/demoLabels";
 import { fetchNormalizationManifest } from "@/features/reviewer-workspace/model/schemaNormalization";
 import type { PaperMeta } from "@/features/reviewer-workspace/types";
 import {
@@ -44,7 +46,9 @@ export default function DataWorkspace({ topicId, initialTable: seed, onTableStat
     runId,
     manifestQuery,
     demoConfigQuery,
+    runLabelsQuery,
   } = useRunSnapshot(topicId);
+  const runLabels = runLabelsQuery.data ?? NO_LABELS;
 
   const indexQuery = useQuery({
     queryKey: reviewerWorkspaceQueryKeys.schemaIndex(runId ?? "unresolved"),
@@ -105,6 +109,7 @@ export default function DataWorkspace({ topicId, initialTable: seed, onTableStat
         expanded: open,
         selection: selectionOfTermKeys(
           seed.terms,
+          (group: LayerGroup) => categoriesFor(runLabels, group, index.papers, curated),
           paperIds
         ),
       };
@@ -119,16 +124,21 @@ export default function DataWorkspace({ topicId, initialTable: seed, onTableStat
   );
 
   const customOrder = useMemo(
+    () => featuredPapers(demoConfigQuery.data, runLabels),
+    [demoConfigQuery.data, runLabels]
   );
 
   const terms: Term[] = useMemo(() => {
     if (!index) return [];
     const names = new Map(index.papers.map((paper) => [paper.paper_id, paperName(paper)]));
     return termsOf(
+      runLabels,
       state.selection,
+      (group: LayerGroup) => categoriesFor(runLabels, group, index.papers, curated),
       curated,
       (id) => names.get(id) ?? id
     );
+  }, [curated, index, runLabels, state.selection]);
 
   const colorOf = useMemo(() => {
     const live = new Set(terms.map((term) => term.key));
@@ -188,12 +198,14 @@ export default function DataWorkspace({ topicId, initialTable: seed, onTableStat
   }, [onTableStateChange, index, state, focus, terms]);
 
   const runDataError = manifestQuery.isError;
+  const indexPending = indexQuery.isPending || runLabelsQuery.isPending;
 
   return (
     <div>
       <h1 className="mt-6 font-bold text-2xl">Extracted data</h1>
 
       {runDataError && (
+        <div className="mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           No extracted data is available for this topic yet.
         </div>
       )}
@@ -203,12 +215,15 @@ export default function DataWorkspace({ topicId, initialTable: seed, onTableStat
       )}
 
       {!runDataError && indexQuery.isError && (
+        <div className="mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           Could not load the paper index for this run.
         </div>
       )}
 
+      {!runDataError && index && !runLabelsQuery.isPending && (
         <SchemaSelect
           index={index}
+          labels={runLabels}
           curated={curated}
           state={state}
           setState={setState}
@@ -223,6 +238,7 @@ export default function DataWorkspace({ topicId, initialTable: seed, onTableStat
               <PaperTree
                 topicId={topicId}
                 paper={paper}
+                labels={runLabels}
                 rowFilter={state.onlySelection ? matcherFor(paperId) : undefined}
                 initialState={focus?.paper === paperId ? focus : undefined}
                 onStateChange={setFocus}

@@ -38,6 +38,8 @@ const cellTitle = (label: string, kind: string, p: Progress) =>
 
 const Figure = ({ value, label }: { value: string; label: string }) => (
   <div className="flex flex-col">
+    <span className="text-2xl font-bold tabular-nums">{value}</span>
+    <span className="text-xs text-muted-foreground">{label}</span>
   </div>
 );
 
@@ -51,6 +53,7 @@ export const ExtractionHeatmap = ({ summary }: { summary: ExtractionSummary }) =
     >
       {REVIEW_TASK_KINDS.map((kind) => (
         <div key={kind} className="contents">
+          <span className="self-center text-[11px] font-semibold text-muted-foreground">
             {REVIEW_TASK_KIND_HEADINGS[kind]}
           </span>
           <div
@@ -70,6 +73,7 @@ export const ExtractionHeatmap = ({ summary }: { summary: ExtractionSummary }) =
         </div>
       ))}
     </div>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
       <span>Each column is one paper.</span>
       {TONE_LEGEND.map(([tone, label]) => (
         <span key={tone} className="inline-flex items-center gap-1">
@@ -101,6 +105,7 @@ export const TopicExtractionCardView = ({
   const body = () => {
     if (!runId) {
       return (
+        <p className="text-sm text-muted-foreground">
           No Comparanda extraction run is linked to this topic yet.
         </p>
       );
@@ -108,6 +113,7 @@ export const TopicExtractionCardView = ({
     if (isPending) return <Skeleton className="h-40 rounded-xl" />;
     if (isError || !summary) {
       return (
+        <p className="text-sm text-mc-alert-ink">
           Could not load the extraction for this topic.
         </p>
       );
@@ -121,8 +127,10 @@ export const TopicExtractionCardView = ({
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between gap-2">
+            <span className="text-sm font-semibold">
               Adjudication progress
             </span>
+            <span className="text-xs tabular-nums text-muted-foreground">
               {summary.papersAdjudicated} of {summary.paperCount} papers ·{" "}
               {fmt(summary.tasks.made)} of {fmt(summary.tasks.total)} tasks
             </span>
@@ -139,6 +147,7 @@ export const TopicExtractionCardView = ({
       <CardContent className="mt-4 flex-1 p-0">{body()}</CardContent>
       <div className="mt-5 flex flex-wrap gap-2">
         <Link href={base}>
+          <Button size="sm" variant="secondary" className="px-3 text-xs" type="button">
             Review
           </Button>
         </Link>

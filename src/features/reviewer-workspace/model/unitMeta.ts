@@ -9,6 +9,9 @@ export const REVIEW_TASK_KIND_HEADINGS: Record<ReviewTaskKind, string> = {
 };
 
 export const KIND_ACCENTS: Record<ReviewTaskKind, { border: string; text: string; bar: string }> = {
+  inferred: { border: "border-l-mc-blue-bold", text: "text-mc-blue-bold", bar: "bg-mc-blue-bold" },
+  derived: { border: "border-l-mc-blue-mid", text: "text-mc-blue-bold", bar: "bg-mc-blue-mid" },
+  verbatim: { border: "border-l-mc-ink-secondary", text: "text-foreground", bar: "bg-mc-ink-secondary" },
 };
 
 export function shortPaperId(paperId: string): string {

@@ -34,6 +34,7 @@ const TopicReviewSchema = ({ params }: Props) => {
       {isLoading && <Skeleton className="mt-6 h-64 w-full" />}
 
       {hasError && (
+        <div className="mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           No extraction schema is available for this topic yet.
         </div>
       )}

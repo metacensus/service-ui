@@ -5,15 +5,28 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
+  "mc-button whitespace-nowrap text-sm",
   {
     variants: {
       variant: {
+        primary: "mc-button-primary",
         destructive:
+          "mc-button-secondary border-mc-alert-border text-mc-alert-ink",
+        outline: "mc-button-secondary",
+        secondary: "mc-button-secondary",
+        ghost: "hover:bg-accent",
+        link: "mc-button-text underline-offset-4",
       },
       size: {
+        default: "h-10",
+        xs: "h-6 px-3 py-1 text-xs",
+        sm: "h-9 px-3",
+        lg: "h-11 px-8",
+        icon: "h-10 w-10 p-0",
       },
     },
     defaultVariants: {
+      variant: "primary",
       size: "default",
     },
   }

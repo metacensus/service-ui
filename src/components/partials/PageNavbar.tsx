@@ -25,6 +25,8 @@ const NavbarLink = ({
     <Link href={href} className="w-full min-w-1/2 flex-1">
       <span>
         <div
+          className={`rounded-sm  text-muted-foreground text-xs font-bold flex justify-center items-center py-1 px-6 hover:text-foreground cursor-pointer ${
+            isActive ? "bg-card text-foreground" : ""
           }`}
         >
           <span>{name}</span>
@@ -48,6 +50,7 @@ const PageNavbar = ({ links }: PageNavbarProps) => {
     .sort((a, b) => b.matchPath.length - a.matchPath.length)[0]?.link.href;
 
   return (
+    <div className="bg-secondary flex gap-1 w-fit p-1 rounded-md mt-6 flex-wrap">
       {links.map((link, index) => (
         <NavbarLink
           key={index}

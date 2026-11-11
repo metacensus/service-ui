@@ -12,6 +12,7 @@ type TopicDetailRowProps = {
 const TopicDetailRow = ({ label, children }: TopicDetailRowProps) => {
   return (
     <>
+      <div className="col-span-2 md:col-span-1 text-muted-foreground">{label}</div>
       <div className="col-span-4">{children}</div>
     </>
   );

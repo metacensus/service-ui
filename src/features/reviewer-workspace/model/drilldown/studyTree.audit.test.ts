@@ -1,6 +1,9 @@
 // Corpus-wide invariant audit for the tiered study tree, ported verbatim from
+// never edit them to make a test pass; a mismatch is a QUESTION: with evidence.
 
 import { describe, expect, it } from "vitest";
+import { demoReachable, exportJson } from "../../data/loadExportRows.testutil";
+import { NO_LABELS } from "../../data/snapshot";
 import type { Manifest, Row, SchemaPresentation } from "../../types";
 import { TREE_TABLE_MAX, type TreeOrder } from "./fieldMap";
 import {
@@ -12,6 +15,9 @@ import {
 } from "./groupedFindings";
 
 const ORDERS: TreeOrder[] = ["variant_first", "outcome_first"];
+// No demo on CI: skip there.
+const DEMO_UP = await demoReachable();
+const SUITE = DEMO_UP ? "study tree corpus audit" : "study tree corpus audit (skipped: no demo at DEMO_BASE_URL)";
 
 const PYTHON_TABLES: Record<string, Record<TreeOrder, number>> = {
   Boige_2016_26794347: { variant_first: 53, outcome_first: 23 },
@@ -20,6 +26,11 @@ const PYTHON_TABLES: Record<string, Record<TreeOrder, number>> = {
   Madi_2018_30114658: { variant_first: 543, outcome_first: 383 },
 };
 
+describe.skipIf(!DEMO_UP)(SUITE, () => {
+  it("reproduces the mock-up audit: 43 papers, 12556 rows, 86 trees, 5289 tables, 0 failures", async () => {
+    const manifest = await exportJson<Manifest>("manifest.json");
+    const presentation = (await exportJson<{ schema_presentation?: SchemaPresentation }>("demo_config.json"))
+      .schema_presentation;
     const failures: string[] = [];
     const parity: string[] = [];
     const stats = {
@@ -35,10 +46,12 @@ const PYTHON_TABLES: Record<string, Record<TreeOrder, number>> = {
     };
 
     for (const paper of manifest.papers) {
+      const rows = await exportJson<Row[]>(`rows/${paper.paper_id}.json`);
       stats.papers += 1;
       stats.rows += rows.length;
       // Cross-check against the manifest row_count per paper.
       expect(rows.length, `${paper.paper_id} row count vs manifest`).toBe(paper.row_count);
+      const context = buildPaperContext(NO_LABELS, rows, presentation);
       const lifted = new Set<string>([
         ...context.lifted.map((chip) => chip.field),
         ...context.lifted.flatMap((chip) => (chip.partner ? [chip.partner.field] : [])),
@@ -46,6 +59,7 @@ const PYTHON_TABLES: Record<string, Record<TreeOrder, number>> = {
       ]);
 
       for (const order of ORDERS) {
+        const tree = buildTieredTree(NO_LABELS, rows, presentation, lifted, order);
         stats.trees += 1;
         const leaves = treeLeaves(tree);
         stats.tables += leaves.length;

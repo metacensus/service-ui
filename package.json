@@ -1,6 +1,7 @@
 {
   "name": "metacensus-ui",
   "version": "0.1.0",
+  "license": "AGPL-3.0-only AND LicenseRef-MetaCensus-Marks",
   "private": true,
   "type": "module",
   "engines": {

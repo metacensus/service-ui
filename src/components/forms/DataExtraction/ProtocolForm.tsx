@@ -174,6 +174,7 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({
   return (
     <form onSubmit={onSubmit} className={cn("h-screen overflow-scroll mb-12")}>
       {!viewOnly && (
+        <div className="p-3 mt-4 border rounded-lg bg-secondary flex items-center gap-3">
           <Switch
             id="track-selection"
             checked={trackSelection}
@@ -183,6 +184,7 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({
             <Label htmlFor="track-selection" className="cursor-pointer">
               Track PDF selection
             </Label>
+            <div className="text-xs text-muted-foreground truncate">
               {trackSelection
                 ? selection?.text
                   ? `Tracking: "${selection.text.slice(0, 80)}${
@@ -223,6 +225,7 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({
       </div>
 
       {!viewOnly && (
+        <div className="fixed bottom-0 left-0 right-0 flex gap-4 w-full border p-2 bg-background justify-end pr-6">
           <Button type="submit" variant="primary">
             Save
           </Button>

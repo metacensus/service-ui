@@ -175,12 +175,14 @@ const ReviewTaskView = ({
             {detail.source_line && (
               <p
                 data-testid="task-header-source"
+                className="mt-1 text-sm text-foreground [overflow-wrap:anywhere]"
               >
                 {detail.source_line}
               </p>
             )}
             <p
               data-testid="task-header-questions"
+              className="mt-1 max-w-3xl text-sm text-muted-foreground [overflow-wrap:anywhere]"
             >
               {single
                 ? `1 question${
@@ -209,6 +211,7 @@ const ReviewTaskView = ({
           </div>
           <div className="flex w-full min-w-0 flex-col items-start gap-2 max-xl:[&_form]:w-full max-xl:[&_form]:min-w-0 max-xl:[&_form]:flex-wrap max-xl:[&_label]:min-w-0 max-xl:[&_input]:w-full max-xl:[&_input]:min-w-0 max-xl:[&_input]:flex-1 max-xl:[&_input]:shrink max-xl:[&_button]:shrink-0 xl:w-auto xl:items-end">
             <ReviewerIdentityControl reviewerName={reviewerName} onSave={setReviewerName} />
+            <span data-testid="task-header-count" className="text-xs text-muted-foreground">
               {decidedCount.toLocaleString("en-US")}/{n.toLocaleString("en-US")}{" "}
               {n === 1 ? "question" : "questions"} decided
             </span>
@@ -234,6 +237,7 @@ const ReviewTaskView = ({
           )}
 
           <div data-testid="task-focus" className="rounded-lg border bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase text-muted-foreground">
               {n === 1 ? "Question" : `Question ${(focus + 1).toLocaleString("en-US")} of ${n.toLocaleString("en-US")}`}
             </div>
             <div className="mt-3">
@@ -243,6 +247,7 @@ const ReviewTaskView = ({
               >
                 <div
                   data-testid="task-focus-question"
+                  className="text-base font-bold text-foreground [overflow-wrap:anywhere]"
                 >
                   {`Should ${detail.questions[focus].field} = ${displayValue(detail.questions[focus].values[0].value)}?`}
                 </div>
@@ -261,9 +266,11 @@ const ReviewTaskView = ({
           )}
 
           <div data-testid="task-decision" className="rounded-lg border bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase text-muted-foreground">
               {single ? "Your decision on this value" : "Your decision on the checked questions"}
             </div>
             {!single && (
+              <p data-testid="task-decision-scope" className="mt-2 text-sm text-foreground">
                 Applies to the {count(checkedIdx.length, "checked question", "checked questions")}
                 {checkedIdx.length > 0 && ` (${count(checkedEntries, "row entry", "row entries")})`}.{" "}
                 {(n - decidedCount).toLocaleString("en-US")} of {n.toLocaleString("en-US")} still open;
@@ -289,13 +296,16 @@ const ReviewTaskView = ({
               />
               {history.length > 0 && (
                 <details data-testid="task-history" className="mt-4 border-t pt-3">
+                  <summary className="cursor-pointer text-xs font-bold text-foreground">
                     Decision history ({history.length})
                   </summary>
                   <ol className="mt-2 space-y-2">
                     {history.map((entry) => (
                       <li
                         key={`${entry.action}|${entry.reviewedAt}|${entry.reviewedBy}`}
+                        className="text-xs text-muted-foreground"
                       >
+                        <strong className="font-medium text-foreground">
                           {entry.action.replace(/_/g, " ")}
                         </strong>{" "}
                         by {entry.reviewedBy} · {new Date(entry.reviewedAt).toLocaleString()} ·{" "}
@@ -309,6 +319,7 @@ const ReviewTaskView = ({
           </div>
 
           <div className="rounded-lg border bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase text-muted-foreground">Discussion on this task</div>
             <div className="mt-3">
               <CommentThread
                 comments={taskComments}
@@ -339,6 +350,7 @@ const ReviewTaskView = ({
                 source={evidence}
               />
             ) : (
+              <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                 No source document for this task.
               </div>
             )}

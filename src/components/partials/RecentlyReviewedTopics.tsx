@@ -66,6 +66,7 @@ const RecentlyReviewedTopics = () => {
               <div>
               </div>
 
+              <span className="text-muted-foreground">{topic.name}</span>
             </Link>
           ),
           className: "max-w-48 text-wrap",
@@ -95,6 +96,7 @@ const RecentlyReviewedTopics = () => {
                   key={index}
                   text={reviewer.reviewer.name}
                   color="gray"
+                  className="mr-2 w-fit text-md"
                 />
               ))}
             </div>
@@ -107,6 +109,7 @@ const RecentlyReviewedTopics = () => {
             <TextBubble
               text={topic.status}
               color="gray"
+              className="mr-2 w-fit text-md"
             />
           ),
           className: "",
@@ -131,6 +134,7 @@ const RecentlyReviewedTopics = () => {
               [
                 {
                   content: (
+                    <span className="flex items-center space-x-2 text-muted-foreground text-xl">
                       Loading...
                     </span>
                   ),
@@ -162,6 +166,8 @@ const RecentlyReviewedTopics = () => {
             >
               <h1 className={styles.h4}>View Topics</h1>
               <p className="mt-4">
+                Now that you&apos;ve created an account, you can open a topic to
+                explore and review the results of peer-reviewed papers.
               </p>
               <div className="mt-6 h-12">
                 <Button variant="primary">

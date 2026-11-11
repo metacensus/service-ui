@@ -29,6 +29,7 @@ const ReviewValueDetail = ({
             <li
               key={`${source.location}:${source.page}:${index}`}
               className={`border-l-2 pl-3 ${
+                activeSource === source ? "border-mc-line-accent" : "border-border"
               }`}
             >
               <button
@@ -38,10 +39,13 @@ const ReviewValueDetail = ({
                 className="block w-full min-w-0 text-left"
                 onClick={() => onSourceSelect?.(source)}
               >
+                <span className="block text-sm italic text-foreground [overflow-wrap:anywhere]">
                   “{source.quote}”
                 </span>
+                <span className="mt-1 block text-xs text-muted-foreground">
                   Source {index + 1} of {sources.length} · article page {source.page}
                 </span>
+                <span className="block text-xs text-muted-foreground [overflow-wrap:anywhere]">
                   {source.location}
                 </span>
               </button>
@@ -49,6 +53,7 @@ const ReviewValueDetail = ({
           ))}
         </ol>
       ) : (
+        <p data-testid="value-detail-quotes-empty" className="text-xs text-muted-foreground">
           No direct source citation for this value.
         </p>
       )}
@@ -56,12 +61,14 @@ const ReviewValueDetail = ({
       {showDerivation && (
         <p
           data-testid="value-detail-derivation"
+          className="mt-3 text-sm text-foreground [overflow-wrap:anywhere]"
         >
           <span className="font-bold">Derivation:</span> {derivation}
         </p>
       )}
       <p
         data-testid="value-detail-reasoning"
+        className="mt-3 text-sm text-foreground [overflow-wrap:anywhere]"
       >
         <span className="font-bold">Reasoning:</span>{" "}
         {shownReasoning ? reasoning : "none recorded"}

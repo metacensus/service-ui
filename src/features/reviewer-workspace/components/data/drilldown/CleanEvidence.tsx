@@ -17,6 +17,7 @@ import {
   dataWorkspaceValueText,
   humanizeDataWorkspaceField,
 } from "@/features/reviewer-workspace/model/dataWorkspace";
+import type { PaperMeta, ProvenanceEntry, ProvSource, Row, RunLabels, SchemaPresentation } from "@/features/reviewer-workspace/types";
 import { firstSourceFor, type Selection } from "./selection";
 import { displayText, fieldLabel, isPopulated, partnerField, sharedSourcesFor } from "@/features/reviewer-workspace/model/drilldown/groupedFindings";
 import { prettyValue } from "@/features/reviewer-workspace/model/drilldown/displayLabel";
@@ -33,9 +34,15 @@ const RESOLUTION_WORDS: Record<string, string> = {
 
 /** How the value relates to the paper. Glosses are authored presentation text. */
 const KIND: Record<string, { label: string; gloss: string; tone: string }> = {
+  verbatim: {
+    label: "Verbatim",
+    gloss: "copied as printed",
+    tone: "bg-mc-tint-blue-fill text-mc-tint-blue-ink",
+  },
   derived: {
     label: "Derived",
     gloss: "computed or converted from printed values",
+    tone: "bg-mc-tint-purple-fill text-mc-tint-purple-ink",
   },
   inferred: {
     label: "Inferred",
@@ -45,7 +52,9 @@ const KIND: Record<string, { label: string; gloss: string; tone: string }> = {
 };
 
 const CERTAINTY: Record<string, { label: string; tone: string }> = {
+  clean: { label: "Clean", tone: "bg-mc-tint-grey-fill text-mc-tint-grey-ink" },
   ambiguous: { label: "Ambiguous", tone: "bg-amber-50 text-amber-800" },
+  abstained: { label: "Abstained", tone: "bg-mc-alert-fill text-mc-alert-ink" },
 };
 
 type Provenance = ProvenanceEntry & { missing_reason?: string };
@@ -53,6 +62,8 @@ type Provenance = ProvenanceEntry & { missing_reason?: string };
 function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="mt-5">
+      <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</h3>
+      <div className="mt-1.5 text-sm leading-6 text-foreground">{children}</div>
     </section>
   );
 }
@@ -75,6 +86,7 @@ const sameSource = (a: ProvSource | null, b: ProvSource) =>
 /** A quote copied from a markdown table row ("| a | b | c |") reads as cells, not pipes. */
 function Quote({ text }: { text: string }) {
   const trimmed = text.trim();
+  if (!trimmed) return <span className="italic text-muted-foreground">No quote recorded</span>;
   if (trimmed.startsWith("|")) {
     const cells = trimmed
       .replace(/^\|/, "")
@@ -85,6 +97,7 @@ function Quote({ text }: { text: string }) {
     return (
       <span className="flex flex-wrap gap-1">
         {cells.map((cell, index) => (
+          <span key={index} className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[12px] text-foreground">
             {cell}
           </span>
         ))}
@@ -129,11 +142,15 @@ function SourceCard({
       onClick={onSelect}
       aria-pressed={active}
       title="Show this source in the PDF"
+      className={`block w-full rounded-md border px-3 py-2.5 text-left text-sm leading-6 text-foreground transition-colors ${
         active
+          ? "border-mc-line-accent bg-secondary"
+          : "hover:border-mc-line-accent hover:bg-secondary/50"
       }`}
     >
       <Quote text={source.quote ?? ""} />
       <span
+        className={`mt-1 block text-xs ${source.resolution === "page_only" ? "text-amber-800" : "text-muted-foreground"}`}
       >
         {where}
       </span>
@@ -147,6 +164,7 @@ export default function CleanEvidence({
   selection,
   rowsByIndex,
   presentation,
+  labels,
   activeSource,
   onSourceSelect,
   onClose,
@@ -156,6 +174,7 @@ export default function CleanEvidence({
   selection: Selection;
   rowsByIndex: Map<number, Row>;
   presentation?: SchemaPresentation;
+  labels: RunLabels;
   activeSource: ProvSource | null;
   onSourceSelect: (source: ProvSource) => void;
   onClose: () => void;
@@ -185,6 +204,8 @@ export default function CleanEvidence({
         partner.role === "as printed"
           ? `Printed as “${other}”`
           : forms.length === 1
+            ? `Normalized to ${prettyValue(labels, other, partner.field, populated[0].fields[partner.field])}`
+            : `Normalized to ${prettyValue(labels, other)}`;
   }
 
   // Which finding this is, in the tree's own words.
@@ -192,6 +213,7 @@ export default function CleanEvidence({
     selection.kind === "row" && anchor
       ? ["entity_id", "outcome_id"]
           .filter((name) => name !== field && name !== partner?.field && isPopulated(anchor, name))
+          .map((name) => prettyValue(labels, displayText(anchor, name), name, anchor.fields[name]))
           .join(" · ")
       : null;
 
@@ -222,9 +244,15 @@ export default function CleanEvidence({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{fieldLabel(labels, field)}</span>
             </div>
+            <div className="mt-1 break-words text-xl font-semibold tracking-tight text-foreground">
+              {prettyValue(labels, value, field, anchor?.fields[field])}
             </div>
+            {partnerLine && <div className="mt-0.5 text-sm text-foreground">{partnerLine}</div>}
+            {findingContext && <div className="mt-1 text-sm text-muted-foreground">{findingContext}</div>}
             {selection.kind === "shared" && (
+              <div className="mt-1 text-sm text-muted-foreground">Same on {scopeRows.length} findings</div>
             )}
           </div>
           <button
@@ -232,12 +260,14 @@ export default function CleanEvidence({
             onClick={onClose}
             aria-label="Close evidence"
             title="Close"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {provenance && (kind || certainty || kindSpread) && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t pt-4 text-sm text-foreground">
             {kind && <Tag tone={kind.tone}>{kind.label}</Tag>}
             {kind && <span>{kind.gloss}</span>}
             {certainty && <Tag tone={certainty.tone}>{certainty.label}</Tag>}
@@ -277,6 +307,7 @@ export default function CleanEvidence({
                   />
                 ))}
             {((shared && shared.sources.length === 0) || (!shared && sources.length === 0)) && (
+              <p className="text-muted-foreground">No source quote recorded.</p>
             )}
             {shared && shared.rowsWithoutSource.length > 0 && shared.sources.length > 0 && (
               <p className="text-xs text-amber-800">
@@ -295,11 +326,14 @@ export default function CleanEvidence({
             <ul className="space-y-1">
               {provenance.source_components.map((component, index) => (
                 <li key={`${component.label}:${index}`} className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="text-muted-foreground">{humanizeDataWorkspaceField(component.label)}</span>
+                  <span className="font-medium text-foreground">{dataWorkspaceValueText(component.value)}</span>
                   {component.sources.map((entry, sourceIndex) => (
                     <button
                       key={`${entry.location}:${entry.page}:${sourceIndex}`}
                       type="button"
                       onClick={() => onSourceSelect(entry)}
+                      className="rounded-sm border border-transparent px-1 text-xs font-medium text-mc-ink-accent hover:border-mc-line-accent hover:bg-secondary"
                     >
                       p. {entry.page}
                     </button>

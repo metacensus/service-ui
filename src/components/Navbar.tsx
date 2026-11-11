@@ -1,4 +1,6 @@
+import { Button, Header, Nav } from "@metacensus/library-ui";
 import { ToastAction } from "@radix-ui/react-toast";
+import { FC } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSelf } from "@/hooks/useGetUserId";
 import { apiClient } from "@/lib/apiClient";
@@ -6,6 +8,12 @@ import { del } from "@/lib/indexdb";
 import { usePathname, useRouter } from "@/lib/next-navigation-compat";
 import queryClient from "@/lib/queryClient";
 import { LOGIN_PATH } from "@/lib/session";
+
+export const APP_LINKS = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/topics", label: "Topics" },
+  { href: "/contributors", label: "Contributors" },
+];
 
 const Navbar: FC = () => {
   const pathName = usePathname();
@@ -35,8 +43,23 @@ const Navbar: FC = () => {
   };
 
   return (
+    <Header
+      homeHref="/dashboard"
+      nav={
+        <Nav
+            ...link,
+            current: pathName.includes(link.href),
+          }))}
         />
+      }
+      actions={
+        <>
+          {userName && <span className="hidden text-sm sm:ml-4 sm:inline">{userName}</span>}
+            Log out
           </Button>
+        </>
+      }
+    />
   );
 };
 

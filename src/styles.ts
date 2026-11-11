@@ -4,4 +4,5 @@ export const styles = {
   h3: "scroll-m-20 text-2xl font-semibold lg:text-3xl",
   h4: "scroll-m-20 text-xl font-medium lg:text-2xl",
   h5: "scroll-m-20 text-lg font-semibold lg:text-xl",
+  focusRing: "focus-visible:outline focus-visible:outline-2 focus-visible:outline-mc-line-accent",
 };

@@ -3,6 +3,7 @@
 import { getAuthHeaders } from "@/functions/getAuthHeaders";
 import { useFetchData } from "@/hooks/useFetchData";
 import useOnClickOutside from "@/hooks/useOnClickOutside";
+import { FieldError } from "@metacensus/library-ui";
 import { useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Category } from "../../../types/Category";
@@ -12,9 +13,12 @@ import MultiSelectMenu from "../shared/MultiSelectMenu";
 import SingleSelectMenu from "../shared/SingleSelectMenu";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { routes } from "@/lib/routes";
+
+const REQUIRED = "This field is required";
 
 type CreateTopicProps = {
   setOpen: (open: boolean) => void;
@@ -33,6 +37,13 @@ type CreateTopicInputs = {
 const CreateTopic = ({ setOpen }: CreateTopicProps) => {
   const client = useQueryClient();
 
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<CreateTopicInputs>();
 
   const { mutate: createNetworkTopic } = useMutation({
     mutationFn: async (data: CreateTopicInputs) => {
@@ -146,10 +157,19 @@ const CreateTopic = ({ setOpen }: CreateTopicProps) => {
       onSubmit={handleSubmit(onSubmit)}
     >
       <div className="flex flex-col gap-1">
+        <Label htmlFor="topic-name">Topic Name</Label>
         <Input
+          id="topic-name"
           placeholder="Name"
+          aria-describedby={errors.name ? "topic-name-error" : undefined}
+          aria-invalid={!!errors.name}
+          {...register("name", { required: REQUIRED })}
           autoComplete="off"
+          className="font-bold text-sm"
         />
+        {errors.name && (
+          <FieldError id="topic-name-error">{errors.name.message}</FieldError>
+        )}
       </div>
 
       <SingleSelectMenu
@@ -201,16 +221,40 @@ const CreateTopic = ({ setOpen }: CreateTopicProps) => {
       />
 
       <div className="flex flex-col gap-1">
+        <Label htmlFor="topic-min-reviews">Minimum Extraction Reviews</Label>
         <Input
+          id="topic-min-reviews"
           type="number"
           min={1}
           defaultValue={2}
+          aria-describedby={
+            errors.minimumExtractionReviews ? "topic-min-reviews-error" : undefined
+          }
+          aria-invalid={!!errors.minimumExtractionReviews}
+          {...register("minimumExtractionReviews", { required: REQUIRED })}
+          className="font-bold text-sm"
         />
+        {errors.minimumExtractionReviews && (
+          <FieldError id="topic-min-reviews-error">
+            {errors.minimumExtractionReviews.message}
+          </FieldError>
+        )}
       </div>
       <div className="flex flex-col gap-1">
+        <Label htmlFor="topic-description">Topic Description</Label>
         <Textarea
+          id="topic-description"
+          aria-describedby={errors.description ? "topic-description-error" : undefined}
+          aria-invalid={!!errors.description}
+          {...register("description", { required: REQUIRED })}
+          className="font-bold text-sm h-fit xl:min-h-32"
           placeholder="Description"
         />
+        {errors.description && (
+          <FieldError id="topic-description-error">
+            {errors.description.message}
+          </FieldError>
+        )}
       </div>
       <div className="flex gap-3 mt-0 xl:mt-12">
         <Button variant="primary" type="submit" size="sm">

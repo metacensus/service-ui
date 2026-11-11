@@ -36,8 +36,12 @@ const CommentThread = ({ comments, reviewerName, onAdd }: CommentThreadProps) =>
       {comments.length > 0 && (
         <ul className="flex flex-col gap-2">
           {comments.map((comment) => (
+            <li key={comment.id} className="rounded-md bg-secondary p-2 text-sm">
+              <div className="text-xs text-muted-foreground">
+                <span className="font-bold text-foreground">{comment.author}</span>{" "}
                 · {formatIsoDate(comment.created_at)}
               </div>
+              <p className="mt-1 text-foreground">{comment.text}</p>
             </li>
           ))}
         </ul>

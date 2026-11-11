@@ -23,6 +23,7 @@ export const PAPER_REVIEW_TIERS = [
 export type PaperReviewTier = (typeof PAPER_REVIEW_TIERS)[number]["tier"];
 
 export type PaperReviewProgress = {
+  /** The Review paper id, e.g. `Northfield_2018_11111111`. */
   paperId: string;
   /** Every Review task of the paper, both levels, in display order. */
   rows: ReviewTaskRow[];

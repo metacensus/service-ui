@@ -22,8 +22,10 @@ export const TopicAnalysisReadinessCard = ({
     <Card className="flex h-full flex-col p-6">
       <CardTitle className="text-xl">Analysis &amp; results</CardTitle>
       <CardContent className="flex flex-1 flex-col items-center justify-center gap-3 px-0 py-6 text-center">
+        <p className="text-lg font-semibold">
           Further adjudication needed before analysis
         </p>
+        <p className="max-w-xs text-sm text-muted-foreground">
           {remaining !== null && remaining > 0
             ? `${remaining.toLocaleString("en-US")} low-confidence extraction ${
                 remaining === 1 ? "decision is" : "decisions are"
@@ -33,6 +35,7 @@ export const TopicAnalysisReadinessCard = ({
       </CardContent>
       <div className="flex flex-wrap justify-center gap-2">
         <Link href={`/topics/${topicId}/topic-review`}>
+          <Button size="sm" variant="secondary" className="px-3 text-xs" type="button">
             Adjudicate now
           </Button>
         </Link>

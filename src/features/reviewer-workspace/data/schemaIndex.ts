@@ -4,6 +4,7 @@ const INDEX_ERROR = "Could not load the paper index for this run.";
 
 const base = (configured: string | undefined, fallback: string) => configured?.replace(/\/+$/, "") || fallback;
 export const schemaIndexUrl = (runId: string) =>
+  `${base(import.meta.env.VITE_REVIEWER_INDEX_BASE_URL, "/reviewer-snapshots/index")}/${encodeURIComponent(runId)}/schema-index.json`;
 
 export async function fetchSchemaIndex(runId: string, fetchFn: typeof fetch = fetch): Promise<SchemaIndex> {
   const response = await fetchFn(schemaIndexUrl(runId));

@@ -154,6 +154,7 @@ const PropVoting = ({
     return (
       <>
         {text.slice(0, selection.start)}
+        <mark className="bg-mc-fill-emphasis text-inherit rounded-sm px-0.5">
           {text.slice(selection.start, selection.end)}
         </mark>
         {text.slice(selection.end)}
@@ -178,6 +179,7 @@ const PropVoting = ({
     <div className="grid gap-6">
       {prop?.description && (
         <div
+          className="border rounded-md border-dashed border-mc-ink-secondary px-6 py-4"
           data-vaul-no-drag
         >
           <p
@@ -231,6 +233,7 @@ const PropVoting = ({
             <div>
               <span className="font-bold">Citation:</span>{" "}
               {selectedText || (
+                <span className="text-muted-foreground">None provided</span>
               )}
             </div>
             {selectedText && (

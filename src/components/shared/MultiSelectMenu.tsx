@@ -1,4 +1,7 @@
 import useOnClickOutside from "@/hooks/useOnClickOutside";
+import { cn } from "@/lib/utils";
+import { styles } from "@/styles";
+import { useId, useRef, useState } from "react";
 import DropdownMenu from "./DropdownMenu";
 import TextBubble from "./TextBubble";
 
@@ -31,6 +34,8 @@ const MultiSelectMenu = ({
   label,
 }: MultiSelectProps) => {
   const ref = useRef(null);
+  const id = useId();
+  const Chevron = open ? ChevronUp : ChevronDown;
   const [query, setQuery] = useState("");
 
   useOnClickOutside(ref, () => {
@@ -39,9 +44,22 @@ const MultiSelectMenu = ({
     }
   });
   return (
+    <div ref={ref} className="flex flex-col gap-1">
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
+      <button
+        type="button"
+        id={id}
+        aria-expanded={open}
+        className={cn(
+          styles.focusRing
+        )}
         onClick={() => setOpen(!open)}
       >
+        <span className="w-fit pl-2 flex flex-row gap-2  flex-wrap">
           {!selectedItems.length && (
+            <span className="text-muted-foreground text-sm capitalize">
               {placeholder}
             </span>
           )}
@@ -64,6 +82,9 @@ const MultiSelectMenu = ({
               }
             />
           ))}
+        </span>
+        <Chevron className="ml-auto mr-4 w-5 h-5 text-muted-foreground" />
+      </button>
       {open && (
         <DropdownMenu
           name={name}

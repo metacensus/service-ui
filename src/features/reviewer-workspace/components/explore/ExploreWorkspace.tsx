@@ -66,6 +66,7 @@ function ProgressStages() {
       {PROGRESS_STAGES.map((label, index) => (
         <li
           key={label}
+          className={`flex items-center gap-2 ${index === stage ? "font-medium text-mc-ink-accent" : "text-muted-foreground"}`}
           aria-current={index === stage ? "step" : undefined}
         >
           {index < stage ? <Check className="h-3.5 w-3.5" /> : index === stage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <span className="h-3.5 w-3.5" />}
@@ -224,6 +225,7 @@ function EvidenceProvenanceLink({ evidence, sources, children, onSelect }: {
           onFocus={onClaimFocus}
           onClick={pinOpen}
           onKeyDown={onClaimKeyDown}
+          className="inline cursor-pointer border-b border-dotted border-mc-ink-secondary bg-transparent p-0 font-inherit text-inherit no-underline transition-colors hover:border-mc-ink-accent hover:bg-secondary focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {children}
         </button>
@@ -250,32 +252,43 @@ function EvidenceProvenanceLink({ evidence, sources, children, onSelect }: {
           }}
           aria-label="Value and sources"
           style={{ maxHeight: "var(--radix-popover-content-available-height)" }}
+          className="z-50 w-[min(390px,calc(100vw-2rem))] overflow-y-auto rounded-lg border bg-card p-4 text-left shadow-[0_14px_40px_-16px_rgba(15,23,42,0.45)] outline-none"
         >
+          <div data-hover-block="value" className="text-xs font-semibold leading-5 text-foreground">
+            <span className="font-mono font-normal text-muted-foreground">{evidence.field}</span>{" "}
             {displayValue(evidence.value)}
           </div>
           <div data-hover-block="chips" className="mt-2 flex flex-wrap gap-1.5">
             {certainty && (
+              <span data-chip="certainty" className={`${CHIP} ${certainty === "clean" ? "bg-mc-tint-grey-fill text-mc-tint-grey-ink" : "bg-amber-100 text-amber-800"}`}>
                 {certainty}
               </span>
             )}
+            <span data-chip="kind" className={`${CHIP} ${kind === "verbatim" ? "bg-mc-tint-blue-fill text-mc-tint-blue-ink" : "bg-mc-tint-purple-fill text-mc-tint-purple-ink"}`}>
               {kind}
             </span>
           </div>
+          <p data-hover-block="reasoning" className="mt-3 text-xs leading-5 text-foreground">
             {rationale ?? "The extracted value is reported directly in the cited passage."}
           </p>
           {evidence.derivation && evidence.derivation !== rationale && (
+            <p data-hover-block="derivation" className="mt-2 border-l-2 border-mc-line-accent pl-2 text-[11px] leading-4 text-muted-foreground">{evidence.derivation}</p>
           )}
           <div data-hover-block="sources" className="mt-1">
             {sources.map((item) => {
               const quote = `“${item.quote ?? item.location ?? "Source passage"}”`;
               return (
+                <figure key={item.evidence_id} data-source-index={item.source_index} className="mt-3 border-l-2 pl-3">
                   <button
                     type="button"
                     onClick={() => activateQuote(item)}
                     aria-label={`${quote} — ${item.pdf_available ? "opens the PDF at this passage" : "opens the source details"}`}
+                    className="block w-full cursor-pointer text-left text-xs italic leading-5 text-muted-foreground decoration-mc-ink-accent hover:text-mc-ink-accent hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     {quote}
+                    <span aria-hidden="true" className="not-italic text-mc-ink-accent"> ↗</span>
                   </button>
+                  <figcaption className="mt-1 text-[11px] leading-4 text-muted-foreground">{sourceCaption(item)}</figcaption>
                   <div className="mt-2">
                     <MembershipBubble paperId={item.paper_id} title={displayTitle(item.title)} onEditorOpenChange={onEditorOpenChange} />
                   </div>
@@ -283,6 +296,7 @@ function EvidenceProvenanceLink({ evidence, sources, children, onSelect }: {
               );
             })}
           </div>
+          <Popover.Arrow className="fill-card" />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
@@ -471,13 +485,18 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
   return (
     <MembershipContext.Provider value={membershipContext}>
       <div className="mt-6">
+        <div className="border-b pb-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-mc-ink-accent">
                 <Sparkles className="h-4 w-4" /> Agentic evidence search
               </div>
+              <h1 className="mt-2 text-2xl font-bold text-foreground">Explore the reviewed evidence</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                 Ask across the reviewed evidence. Each supported claim opens directly to its source passage.
               </p>
             </div>
+            <div className="rounded-md border bg-secondary px-3 py-2 text-xs text-foreground">
               {actions.length} reviewer decision{actions.length === 1 ? "" : "s"} applied
             </div>
           </div>
@@ -494,6 +513,7 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
                 type="button"
                 onClick={startNewChat}
                 disabled={turns.length === 0 && !loading}
+                className="rounded-md border bg-white px-2.5 py-1 text-xs font-semibold text-foreground transition hover:border-mc-line-accent hover:bg-secondary hover:text-mc-ink-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:bg-white disabled:hover:text-foreground"
               >
                 Clear chat
               </button>
@@ -507,8 +527,12 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
             >
               {turns.length === 0 && !loading && (
                 <div className="mx-auto max-w-xl py-8">
+                  <h2 className="mt-5 text-lg font-bold text-foreground">Start with an evidence question</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">Ask about studies, variants, outcomes, effect estimates, or the strength of the extracted evidence.</p>
                   <div className="mt-6 space-y-2">
                     {prompts.map((prompt) => (
+                      <button key={prompt} type="button" onClick={() => setQuestion(prompt)} className="group flex w-full items-center justify-between rounded-md border px-4 py-3 text-left text-sm text-foreground transition hover:border-mc-line-accent hover:bg-secondary">
+                        <span>{prompt}</span><ArrowRight className="h-4 w-4 shrink-0 text-mc-ink-secondary group-hover:text-mc-ink-accent" />
                       </button>
                     ))}
                   </div>
@@ -519,27 +543,38 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
                 const paperCount = new Set(turn.response.evidence.map((item) => item.paper_id)).size;
                 const tag = revisionTag(turn.response.set_revision, workingSet.revision);
                 return (
+                  <article key={turnIndex} className={turnIndex > 0 ? "mt-10 border-t pt-8" : ""}>
                     <div className="mb-5 flex justify-end">
+                      <div className="max-w-[88%] rounded-lg rounded-br-sm bg-secondary px-4 py-3 text-sm leading-6 text-foreground">
                         {turn.question}
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Sparkles className="h-3.5 w-3.5" /> Synthesis</div>
+                    <div className="prose prose-sm mt-3 max-w-none leading-7 prose-headings:text-foreground prose-table:block prose-table:overflow-x-auto prose-th:bg-secondary/50 prose-th:p-2 prose-td:p-2">
                       <EvidenceAnswer response={turn.response} onSelect={selectEvidence} />
                     </div>
                     {tag && (
+                      <span data-revision-tag title={tag.title} className="mt-2 inline-block whitespace-nowrap rounded border border-mc-line-accent bg-secondary px-1.5 py-px text-[11px] text-foreground">
                         {tag.text}
                       </span>
                     )}
 
                     {turn.response.evidence.length > 0 && (
+                      <details className="group mt-6 border-t pt-4">
+                        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground">
                           <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
                           Supporting passages · {turn.response.evidence.length} from {paperCount} paper{paperCount === 1 ? "" : "s"}
                         </summary>
+                        <div className="mt-3 divide-y rounded-md border bg-secondary/50">
                           {turn.response.evidence.map((item) => (
                             <button
                               key={item.evidence_id}
                               type="button"
                               onClick={() => selectEvidence(item)}
+                              className={`block w-full px-3 py-2.5 text-left transition first:rounded-t-md last:rounded-b-md ${active?.evidence_id === item.evidence_id ? "bg-secondary" : "hover:bg-white"}`}
                             >
+                              <span className="block truncate text-xs font-semibold text-foreground">{displayTitle(item.title)}</span>
+                              {item.quote && <span className="mt-1 block line-clamp-1 text-xs text-muted-foreground">{item.quote}</span>}
                             </button>
                           ))}
                         </div>
@@ -548,10 +583,13 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
 
                     {turn.response.steps.length > 0 && (
                       <details className="group mt-3">
+                        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
                           <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
                           Analysis details · {turn.response.steps.length} step{turn.response.steps.length === 1 ? "" : "s"}{revisedQueries ? ` · ${revisedQueries} revised` : ""}
                         </summary>
+                        <ol className="mt-3 space-y-1.5 border-l pl-4">
                           {turn.response.steps.map((step, index) => (
+                            <li key={index} className={`text-xs leading-5 ${isFailedMembershipUpdate(step) ? "font-semibold text-mc-alert-ink" : "text-muted-foreground"}`}>
                               {stepLabel(step)}
                             </li>
                           ))}
@@ -563,30 +601,40 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
               })}
               {loading && (
                 <div className={`mx-auto flex max-w-sm flex-col items-center text-center ${turns.length ? "py-12" : "py-24"}`}>
+                  <Loader2 className="h-7 w-7 animate-spin text-mc-ink-accent" />
+                  <h2 className="mt-4 font-bold text-foreground">Reviewing the evidence</h2>
                   <ProgressStages />
                 </div>
               )}
+              {error && <div className="rounded-md border border-mc-alert-border bg-mc-alert-fill p-4 text-sm text-mc-alert-ink">{error}</div>}
               <div ref={transcriptEndRef} />
             </div>
             {!runId && (
               <div className="border-t bg-white px-5 py-4">
+                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                   Explore is available for the pinned DPYD reviewer release. No
                   snapshot is configured for this topic, so there is nothing to
                   ask about here.
                 </div>
               </div>
             )}
+            <form onSubmit={submit} className="border-t bg-secondary/50 p-4">
               <label htmlFor="explore-question" className="sr-only">Ask the reviewed evidence</label>
+                <textarea id="explore-question" rows={2} value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submit(); } }} placeholder="Ask about variants, outcomes, effect estimates, or extraction quality…" className="min-h-12 flex-1 resize-none px-2 py-2 text-sm focus:outline-none" />
+                <button disabled={!question.trim() || !runId || loading} className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-30" aria-label="Search the evidence"><ArrowRight className="h-4 w-4" /></button>
               </div>
             </form>
           </section>
 
+          <aside ref={sourceLensRef} data-membership-scope="lens" className="min-h-[620px] scroll-mt-4 bg-secondary/50 p-4 xl:min-h-0 xl:overflow-hidden">
             {runId && active && source ? (
               <div className="flex h-full flex-col">
+                <div className="mb-3 flex items-center justify-between gap-3 px-1"><div className="min-w-0"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Quote className="h-3.5 w-3.5" /> Source lens</div><div className="mt-1 flex flex-wrap items-center gap-2"><span className="max-w-md truncate text-sm font-bold text-foreground">{displayTitle(active.title)}</span><MembershipBubble paperId={active.paper_id} title={displayTitle(active.title)} /></div></div>{active.pdf_page && <div className="shrink-0 text-xs text-muted-foreground">PDF page {active.pdf_page}</div>}</div>
                 {lensNote && <p data-lens-note className="mb-3 rounded-md border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs text-orange-900">{lensNote}</p>}
                 <div className="min-h-0 flex-1"><EvidencePanel runId={runId} paperId={active.paper_id} pdfUrl={pdfUrl(runId, active.pdf_path)} source={source} pdfAvailable={active.pdf_available} /></div>
               </div>
             ) : (
+              <div className="flex h-full min-h-[500px] items-center justify-center rounded-md border border-dashed bg-white p-8 text-center"><div><FileSearch className="mx-auto h-8 w-8 text-mc-ink-secondary" /><h2 className="mt-4 font-bold text-foreground">Source evidence appears here</h2><p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">Select an underlined claim in the answer to open its PDF at the supporting passage.</p></div></div>
             )}
           </aside>
         </div>

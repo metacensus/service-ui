@@ -152,6 +152,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
       <PopoverContent align="end" className="w-96 p-0 max-h-[28rem] overflow-auto">
         <div className="px-4 py-3 border-b">
           <p className="text-sm font-bold">Action Items</p>
+          <p className="text-xs text-muted-foreground">
             Things you can act on in this topic
           </p>
         </div>
@@ -159,6 +160,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
         {count === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
             <p className="text-sm font-medium">You&apos;re all caught up</p>
+            <p className="text-xs text-muted-foreground">
               No actions need your attention right now.
             </p>
           </div>
@@ -166,13 +168,16 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
           <div className="flex flex-col">
             {groups.map((group) => (
               <div key={group.category} className="py-2">
+                <p className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {group.category} ({group.items.length})
                 </p>
                 {group.items.map((item) => (
                   <Link
                     key={item.id}
                     href={item.href}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-secondary"
                   >
+                    <span className="text-xs line-clamp-2 flex-1">
                       {item.label}
                     </span>
                   </Link>

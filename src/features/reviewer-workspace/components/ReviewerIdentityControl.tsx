@@ -56,6 +56,7 @@ const ReviewerIdentityControl = ({
       >
         <label
           htmlFor="reviewer-name"
+          className="text-xs font-bold text-muted-foreground whitespace-nowrap"
         >
           Reviewing as
         </label>
@@ -76,8 +77,11 @@ const ReviewerIdentityControl = ({
 
   return (
     <div className="flex items-center gap-2 text-sm">
+      <span className="text-xs font-bold text-muted-foreground">Reviewing as</span>
+      <span className="font-medium text-foreground">{reviewerName}</span>
       <button
         type="button"
+        className="text-xs text-muted-foreground underline underline-offset-2 hover:text-mc-ink-accent"
         onClick={startEditing}
       >
         change

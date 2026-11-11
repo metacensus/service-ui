@@ -23,11 +23,27 @@ export type PapersReview = {
   seed: ReviewSeed | null;
 };
 
+/** A missing run or a failed read is unavailable; otherwise loading until the index, actions and seed all settle. */
+export function papersReviewStatus(gate: {
+  hasRun: boolean;
+  failed: boolean;
+  pending: boolean;
+}): PapersReview["status"] {
+  if (!gate.hasRun || gate.failed) return "unavailable";
+  return gate.pending ? "loading" : "ready";
+}
+
 /** Review task progress per stored paper, from the shared index cache and Review store. */
 export function usePaperReviewProgress(topicId: string): PapersReview {
   const runId = resolveRunId(topicId);
   const { query: indexQuery, index, tasks } = useReviewIndex(runId);
+  const { actions, actionsQuery, reviewSeed, reviewSeedPending } = useReviewState(topicId, runId);
 
+  const status = papersReviewStatus({
+    hasRun: runId !== null,
+    failed: indexQuery.isError || actionsQuery.isError,
+    pending: indexQuery.isPending || actionsQuery.isPending || reviewSeedPending,
+  });
 
   const byPmid = useMemo(
     () => reviewPaperIdsByPmid(index ? index.papers.map((paper) => paper.paper_id) : []),

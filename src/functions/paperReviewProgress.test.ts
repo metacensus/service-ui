@@ -132,5 +132,8 @@ describe("with the seed baseline", () => {
   });
 
   it("maps stored papers to Review papers by the pmid suffix", () => {
+    const byPmid = reviewPaperIdsByPmid(["Northfield_2018_11111111", "south_field_2017_22222222"]);
+    expect(byPmid.get("11111111")).toBe("Northfield_2018_11111111");
+    expect(byPmid.get("22222222")).toBe("south_field_2017_22222222");
   });
 });

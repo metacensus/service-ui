@@ -20,6 +20,7 @@ export function useExtractionSummary(topicId: string) {
     enabled: runId !== null,
   });
   const { query: indexQuery, tasks } = useReviewIndex(runId);
+  const { actions, reviewSeed, reviewSeedPending } = useReviewState(topicId, runId);
 
   const summary = useMemo(
     () =>
@@ -37,6 +38,7 @@ export function useExtractionSummary(topicId: string) {
   return {
     runId,
     summary,
+    isPending: runId !== null && (indexQuery.isPending || reviewSeedPending),
     isError: indexQuery.isError,
   };
 }

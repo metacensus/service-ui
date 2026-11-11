@@ -1,4 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { demoJson, demoReachable, EXPORT_RUN, exportJson, loadExportRows } from "../../data/loadExportRows.testutil";
+import { schemaIndexUrl } from "../../data/schemaIndex";
+import { NO_LABELS } from "../../data/snapshot";
 import type { Manifest, Row, SchemaPresentation } from "../../types";
 import { hasTextHighlight } from "../highlight";
 import type { LayerGroup, SchemaIndex } from "../schemaSelect";
@@ -10,7 +13,10 @@ import {
   RESULT_VALUE_FIELDS,
 } from "./textHighlight";
 
+const DEMO_UP = await demoReachable();
 const withExport = (name: string, body: () => void) =>
+  describe.skipIf(!DEMO_UP)(
+    DEMO_UP ? name : `${name} (skipped: no demo at DEMO_BASE_URL)`,
     { timeout: 120000 },
     body
   );
@@ -264,7 +270,14 @@ withExport("text highlight export-backed", () => {
   // Read in beforeAll, not here: describe bodies run even when skipped.
   let presentation: SchemaPresentation | undefined;
   const cache = new Map<string, Row[]>();
+  beforeAll(async () => {
+    presentation = (await exportJson<{ schema_presentation?: SchemaPresentation }>("demo_config.json"))
+      .schema_presentation;
+    for (const { paper_id } of (await exportJson<Manifest>("manifest.json")).papers) {
+      cache.set(paper_id, await loadExportRows(paper_id));
     }
+  }, 120000);
+  const rowsOf = (paperId: string) => cache.get(paperId)!;
 
   const statsOf = (paperId: string): [number, number, number, number, number] => {
     const rows = rowsOf(paperId);
@@ -289,6 +302,7 @@ withExport("text highlight export-backed", () => {
   it("shows 11,967 of 12,556 findings across the 43 papers, and leaves no paper empty", () => {
     let before = 0;
     let after = 0;
+    for (const paperId of cache.keys()) {
       const shown = hideUnhighlightedValues(rowsOf(paperId)).length;
       expect(shown, paperId).toBeGreaterThan(0);
       before += rowsOf(paperId).length;
@@ -437,13 +451,18 @@ withExport("text highlight export-backed", () => {
     };
     for (const paperId of PAPERS) {
       for (const order of ORDERS) {
+        visit(buildPaperTree(NO_LABELS, hideUnhighlightedValues(rowsOf(paperId)), presentation, order), `${paperId} ${order}`);
       }
     }
   });
 });
 
+withExport("text highlight index cross-check", () => {
+  it("the index counts only shown findings for the 10 demo papers", async () => {
+    const index = await demoJson<SchemaIndex>(schemaIndexUrl(EXPORT_RUN));
     for (const paperId of PAPERS) {
       const entry = index.papers.find((paper) => paper.paper_id === paperId)!;
+      const shown = hideUnhighlightedValues(await loadExportRows(paperId));
       expect(entry.row_count, paperId).toBe(shown.length);
       for (const [group, layer] of Object.entries(index.layers) as [LayerGroup, SchemaIndex["layers"][LayerGroup]][]) {
         const categories: Record<string, number> = {};

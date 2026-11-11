@@ -79,7 +79,27 @@ export interface DemoConfig {
   schema_presentation?: SchemaPresentation;
 }
 
+/**
+ * Authored display text for one run, served by the demo: the export has no display labels.
+ * Stored values stay in tooltips and in "All extracted fields"; anything unlabeled shows as stored.
+ */
+export interface RunLabels {
+  field_labels: Record<string, string>;
+  /** Field → stored ID → label. */
+  id_labels: Record<string, Record<string, string>>;
+  /** effect_size_type → the measure's short name on a result ("OR"). */
+  measure_labels: Record<string, string>;
+  /** comparison_group_type → the genetic model shown on a result ("per allele"). */
+  frame_tags: Record<string, string>;
+  /** A variant offered when one of the haplotypes it tags is picked; its term matches under each of `values`. */
+  tag_variant?: { name: string; offered_for: string[]; category: string; item: string; values: string[] };
+  /** Variant category whose items found in a single paper are hidden. */
+  single_paper_hidden_category?: string;
+  /** Papers listed first, in this order, when the export's demo_config.json names none. */
   featured_papers?: string[];
+  featured_badge?: string;
+}
+
 export interface IdentityDimension {
   field: string;
   description: string;

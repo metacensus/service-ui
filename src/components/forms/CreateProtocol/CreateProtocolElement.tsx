@@ -18,6 +18,7 @@ import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { styles } from "@/styles";
 import { XIcon } from "lucide-react";
+import { useEffect, useId, useMemo, useReducer, useState } from "react";
 import { ProtocolElement } from "../../../../types/ProtocolElement";
 import { ProtocolSection } from "../../../../types/ProtocolSection";
 
@@ -202,6 +203,7 @@ export const CustomProtocolElement = ({
       id: "checkbox-input",
     },
   ];
+  const uid = useId();
   const [state, dispatch] = useReducer(elementReducer, {
     type: selectedElement?.type || "text",
     name: selectedElement?.name || "",
@@ -229,11 +231,14 @@ export const CustomProtocolElement = ({
 
   return (
     <div>
+      <Card className="flex flex-col gap-2 xl:grid grid-cols-2 xl:gap-6 xl:p-6 mt-4 border-0 shadow-none xl:shadow-sm xl:border">
         <div className="w-full">
+          <Label htmlFor={`${uid}-type`}>Field Type</Label>
           <Select
             onValueChange={(e) => dispatch({ type: "SET_TYPE", payload: e })}
             value={state.type}
           >
+            <SelectTrigger id={`${uid}-type`} className="w-full">
               <SelectValue placeholder="Field Type" />
             </SelectTrigger>
             <SelectContent>
@@ -246,7 +251,9 @@ export const CustomProtocolElement = ({
           </Select>
         </div>
         <div>
+          <Label htmlFor={`${uid}-label`}>Field Label</Label>
           <Input
+            id={`${uid}-label`}
             value={state.label}
             onChange={(e) =>
               dispatch({ type: "SET_LABEL", payload: e.target.value })
@@ -259,7 +266,9 @@ export const CustomProtocolElement = ({
           state.type !== "radio" &&
           state.type !== "checkbox" && (
             <div>
+              <Label htmlFor={`${uid}-placeholder`}>Field Placeholder</Label>
               <Input
+                id={`${uid}-placeholder`}
                 value={state.placeholder}
                 onChange={(e) =>
                   dispatch({ type: "SET_PLACEHOLDER", payload: e.target.value })
@@ -271,6 +280,7 @@ export const CustomProtocolElement = ({
         {/* {(elementType === "radio" || elementType === "checkbox") && ( */}
         {(state.type === "radio" || state.type === "checkbox") && (
           <div>
+            <Label asChild><span>Options</span></Label>
 
             <Card className="p-2">
               <div className="flex gap-4 items-center">
@@ -289,6 +299,8 @@ export const CustomProtocolElement = ({
                   ) => (
                     <div key={index} className="flex gap-4 items-center">
                       <Input
+                        id={`${uid}-option-${index}-name`}
+                        aria-label="Option Name"
                         value={option.name}
                         onChange={(e) => {
                           dispatch({
@@ -312,6 +324,8 @@ export const CustomProtocolElement = ({
                         placeholder="Option Name"
                       />
                       <Input
+                        id={`${uid}-option-${index}-value`}
+                        aria-label="Option Value"
                         value={option.value}
                         onChange={(e) => {
                           dispatch({
@@ -371,34 +385,46 @@ export const CustomProtocolElement = ({
         )}
         <div className="flex flex-col gap-4 xl:flex-row">
           <div className="xl:mr-8">
+            <RadioGroup aria-labelledby={`${uid}-required`}>
+              <Label asChild><span id={`${uid}-required`}>Required?</span></Label>
               <div className="flex gap-2">
                 <div className="flex gap-1">
                   <input
+                    id={`${uid}-required-yes`}
                     type="radio"
+                    className="h-4 w-4"
                     checked={state.required}
                     onChange={() =>
                       dispatch({ type: "SET_REQUIRED", payload: true })
                     }
                   />
+                  <Label htmlFor={`${uid}-required-yes`}>Yes</Label>
                 </div>
                 <div className="flex gap-1">
                   <input
+                    id={`${uid}-required-no`}
                     type="radio"
+                    className="h-4 w-4"
                     checked={!state.required}
                     onChange={() =>
                       dispatch({ type: "SET_REQUIRED", payload: false })
                     }
                   />
+                  <Label htmlFor={`${uid}-required-no`}>No</Label>
                 </div>
               </div>
             </RadioGroup>
           </div>
 
           <div>
+            <RadioGroup aria-labelledby={`${uid}-shown`}>
+              <Label asChild><span id={`${uid}-shown`}>Conditionally Shown?</span></Label>
               <div className="flex gap-2">
                 <div className="flex gap-1">
                   <input
+                    id={`${uid}-shown-yes`}
                     type="radio"
+                    className="h-4 w-4"
                     checked={state.conditionallyShown}
                     onChange={() =>
                       dispatch({
@@ -407,10 +433,13 @@ export const CustomProtocolElement = ({
                       })
                     }
                   />
+                  <Label htmlFor={`${uid}-shown-yes`}>Yes</Label>
                 </div>
                 <div className="flex gap-1">
                   <input
+                    id={`${uid}-shown-no`}
                     type="radio"
+                    className="h-4 w-4"
                     checked={!state.conditionallyShown}
                     onChange={() =>
                       dispatch({
@@ -419,6 +448,7 @@ export const CustomProtocolElement = ({
                       })
                     }
                   />
+                  <Label htmlFor={`${uid}-shown-no`}>No</Label>
                 </div>
               </div>
             </RadioGroup>
@@ -509,10 +539,16 @@ const SelectProtocolElement = ({
               onClick={() => setElementType("premade")}
             >
               <input
+                id="element-type-premade"
+                className="ml-auto h-4 w-4"
                 type="radio"
                 value="premade"
                 checked={elementType === "premade"}
               />
+              <label
+                htmlFor="element-type-premade"
+                className="mc-label cursor-pointer"
+              >
                 Premade Type
               </label>
             </div>
@@ -522,10 +558,16 @@ const SelectProtocolElement = ({
               onClick={() => setElementType("custom")}
             >
               <input
+                id="element-type-custom"
+                className="ml-auto h-4 w-4"
                 type="radio"
                 value="custom"
                 checked={elementType === "custom"}
               />
+              <label
+                htmlFor="element-type-custom"
+                className="mc-label cursor-pointer"
+              >
                 Custom Field
               </label>
             </div>

@@ -5,6 +5,7 @@ import {
   parseNormalizationManifest,
 } from "./schemaNormalization";
 
+const RUN = "run-fixture";
 
 function validBody() {
   return {
@@ -21,6 +22,8 @@ function validBody() {
             raw: "c.1236G>A (rs56038477)",
             papers: [
               {
+                paper_id: "z_2022",
+                display: "Z 2022, J",
               },
             ],
           },
@@ -112,6 +115,7 @@ describe("parseNormalizationManifest", () => {
 describe("normalization URLs", () => {
   it("encodes the run id and respects the base", () => {
     expect(normalizationAssetUrl("a/b run", "manifest.json")).toBe(
+      "/reviewer-snapshots/normalization/a%2Fb%20run/manifest.json"
     );
   });
 

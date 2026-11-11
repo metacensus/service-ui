@@ -1,4 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { routes } from "@/lib/routes";
+import { demoJson, demoReachable, EXPORT_RUN } from "../data/loadExportRows.testutil";
+import { schemaIndexUrl } from "../data/schemaIndex";
+import { NO_LABELS } from "../data/snapshot";
+import type { RunLabels } from "../types";
 import {
   categoriesFor,
   categoryLabel,
@@ -14,7 +19,10 @@ import {
   type Term,
 } from "./schemaSelect";
 
+const DEMO_UP = await demoReachable();
 const withIndex = (name: string, body: () => void) =>
+  describe.skipIf(!DEMO_UP)(
+    DEMO_UP ? name : `${name} (skipped: no demo at DEMO_BASE_URL)`,
     { timeout: 60000 },
     body
   );
@@ -55,20 +63,42 @@ function indexWith(papers: PaperIndex[]): SchemaIndex {
 
 const catalog = (_group: LayerGroup) => VARIANT_CATEGORIES;
 
+const LABELS: RunLabels = {
+  ...NO_LABELS,
+  id_labels: {
+    entity_id: { "variant-a": "Variant A" },
+    study_design_id: { "design-a": "Design A" },
+  },
+  tag_variant: {
+    name: "tag",
+    offered_for: ["haplotype-a"],
+    category: "dpyd_variant",
+    item: "variant-t",
+    values: ["dpyd_variant", "dpyd_haplotype_or_variant_group"],
+  },
+};
+
 describe("termsOf", () => {
   it("a bare category becomes an Any term", () => {
+    const terms = termsOf(LABELS, { Variants: { dpyd_variant: [] } }, catalog, new Map());
     expect(terms).toHaveLength(1);
     expect(terms[0]).toMatchObject({ group: "Variants", label: "DPYD variants" });
   });
 
+  it("the tag variant's term reads '… (<name>)' and matches every tagged locus type", () => {
     const terms = termsOf(
+      LABELS,
+      { Variants: { dpyd_variant: ["variant-t"] } },
       catalog,
+      new Map([["entity_id:variant-t", "Variant T"]])
     );
     expect(terms).toHaveLength(1);
+    expect(terms[0].label).toBe("Variant T (tag)");
     expect(terms[0].category.values).toEqual(["dpyd_variant", "dpyd_haplotype_or_variant_group"]);
   });
 
   it("a Paper pick becomes its own term", () => {
+    const terms = termsOf(LABELS, { Paper: ["p9"] }, catalog, new Map(), () => "P 9");
     expect(terms).toHaveLength(1);
     expect(terms[0]).toMatchObject({ group: "Paper", item: "p9", label: "P 9" });
   });
@@ -77,6 +107,7 @@ describe("termsOf", () => {
 describe("termCount", () => {
   it("counts a bare category across its folded values", () => {
     const paper = paperIndex();
+    const [term] = termsOf(LABELS, { Variants: { dpyd_variant: [] } }, catalog, new Map());
     expect(termCount(paper, term)).toBe(4);
   });
 
@@ -93,6 +124,7 @@ describe("rowMatcher", () => {
 
   it("ORs items within a group", () => {
     const index = indexWith([paperIndex()]);
+    const terms = termsOf(LABELS, { Variants: { dpyd_variant: ["x", "y"] } }, catalog, new Map());
     const match = rowMatcher(terms, index, "any", "p1");
     expect(match(row({ entity_locus_type: "dpyd_variant", entity_id: "x" }))).toBe(true);
     expect(match(row({ entity_locus_type: "dpyd_variant", entity_id: "y" }))).toBe(true);
@@ -102,6 +134,7 @@ describe("rowMatcher", () => {
   it("any across groups ORs; all across groups ANDs", () => {
     const index = indexWith([paperIndex()]);
     const terms = termsOf(
+      LABELS,
       { Variants: { dpyd_variant: ["x"] }, Outcomes: { diarrhoea: [] } },
       (group) =>
         group === "Outcomes"
@@ -118,6 +151,7 @@ describe("rowMatcher", () => {
 
   it("a Paper term matches every row of its paper", () => {
     const index = indexWith([paperIndex()]);
+    const terms = termsOf(LABELS, { Paper: ["p1"] }, catalog, new Map());
     const match = rowMatcher(terms, index, "any", "p1");
     expect(match(row({}))).toBe(true);
     expect(rowMatcher(terms, index, "any", "p2")(row({}))).toBe(false);
@@ -128,15 +162,27 @@ describe("itemLabel", () => {
   const curated = new Map([["entity_id:known_x", "c.1236G>A"]]);
 
   it("curated first, with the DPYD c. prefix rule outside the DPYD chip", () => {
+    expect(itemLabel(LABELS, "Variants", "dpyd_variant", "known_x", curated)).toBe("c.1236G>A");
+    expect(itemLabel(LABELS, "Variants", "non_dpyd_genetic_locus", "known_x", curated)).toBe("DPYD c.1236G>A");
   });
 
+  it("then the run's labels and rules, then the dpyd c. rule, then prettify", () => {
+    expect(itemLabel(LABELS, "Variants", "dpyd_variant", "dpyd_c1236g>a", new Map())).toBe("c.1236G>A");
+    expect(itemLabel(LABELS, "Variants", "dpyd_variant", "variant-a", new Map())).toBe("Variant A");
+    expect(itemLabel(LABELS, "Variants", "other", "compound_variant-a__tymp_rs11479", new Map())).toBe(
+      "Variant A + TYMP rs11479"
+    );
+    expect(itemLabel(LABELS, "Variants", "dpyd_variant", "some_new_thing", new Map())).toBe("Some new thing");
   });
 });
 
 describe("term keys ↔ selection", () => {
+  const curated = new Map([["entity_id:variant-t", "Variant T"]]);
 
   it("round-trips term keys through the selection, in order", () => {
     const keys = [
+      "Variants|dpyd_haplotype_or_variant_group|haplotype-a",
+      "Variants|dpyd_variant|variant-t",
       "Outcomes|toxicity_overall_or_global",
       "Paper|p9",
     ];
@@ -147,12 +193,17 @@ describe("term keys ↔ selection", () => {
     const selection = selectionOfTermKeys(keys, mixed, ["p9"]);
     expect(selection).toEqual({
       Variants: {
+        dpyd_haplotype_or_variant_group: ["haplotype-a"],
+        dpyd_variant: ["variant-t"],
       },
       Outcomes: { toxicity_overall_or_global: [] },
       Paper: ["p9"],
     });
+    const terms = termsOf(LABELS, selection, mixed, curated, (id) => id);
     // termsOf orders terms by GROUPS.
     expect(terms.map((term) => term.key)).toEqual([
+      "Variants|dpyd_variant|variant-t",
+      "Variants|dpyd_haplotype_or_variant_group|haplotype-a",
       "Outcomes|toxicity_overall_or_global",
       "Paper|p9",
     ]);
@@ -181,12 +232,23 @@ describe("term keys ↔ selection", () => {
 });
 
 describe("categoryLabel", () => {
+  it("Study context consults the manifest first, then the run's labels", () => {
     expect(
+      categoryLabel(LABELS, "Study context", "design-a", new Map([["study_design_id:design-a", "Design A (curated)"]]))
+    ).toBe("Design A (curated)");
+    expect(categoryLabel(LABELS, "Study context", "design-a", new Map())).toBe("Design A");
+    expect(categoryLabel(NO_LABELS, "Study context", "design-a", new Map())).toBe("Design-a");
   });
 });
 
 withIndex("export-backed HapB3 checks", () => {
   // Read in beforeAll, not here: describe bodies run even when skipped.
+  let index: SchemaIndex;
+  let run: RunLabels;
+  beforeAll(async () => {
+    index = await demoJson<SchemaIndex>(schemaIndexUrl(EXPORT_RUN));
+    run = await demoJson<RunLabels>(routes.demo.labels(EXPORT_RUN));
+  });
   const paperById = (index: SchemaIndex, id: string) =>
     index.papers.find((paper) => paper.paper_id === id)!;
 
@@ -216,10 +278,13 @@ withIndex("export-backed HapB3 checks", () => {
     expect(shown).toBe(29);
   });
 
+  it("HapB3 path: HapB3 alone → 2 papers; with the tag → 8 papers, 6 featured", () => {
     const curated = new Map<string, string>();
     const forPapers = (terms: Term[]) => index.papers.filter((paper) => terms.some((term) => termCount(paper, term) > 0));
     const hapb3 = termsOf(
+      run,
       { Variants: { dpyd_haplotype_or_variant_group: ["dpyd_hapb3"] } },
+      (group) => categoriesFor(run, group, index.papers),
       curated
     );
     const hapb3Papers = forPapers(hapb3);
@@ -227,10 +292,14 @@ withIndex("export-backed HapB3 checks", () => {
       ["etienne_grimaldi_2017_28481884", "Lee_2016_26658227"].sort()
     );
     const withTag = termsOf(
+      run,
+      { Variants: { dpyd_haplotype_or_variant_group: ["dpyd_hapb3"], dpyd_variant: [run.tag_variant!.item] } },
+      (group) => categoriesFor(run, group, index.papers),
       curated
     );
     const tagged = forPapers(withTag);
     expect(tagged).toHaveLength(8);
+    expect(tagged.filter((paper) => run.featured_papers?.includes(paper.paper_id))).toHaveLength(6);
     const lee = paperById(index, "Lee_2016_26658227");
     expect(lee.row_count).toBe(191);
     expect(hapb3.reduce((sum, term) => sum + termCount(lee, term), 0)).toBe(12);

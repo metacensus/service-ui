@@ -73,6 +73,7 @@ const TopicReview = ({ params }: Props) => {
     reviewerName,
     storageMode,
     reviewSeed,
+    reviewSeedPending,
     setReviewerName,
     resetReviewState,
   } = useReviewState(topicId, runId);
@@ -98,6 +99,7 @@ const TopicReview = ({ params }: Props) => {
   );
   const landing = useMemo(
     () =>
+      tasks && scope && !reviewSeedPending
         ? buildReviewLanding({
             tasks,
             scope,
@@ -107,10 +109,12 @@ const TopicReview = ({ params }: Props) => {
             seed: reviewSeed,
           })
         : null,
+    [tasks, scope, reviewSeedPending, actions, shownFilters, includeNonAmbiguous, reviewSeed]
   );
 
   const loading =
     runId !== null &&
+    (indexQuery.isPending || reviewSeedPending || (workingSetOn && workingSet.status === "loading"));
   const workingSetFailed =
     !indexQuery.isError && workingSetOn && workingSet.status === "error";
   const emptyWorkingSet = landing?.scope.emptyWorkingSet ?? false;
@@ -142,6 +146,7 @@ const TopicReview = ({ params }: Props) => {
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-bold text-2xl">Extraction review</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             High-leverage extraction decisions, ordered by their impact on the
             evidence base.
           </p>
@@ -165,6 +170,7 @@ const TopicReview = ({ params }: Props) => {
       </div>
 
       {!runId && (
+        <div className="mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           No Comparanda extraction run is linked to this topic yet.
         </div>
       )}
@@ -177,6 +183,7 @@ const TopicReview = ({ params }: Props) => {
       )}
 
       {indexQuery.isError && (
+        <div className="mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           No extraction run is available to review for this topic yet. Run an
           extraction first, then return here to review it.
         </div>
@@ -187,6 +194,7 @@ const TopicReview = ({ params }: Props) => {
           {filterBar}
           <div
             role="alert"
+            className="mc-notice text-sm"
           >
             The working set could not be loaded, so no tasks are shown. Try
             again later, or turn off “Use working set” to review all papers.
@@ -197,6 +205,7 @@ const TopicReview = ({ params }: Props) => {
       {landing && emptyWorkingSet && (
         <div className="mt-6 flex flex-col gap-4">
           {filterBar}
+          <div className="rounded-md bg-secondary p-3 text-sm text-foreground">
             The working set is empty. Add papers in{" "}
             <Link
               href={`${base}/data?mode=table`}
@@ -235,6 +244,7 @@ const TopicReview = ({ params }: Props) => {
           )}
 
           {listedCount === 0 && (
+            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
               No tasks match these filters.
             </div>
           )}
@@ -251,6 +261,7 @@ const TopicReview = ({ params }: Props) => {
             />
           ))}
 
+          <p data-testid="landing-hint" className="text-xs text-muted-foreground">
             Select a task above to open it. When every question of a task is
             decided, the view advances to the next undecided task.
           </p>

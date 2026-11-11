@@ -5,8 +5,10 @@
 
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { ChevronRight, Pill, Users } from "lucide-react";
+import type { PaperMeta, Row, RunLabels, SchemaPresentation } from "@/features/reviewer-workspace/types";
 import type { Selection } from "./selection";
 import { prettyValue } from "@/features/reviewer-workspace/model/drilldown/displayLabel";
+import { PLACEHOLDER_VALUES, type TreeOrder } from "@/features/reviewer-workspace/model/drilldown/fieldMap";
 import {
   displayText,
   fieldLabel,
@@ -67,6 +69,7 @@ function Value({
   text,
   scopeLabel,
   presentation,
+  labels,
   query,
   selectedKey,
   onSelect,
@@ -79,6 +82,7 @@ function Value({
   text?: string;
   scopeLabel: string;
   presentation?: SchemaPresentation;
+  labels: RunLabels;
   query: string;
   selectedKey: string;
   onSelect: Select;
@@ -89,11 +93,14 @@ function Value({
   const [open, setOpen] = useState(false);
   const anchor = rows[0];
   if (!anchor) return null;
+  const shown = text ?? prettyValue(labels, displayText(anchor, field), field, anchor.fields[field]);
   const selectionFor = (target: string, indexes: number[], label: string): Selection =>
     indexes.length === 1
       ? { kind: "row", paperId, rowIndex: indexes[0], field: target }
       : { kind: "shared", paperId, field: target, scopeLabel: label, rowIndexes: indexes };
+  // Same box as ValueButton in parts.tsx.
   const base = `rounded-sm border ${tight ? "px-px" : "px-1"} text-left ${className}`;
+  const idle = "border-transparent hover:border-mc-line-accent hover:bg-secondary";
 
   const normalized = isNormalizedField(field, presentation) && isPopulated(anchor, field);
   if (!normalized) {
@@ -102,10 +109,12 @@ function Value({
     return (
       <button
         type="button"
+        title={shown === displayText(anchor, field) ? `${fieldLabel(labels, field)} · ${field}` : `${fieldLabel(labels, field)} · stored as ${displayText(anchor, field)}`}
         onClick={(event) => {
           event.stopPropagation();
           onSelect(selection);
         }}
+        className={`${base} ${selected ? "border-mc-line-accent bg-mc-fill-emphasis text-mc-ink-accent" : idle}`}
       >
         <Highlight text={shown} query={query} />
       </button>
@@ -117,14 +126,17 @@ function Value({
     <span className="inline-flex min-w-0 flex-col items-start">
       <button
         type="button"
+        title={`${fieldLabel(labels, field)} · ${displayText(anchor, field)} — click for the paper's wording`}
         onClick={(event) => {
           event.stopPropagation();
           setOpen((value) => !value);
         }}
+        className={`${base} ${open ? "border-mc-line-accent bg-secondary" : idle}`}
       >
         <Highlight text={shown} query={query} />
       </button>
       {open && (
+        <span className="mt-1 flex flex-col items-start gap-0.5 border-l-2 border-mc-line-accent pl-2">
           {forms.map((form) => {
             const selection = selectionFor(
               presentation?.reported_value_fields?.[field] ?? field,
@@ -140,7 +152,10 @@ function Value({
                   event.stopPropagation();
                   onSelect(selection);
                 }}
+                className={`rounded-sm border border-mc-line-accent px-1 py-0.5 text-left text-xs font-normal text-mc-ink-accent ${
                   selected
+                    ? "bg-mc-fill-emphasis"
+                    : "bg-secondary hover:bg-mc-fill-emphasis"
                 }`}
               >
                 “{form.text}”
@@ -148,6 +163,7 @@ function Value({
             );
           })}
           {forms.length === 0 && (
+            <span className="text-xs font-normal italic text-muted-foreground">not printed in the paper</span>
           )}
         </span>
       )}
@@ -161,6 +177,7 @@ export function PaperLine({
   paper,
   rows,
   presentation,
+  labels,
   query,
   selectedKey,
   onSelect,
@@ -168,6 +185,7 @@ export function PaperLine({
   paper: PaperMeta;
   rows: Row[];
   presentation?: SchemaPresentation;
+  labels: RunLabels;
   query: string;
   selectedKey: string;
   onSelect: Select;
@@ -180,14 +198,18 @@ export function PaperLine({
   return (
     <div className="mt-3">
       {facts.length > 0 && (
+        <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-foreground">
           {facts.map((field, index) => (
             <span key={field} className="inline-flex items-baseline gap-2">
+              {index > 0 && <span className="text-mc-ink-secondary">·</span>}
+              {field === "total_n" && <span className="text-muted-foreground">Total N</span>}
               <Value
                 paperId={paper.paper_id}
                 rows={rows}
                 field={field}
                 scopeLabel="paper"
                 presentation={presentation}
+                labels={labels}
                 query={query}
                 selectedKey={selectedKey}
                 onSelect={onSelect}
@@ -215,6 +237,7 @@ type Shared = {
   onToggleRow: (rowIndex: number) => void;
   renderDetail: (row: Row, node: TreeNode) => ReactNode;
   presentation?: SchemaPresentation;
+  labels: RunLabels;
   narrow: boolean;
 };
 
@@ -245,14 +268,18 @@ function indentStyle(depth: number): CSSProperties {
 }
 
 /** Printed group wording that only restates a genetic model ("unit increase in the dosage of the minor allele") — the result says "per allele". */
+function restatesModel(labels: RunLabels, field: string, rows: Row[]) {
   return (
     field === "comparison_group_raw" &&
+    rows.every((row) => labels.frame_tags[String(row.fields.comparison_group_type ?? "")])
   );
 }
 
+function contextChips(labels: RunLabels, chips: SharedChip[], rows: Row[]) {
   const byField = new Map(chips.map((chip) => [chip.field, chip]));
   return CONTEXT_FIELDS.flatMap((field) => {
     const chip = byField.get(field);
+    if (!chip || restatesModel(labels, field, rows)) return [];
     if (PLACEHOLDER_VALUES.has(String(rows[0]?.fields[field] ?? ""))) return [];
     return [chip];
   });
@@ -260,12 +287,14 @@ function indentStyle(depth: number): CSSProperties {
 
 /** What every finding below shares, as readable tags on the node's own line. */
 function ContextTags({ chips, node, ...props }: Shared & { chips: SharedChip[]; node: TreeNode }) {
+  const shown = contextChips(props.labels, chips, node.rows);
   const scope = node.path.map((step) => step.text).join(" › ");
   return (
     <>
       {shown.map((chip) => (
         <span
           key={chip.field}
+          className="inline-flex max-w-full self-center rounded-md bg-mc-tint-purple-fill px-1.5 py-0.5 text-[13px] font-medium text-mc-tint-purple-ink ring-1 ring-inset ring-mc-line-accent"
         >
           <Value
             paperId={props.paper.paper_id}
@@ -273,6 +302,7 @@ function ContextTags({ chips, node, ...props }: Shared & { chips: SharedChip[]; 
             field={chip.field}
             scopeLabel={scope}
             presentation={props.presentation}
+            labels={props.labels}
             query={props.query}
             selectedKey={props.selectedKey}
             onSelect={props.onSelect}
@@ -295,6 +325,7 @@ function Node({ node, ...props }: Shared & { node: TreeNode }) {
     : [...node.lifted, ...node.liftedOverflow];
 
   return (
+    <div className={node.depth === 1 ? "border-b last:border-b-0" : ""}>
       <div
         role="button"
         tabIndex={0}
@@ -306,12 +337,14 @@ function Node({ node, ...props }: Shared & { node: TreeNode }) {
             props.onToggle(node.key);
           }
         }}
+        className={`group flex cursor-pointer items-baseline gap-2 pr-4 pl-[calc(var(--i-sm)+0.75rem)] transition-colors hover:bg-secondary/50 md:pl-[calc(var(--i)+1rem)] ${
           node.depth === 1 ? "py-3.5" : "py-2"
         }`}
         style={indentStyle(node.depth - 1)}
       >
         <ChevronRight
           aria-hidden
+          className={`relative top-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:text-foreground ${
             open ? "rotate-90" : ""
           }`}
         />
@@ -320,7 +353,10 @@ function Node({ node, ...props }: Shared & { node: TreeNode }) {
         <span
           className={`min-w-0 break-words ${
             node.depth === 1
+              ? "text-[15px] font-semibold text-foreground"
               : node.depth === 2
+                ? "font-medium text-foreground"
+                : "text-foreground"
           }`}
         >
           {node.populated ? (
@@ -330,15 +366,18 @@ function Node({ node, ...props }: Shared & { node: TreeNode }) {
               field={field}
               scopeLabel={scope}
               presentation={props.presentation}
+              labels={props.labels}
               query={props.query}
               selectedKey={props.selectedKey}
               onSelect={props.onSelect}
             />
           ) : (
+            <span className="italic text-muted-foreground">No {fieldLabel(props.labels, field).toLowerCase()} recorded</span>
           )}
         </span>
         {open && <ContextTags chips={chips} node={node} {...props} />}
         </span>
+        <span className="shrink-0 self-center rounded-full bg-secondary px-2 py-0.5 text-xs font-medium tabular-nums text-foreground">
           {count}
         </span>
       </div>
@@ -354,6 +393,7 @@ function Node({ node, ...props }: Shared & { node: TreeNode }) {
 function LevelKind({ field }: { field: string }) {
   const { word, icon: Icon } = LEVEL_KIND[field];
   return (
+    <span className="inline-flex shrink-0 items-center gap-1 self-center rounded-md bg-mc-tint-purple-fill px-2 py-0.5 text-xs font-bold text-mc-tint-purple-ink">
       <Icon className="h-3.5 w-3.5" aria-hidden />
       {word}
     </span>
@@ -371,6 +411,7 @@ function Table({ node, ...props }: Shared & { node: TreeNode }) {
   const varies = (field: string) =>
     new Set(node.rows.map((row) => (isPopulated(row, field) ? displayText(row, field) : ""))).size > 1;
   const extras = EXTRA_COLUMN_FIELDS.filter(
+    (field) => field !== identity && varies(field) && !restatesModel(props.labels, field, node.rows)
   ).slice(0, 2);
   const columns = [identity ? "minmax(0,1.3fr)" : null, ...extras.map(() => "minmax(0,1fr)"), "minmax(0,1.4fr)"]
     .filter(Boolean)
@@ -378,13 +419,17 @@ function Table({ node, ...props }: Shared & { node: TreeNode }) {
 
   return (
     <div
+      className="mb-3 mr-4 ml-[calc(var(--i-sm)+2.25rem)] overflow-hidden rounded-md border md:ml-[calc(var(--i)+2.5rem)]"
       style={indentStyle(node.depth - 1)}
     >
       {!props.narrow && (
         <div
+          className="grid gap-4 border-b bg-secondary/50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground"
           style={{ gridTemplateColumns: columns }}
         >
+          {identity && <span>{fieldLabel(props.labels, identity)}</span>}
           {extras.map((field) => (
+            <span key={field}>{fieldLabel(props.labels, field)}</span>
           ))}
           <span>Result</span>
         </div>
@@ -392,6 +437,7 @@ function Table({ node, ...props }: Shared & { node: TreeNode }) {
       {rows.map((row) => {
         const open = props.expandedRows.has(row.row_index);
         return (
+          <div key={row.row_index} className="border-b last:border-b-0">
             <div
               role="button"
               tabIndex={0}
@@ -406,20 +452,25 @@ function Table({ node, ...props }: Shared & { node: TreeNode }) {
               }}
               className={`cursor-pointer gap-x-4 gap-y-0.5 px-3 py-2 text-sm transition-colors ${
                 props.narrow ? "flex flex-col" : "grid items-baseline"
+              } ${open ? "bg-secondary" : "hover:bg-secondary/50"}`}
               style={props.narrow ? undefined : { gridTemplateColumns: columns }}
             >
               {identity && (
+                <span className="min-w-0 break-words font-medium text-foreground">
                   <CellValue row={row} field={identity} {...props} />
                 </span>
               )}
               {extras.map((field) => (
+                <span key={field} className="min-w-0 break-words text-foreground">
                   {/* the printed wording of a genetic model is already "per allele" etc. on the result */}
+                  {restatesModel(props.labels, field, [row]) ? null : <CellValue row={row} field={field} {...props} />}
                 </span>
               ))}
               <span className="min-w-0">
                 <Result row={row} {...props} />
               </span>
             </div>
+            {open && <div className="border-t bg-white px-3 pb-3">{props.renderDetail(row, node)}</div>}
           </div>
         );
       })}
@@ -428,6 +479,7 @@ function Table({ node, ...props }: Shared & { node: TreeNode }) {
 }
 
 function CellValue({ row, field, ...props }: Shared & { row: Row; field: string }) {
+  if (!isPopulated(row, field)) return <span className="text-mc-ink-secondary">—</span>;
   return (
     <Value
       paperId={props.paper.paper_id}
@@ -435,6 +487,7 @@ function CellValue({ row, field, ...props }: Shared & { row: Row; field: string 
       field={field}
       scopeLabel={`Finding ${row.row_index + 1}`}
       presentation={props.presentation}
+      labels={props.labels}
       query={props.query}
       selectedKey={props.selectedKey}
       onSelect={props.onSelect}
@@ -451,6 +504,7 @@ function Result({ row, ...props }: Shared & { row: Row }) {
       field={field}
       text={text ?? displayText(row, field)}
       scopeLabel={`Finding ${row.row_index + 1}`}
+      labels={props.labels}
       query={props.query}
       selectedKey={props.selectedKey}
       onSelect={props.onSelect}
@@ -460,12 +514,17 @@ function Result({ row, ...props }: Shared & { row: Row }) {
   );
   const parts: ReactNode[] = [];
   const measure = String(row.fields.effect_size_type ?? "");
+  const frame = props.labels.frame_tags[String(row.fields.comparison_group_type ?? "")];
   if (isPopulated(row, "effect_size")) {
     parts.push(
       <span key="est" className="inline-flex items-baseline gap-1">
+        <span className="text-xs font-medium text-muted-foreground">
+          {props.labels.measure_labels[measure] ?? "Effect"}
           {frame ? ` ${frame}` : ""}
         </span>
+        <span className="font-semibold text-foreground">{num("effect_size")}</span>
         {(isPopulated(row, "effect_size_ci_lower") || isPopulated(row, "effect_size_ci_upper")) && (
+          <span className="text-muted-foreground">
             ({isPopulated(row, "effect_size_ci_lower") ? num("effect_size_ci_lower") : "?"}–
             {isPopulated(row, "effect_size_ci_upper") ? num("effect_size_ci_upper") : "?"})
           </span>
@@ -475,6 +534,8 @@ function Result({ row, ...props }: Shared & { row: Row }) {
   }
   if (isPopulated(row, "p_value")) {
     parts.push(
+      <span key="p" className="inline-flex items-baseline gap-1 text-foreground">
+        <span className="text-xs font-medium text-muted-foreground">p</span>
         {num("p_value")}
       </span>
     );
@@ -483,6 +544,7 @@ function Result({ row, ...props }: Shared & { row: Row }) {
     if (!isPopulated(row, field)) continue;
     parts.push(
       <span key={field} className="inline-flex items-baseline gap-1">
+        <span className="text-xs font-medium text-muted-foreground">{fieldLabel(props.labels, field)}</span>
         {num(field)}
       </span>
     );
@@ -491,15 +553,18 @@ function Result({ row, ...props }: Shared & { row: Row }) {
   const total = isPopulated(row, "n_total");
   if (events || total) {
     parts.push(
+      <span key="n" className="inline-flex items-baseline text-muted-foreground">
         {events ? num("n_events") : "?"}/{total ? num("n_total") : "?"}
       </span>
     );
   } else if (isPopulated(row, "count_as_printed_raw")) {
     parts.push(
+      <span key="n" className="text-foreground">
         {num("count_as_printed_raw")}
       </span>
     );
   }
+  if (parts.length === 0) return <span className="text-mc-ink-secondary">—</span>;
   return (
     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">{parts}</span>
   );
@@ -529,6 +594,7 @@ export function CleanControls({
         }}
         placeholder="Search"
       />
+      <div className="inline-flex h-10 shrink-0 self-start rounded-md bg-secondary p-1 text-sm md:ml-auto md:self-auto">
         {(["variant_first", "outcome_first"] as TreeOrder[]).map((value) => (
           <button
             key={value}
@@ -536,6 +602,7 @@ export function CleanControls({
             aria-pressed={order === value}
             onClick={() => onOrderChange(value)}
             className={`rounded px-3 font-medium transition-colors ${
+              order === value ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {value === "variant_first" ? "By variant" : "By outcome"}

@@ -1,3 +1,7 @@
+@import "@metacensus/library-ui/fonts.css";
+@import "@metacensus/library-ui/tokens.css";
+@import "@metacensus/library-ui/styles.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,6 +18,13 @@
   }
   html {
     scroll-behavior: smooth;
+    accent-color: var(--mc-fill-solid);
+  }
+  /* Preflight's placeholder grey is 2.5:1; this is about 4.7:1. */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--mc-ink);
+    opacity: 0.8;
   }
   body {
     @apply bg-background text-foreground;

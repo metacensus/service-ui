@@ -1,4 +1,5 @@
 import { ApiError } from "@metacensus/api";
+import { Button, Field, Input, Label, Notice } from "@metacensus/library-ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -6,6 +7,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { apiClient } from "@/lib/apiClient";
 import queryClient from "@/lib/queryClient";
 import { useRouter } from "@/lib/next-navigation-compat";
+import { AuthShell, authLink, fieldError } from "../AuthShell";
 
 type LogInFormInputs = {
   email: string;
@@ -45,29 +47,44 @@ export default function LogIn() {
 
   return (
     <AuthShell title="Log in.">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        <Field error={fieldError(errors.email)}>
+          <Label>Email</Label>
+          <Input
             type="email"
             autoComplete="email"
             placeholder="you@organization.org"
             {...register("email", { required: "Email is required" })}
           />
+        </Field>
 
+        <Field error={fieldError(errors.password)}>
+          <Label>Password</Label>
+          <Input
             type="password"
             autoComplete="current-password"
             placeholder="Your password"
             {...register("password", { required: "Password is required" })}
           />
+        </Field>
 
+        {loginError && <Notice role="alert">{loginError}</Notice>}
 
+        <Button
           type="submit"
           disabled={!watch("email") || !watch("password") || isSubmitting}
         >
           {isSubmitting ? "Signing in…" : "Log in"}
+        </Button>
       </form>
 
+      <p className="mt-8 text-sm">
         New to MetaCensus?{" "}
+        <Link to="/sign-up" className={authLink}>
           Get started
         </Link>
       </p>
+      <p className="mt-2 text-sm">
         Not sure MetaCensus is for you yet?{" "}
           Talk to us
       </p>

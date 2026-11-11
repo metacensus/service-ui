@@ -13,6 +13,8 @@ const IconCard = ({ icon, active, onClick, className }: IconCardProps) => {
     <Card
       onClick={onClick}
       className={cn(
+        "w-9 h-9 p-1.5 flex items-center justify-center cursor-pointer hover:bg-secondary",
+        active && "bg-mc-fill-emphasis",
         className
       )}
     >

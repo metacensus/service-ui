@@ -6,6 +6,7 @@ import {
   fetchDemoConfig,
   fetchManifest,
   fetchReviewUnits,
+  fetchRunLabels,
   fetchSchemaSummary,
 } from "../data/snapshot";
 
@@ -19,6 +20,8 @@ export const reviewerWorkspaceQueryKeys = {
     ["reviewer-workspace", runId, "schema-summary"] as const,
   demoConfig: (runId: string) =>
     ["reviewer-workspace", runId, "demo-config"] as const,
+  runLabels: (runId: string) =>
+    ["reviewer-workspace", runId, "labels"] as const,
   normalizationManifest: (runId: string) =>
     ["reviewer-workspace", runId, "normalization"] as const,
   paperRows: (runId: string, paperId: string) =>
@@ -86,11 +89,20 @@ export function useRunSnapshot(topicId: string) {
     enabled,
   });
 
+  const runLabelsQuery = useQuery({
+    queryKey: reviewerWorkspaceQueryKeys.runLabels(queryRunId),
+    queryFn: () => fetchRunLabels(queryRunId),
+    enabled,
+    // A failure settles at once: the page shows values as stored rather than waiting on retries.
+    retry: false,
+  });
+
   return {
     runId,
     manifestQuery,
     reviewUnitsQuery,
     schemaSummaryQuery,
     demoConfigQuery,
+    runLabelsQuery,
   };
 }

@@ -16,9 +16,13 @@ import {
 } from "./reviewIndex";
 
 describe("review index URLs", () => {
+  it("default to /reviewer-snapshots/index and encode run and paper ids", () => {
     // VITE_REVIEWER_INDEX_BASE_URL is unset in vitest, so the default applies.
+    expect(reviewIndexUrl("run-fixture")).toBe(
+      "/reviewer-snapshots/index/run-fixture/review-index.json"
     );
     expect(reviewTasksUrl("run a", "Lee_2014/x:y")).toBe(
+      "/reviewer-snapshots/index/run%20a/review-tasks/Lee_2014%2Fx%3Ay.json"
     );
   });
 });

@@ -18,13 +18,16 @@ import {
   workingSetViewLabel,
 } from "./workingSetControls";
 
+const LISTED = ["Alpha_2001_1000001", "Charlie_2003_1000003", "Delta_2004_1000004"];
 
 describe("working-set controls", () => {
   it("reads 'Remove N from working set' when every listed paper is active", () => {
+    const button = workingSetButton(LISTED, new Set([...LISTED, "Echo_2005_1000005"]));
     expect(button).toEqual({ label: "Remove 3 from working set", membership: "excluded" });
   });
 
   it("reads 'Add N to working set' with N the listed count when any listed paper is out", () => {
+    const button = workingSetButton(LISTED, new Set(["Charlie_2003_1000003"]));
     expect(button).toEqual({ label: "Add 3 to working set", membership: "active" });
   });
 
@@ -33,32 +36,42 @@ describe("working-set controls", () => {
   });
 
   it("Add changes only the listed papers that are not already active, with the fixed reason", () => {
+    expect(membershipChanges(LISTED, "active", new Set(["Charlie_2003_1000003"]))).toEqual([
+      { paperId: "Alpha_2001_1000001", membership: "active", reason: "Added in Data → Table" },
+      { paperId: "Delta_2004_1000004", membership: "active", reason: "Added in Data → Table" },
     ]);
   });
 
   it("Remove changes only the listed papers that are active, with the fixed reason", () => {
+    expect(membershipChanges(LISTED, "excluded", new Set(["Delta_2004_1000004", "Echo_2005_1000005"]))).toEqual([
+      { paperId: "Delta_2004_1000004", membership: "excluded", reason: "Removed in Data → Table" },
     ]);
   });
 });
 
 describe("ticked papers", () => {
   it("the button acts on the ticked papers: one ticked and out reads 'Add 1'", () => {
+    expect(workingSetButton(["Charlie_2003_1000003"], new Set())).toEqual({
       label: "Add 1 to working set",
       membership: "active",
     });
   });
 
   it("every ticked paper in reads 'Remove N'", () => {
+    const ticked = ["Delta_2004_1000004", "Charlie_2003_1000003"];
     expect(workingSetButton(ticked, new Set(ticked)).label).toBe("Remove 2 from working set");
   });
 
   it("a mixed selection (some in, some out) reads 'Add N' with N every ticked paper", () => {
+    expect(workingSetButton(LISTED, new Set(["Charlie_2003_1000003", "Delta_2004_1000004"]))).toEqual({
       label: "Add 3 to working set",
       membership: "active",
     });
   });
 
   it("only ticked papers that are listed count, in list order", () => {
+    const ticked = new Set(["Delta_2004_1000004", "Echo_2005_1000005", "Alpha_2001_1000001"]);
+    expect(tickedListed(LISTED, ticked)).toEqual(["Alpha_2001_1000001", "Delta_2004_1000004"]);
   });
 
   it("Select all is enabled while any listed paper is unticked, and never for an empty list", () => {
@@ -70,6 +83,9 @@ describe("ticked papers", () => {
 
   it("Unselect all is enabled only while a listed paper is ticked; a hidden tick does not count", () => {
     expect(canUnselectAll(LISTED, new Set())).toBe(false);
+    expect(canUnselectAll(LISTED, new Set(["Echo_2005_1000005"]))).toBe(false);
+    expect(canUnselectAll(LISTED, new Set(["Charlie_2003_1000003"]))).toBe(true);
+    expect(canUnselectAll([], new Set(["Charlie_2003_1000003"]))).toBe(false);
   });
 });
 
@@ -87,17 +103,25 @@ describe("the Table reason", () => {
   });
 
   it("a typed reason is sent for every changed paper", () => {
+    expect(membershipChanges(LISTED, "active", new Set(["Charlie_2003_1000003"]), "  Whole\ncorpus ")).toEqual([
+      { paperId: "Alpha_2001_1000001", membership: "active", reason: "Whole corpus" },
+      { paperId: "Delta_2004_1000004", membership: "active", reason: "Whole corpus" },
     ]);
   });
 
   it("a reason that cleans to nothing saves the default", () => {
+    expect(membershipChanges(["Delta_2004_1000004"], "excluded", new Set(["Delta_2004_1000004"]), "   ")).toEqual([
+      { paperId: "Delta_2004_1000004", membership: "excluded", reason: "Removed in Data → Table" },
     ]);
+    expect(membershipChanges(["Delta_2004_1000004"], "active", new Set(), "\n")).toEqual([
+      { paperId: "Delta_2004_1000004", membership: "active", reason: "Added in Data → Table" },
     ]);
   });
 });
 
 describe("the Table editor text", () => {
   const boige: WorkingSetMember = {
+    paper_id: "Charlie_2003_1000003",
     membership: "excluded",
     decision_origin: "default",
     reason: null,
@@ -106,23 +130,30 @@ describe("the Table editor text", () => {
   };
 
   it("titles one paper by name and several by count", () => {
+    expect(selectionSubject(["Charlie 2003 (Journal C)"])).toBe("Charlie 2003 (Journal C)");
+    expect(selectionSubject(["Delta 2004 (Journal D)", "Hotel 2008 (Journal H)"])).toBe(
       "2 papers"
     );
   });
 
   it("one paper reads the chat's current line", () => {
+    expect(selectionCurrentLine(["Charlie_2003_1000003"], new Set(), boige)).toBe(
       "Current: Excluded by default — no decision recorded — no recorded reason"
     );
   });
 
   it("several papers read how many are in", () => {
+    const pair = ["Delta_2004_1000004", "hotel_2008_1000008"];
     expect(selectionCurrentLine(pair, new Set())).toBe("Current: 0 of 2 selected papers in the working set");
     expect(selectionCurrentLine(pair, new Set(pair))).toBe("Current: 2 of 2 selected papers in the working set");
   });
 
   it("a mixed selection says only the ones not in it will be added", () => {
+    const pair = ["Charlie_2003_1000003", "Bravo_2002_1000002"];
+    expect(selectionCurrentLine(pair, new Set(["Charlie_2003_1000003"]))).toBe(
       "Current: 1 of 2 selected papers in the working set — only the 1 not in it will be added"
     );
+    expect(selectionCurrentLine(LISTED, new Set(["Charlie_2003_1000003"]))).toBe(
       "Current: 1 of 3 selected papers in the working set — only the 2 not in it will be added"
     );
   });
@@ -146,6 +177,7 @@ describe("the Table editor text", () => {
 });
 
 describe("working-set table view", () => {
+  const active = new Set(["Charlie_2003_1000003", "Echo_2005_1000005"]);
   const rows = LISTED.map((paper_id) => ({ paper_id }));
 
   it("'All papers' keeps every row in order", () => {
@@ -153,6 +185,7 @@ describe("working-set table view", () => {
   });
 
   it("'Working set only' keeps only active papers, in list order", () => {
+    expect(viewFilter(rows, (row) => row.paper_id, "workingSet", active)).toEqual([{ paper_id: "Charlie_2003_1000003" }]);
     expect(viewFilter(rows, (row) => row.paper_id, "workingSet", new Set())).toEqual([]);
   });
 
@@ -164,7 +197,9 @@ describe("working-set table view", () => {
 
 describe("clear working set", () => {
   it("removes every active paper, not just the listed ones", () => {
+    const active = new Set(["Echo_2005_1000005", "Charlie_2003_1000003"]);
     expect(clearWorkingSetRequest(active)).toEqual({
+      paperIds: ["Charlie_2003_1000003", "Echo_2005_1000005"],
       membership: "excluded",
       reason: "Working set cleared in Data → Table",
     });

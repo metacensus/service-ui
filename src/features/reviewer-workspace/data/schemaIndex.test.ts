@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fetchSchemaIndex, schemaIndexUrl } from "./schemaIndex";
 
+const RUN = "run-fixture";
 
 function stubFetch(body: unknown, opts: { ok?: boolean; status?: number; jsonThrows?: boolean } = {}) {
   const { ok = true, status = 200, jsonThrows = false } = opts;
@@ -30,6 +31,7 @@ const INDEX = {
 
 describe("schema index URL", () => {
   it("serves the index from its base", () => {
+    expect(schemaIndexUrl(RUN)).toBe(`/reviewer-snapshots/index/${RUN}/schema-index.json`);
   });
 });
 

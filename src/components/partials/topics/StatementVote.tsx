@@ -38,6 +38,7 @@ const StatementVote = ({ topicId, prop }: StatementVoteProps) => {
 
   return (
     <div>
+      <Button variant="secondary" onClick={() => setOpenDrawer(true)}>
         {userVote ? "Recast Vote" : "Vote"}
       </Button>
 

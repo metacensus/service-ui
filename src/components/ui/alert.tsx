@@ -8,6 +8,8 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
+        default: "bg-card text-card-foreground",
+        destructive: "mc-notice [&>svg]:text-mc-alert-ink",
       },
     },
     defaultVariants: {

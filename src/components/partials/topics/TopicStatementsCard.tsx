@@ -37,9 +37,11 @@ const StatementRow = ({ topicId, statement }: { topicId: string; statement: Prop
 
   return (
     <li className="flex flex-col gap-2">
+      <p className="text-sm leading-snug">{statement.description}</p>
       {votesQuery.isPending ? (
         <Skeleton className="h-3 w-full rounded-full" />
       ) : votesQuery.isError ? (
+        <p className="text-xs text-mc-alert-ink">Could not load the votes.</p>
       ) : (
         <VoteBar tally={tally} />
       )}
@@ -60,10 +62,12 @@ const TopicStatementsCard = ({ topicId, propsQuery }: TopicStatementsCardProps) 
         query={propsQuery}
         isEmpty={(rows) => dashboardStatements(rows).length === 0}
         empty={
+          <p className="text-sm text-muted-foreground">
             No consensus statements have been made for this topic yet.
           </p>
         }
         error={
+          <p className="text-sm text-mc-alert-ink">
             Could not load the consensus statements for this topic.
           </p>
         }
@@ -79,6 +83,7 @@ const TopicStatementsCard = ({ topicId, propsQuery }: TopicStatementsCardProps) 
     </CardContent>
     <div className="mt-5">
       <Link href={`/topics/${topicId}/topic-consensus-statements`}>
+        <Button size="sm" type="button" variant="secondary" className="px-3 text-xs">
           Go to consensus statements
         </Button>
       </Link>

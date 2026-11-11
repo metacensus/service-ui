@@ -34,10 +34,12 @@ const TopicContributors = ({ params }: Props) => {
     () => [
       {
         content: <span>Name</span>,
+        className: "text-lg",
         columnId: "name",
       },
       {
         content: <span>Role</span>,
+        className: "text-lg",
         columnId: "role",
       },
     ],
@@ -71,6 +73,7 @@ const TopicContributors = ({ params }: Props) => {
   );
 
   return (
+    <div className="w-full flex flex-col mt-6">
       <TableSimple columns={columns} rows={rows} tableTitle="" />
     </div>
   );

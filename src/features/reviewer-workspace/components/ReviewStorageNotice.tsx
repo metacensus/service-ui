@@ -5,6 +5,7 @@ const ReviewStorageNotice = ({ mode }: { mode: "persistent" | "memory" }) => {
 
   return (
     <div
+      className="mt-4 flex items-start gap-2 mc-notice text-sm"
       role="status"
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />

@@ -12,6 +12,7 @@ import {
 
 const evidence = {
   evidence_id: "ev_qyp0nd",
+  paper_id: "Northfield_2024_100001",
   row_index: 16,
   field: "n_total",
   source_index: 1,

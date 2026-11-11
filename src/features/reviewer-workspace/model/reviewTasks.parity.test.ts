@@ -1,16 +1,25 @@
 // The landing model fed the real seed-time index reproduces the demo papers'
+// numbers. Reads the index from a local demo (/reviewer-snapshots/index/<run>)
+// and skips when the demo is unreachable.
+// Working sets: every paper of the index active and, derived from it in test
+// code, the 3 demo papers active and Lecomte 2004 alone.
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const indexedDb = vi.hoisted(() => ({ get: vi.fn(), set: vi.fn(), del: vi.fn() }));
 vi.mock("@/lib/indexdb", () => indexedDb);
 
+import { demoJson, demoReachable, EXPORT_RUN as RUN } from "../data/loadExportRows.testutil";
 import { createLocalReviewerPersistence } from "../data/persistence";
 import {
+  reviewIndexUrl,
+  reviewTasksUrl,
   validateReviewIndex,
   validateReviewTasks,
   type ReviewIndex,
 } from "../data/reviewIndex";
+import { activePaperIds, type WorkingSet } from "../data/workingSet";
+import { workingSetFixture } from "./__fixtures__/workingSetFixture";
 import { hasTextHighlight } from "./highlight";
 import { buildTaskDecisionActions } from "./reviewTaskDecisions";
 import { questionDetail, questionEvidence, taskFirstQuote } from "./reviewTaskPage";
@@ -28,9 +37,13 @@ import type { StoredReviewAction } from "../types";
 const DEMO = ["Amstutz_2009_19530960", "Boige_2016_26794347", "Lecomte_2004_15355920"];
 const LECOMTE = "Lecomte_2004_15355920";
 
+/** Every paper of the index active, except those not listed in `active` (when given). */
+function workingSetWith(index: ReviewIndex, active?: string[]): WorkingSet {
+  const state = workingSetFixture(index.papers.map((paper) => paper.paper_id));
   return {
     ...state,
     members: state.members.map((member) =>
+      !active || active.includes(member.paper_id) ? member : { ...member, membership: "excluded" as const }
     ),
   };
 }
@@ -42,14 +55,19 @@ const FIRST_LECOMTE = "src:Lecomte_2004_15355920:inferred:sections/analysis_of_t
 const FIRST_ALL =
   "src:Kristensen_2010_20819423:inferred:sections/gene_variants_in_dpyd_mthfr_and_tyms_predict_5_fu_related_toxicity__sec18.md:2d1cbbf51c";
 
+describe.skipIf(!(await demoReachable()))("the landing reproduces the demo papers' numbers from the real index", () => {
   // Read in beforeAll: skipIf still runs this body, so a read here would fail
+  // collection when the demo is unreachable.
   let index: ReviewIndex;
   let tasks: ReviewTask[];
   let all43: ReviewScope;
   let view43: ReviewLanding;
   let demoScope: ReviewScope;
   let lecomteScope: ReviewScope;
+  beforeAll(async () => {
+    index = validateReviewIndex(await demoJson(reviewIndexUrl(RUN)), RUN);
     tasks = reviewTasksFromIndex(index);
+    all43 = resolveReviewScope(index, true, new Set(activePaperIds(workingSetWith(index))));
     view43 = buildReviewLanding({
       tasks,
       scope: all43,
@@ -57,6 +75,8 @@ const FIRST_ALL =
       filters: REVIEW_TASK_DEFAULT_FILTERS,
       includeNonAmbiguous: false,
     });
+    demoScope = resolveReviewScope(index, true, new Set(activePaperIds(workingSetWith(index, DEMO))));
+    lecomteScope = resolveReviewScope(index, true, new Set(activePaperIds(workingSetWith(index, [LECOMTE]))));
   });
 
   const view = (actions: StoredReviewAction[], includeNonAmbiguous: boolean, scope = demoScope) =>
@@ -136,6 +156,7 @@ const FIRST_ALL =
   });
 
   it("after approving Lecomte's 8 ambiguous tasks (built actions, saved through the persistence path)", async () => {
+    const doc = validateReviewTasks(await demoJson(reviewTasksUrl(RUN, LECOMTE)), LECOMTE);
     const ambiguous = doc.tasks.filter((t) => t.certainty === "ambiguous");
     expect(ambiguous).toHaveLength(8);
     indexedDb.get.mockResolvedValue(undefined);
@@ -171,8 +192,10 @@ const FIRST_ALL =
     expect(lecomteOn.next?.task.id).toBe(FIRST_LECOMTE);
   });
 
+  it("every demo task and question opens a highlighted source first", async () => {
     const pageOnly = { taskOpen: 0, questionOpen: 0, listFirst: 0 };
     for (const paper of DEMO) {
+      const doc = validateReviewTasks(await demoJson(reviewTasksUrl(RUN, paper)), paper);
       for (const task of doc.tasks) {
         if (!hasTextHighlight(taskFirstQuote(doc, task))) pageOnly.taskOpen += 1;
         task.questions.forEach((_, i) => {

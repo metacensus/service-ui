@@ -3,8 +3,10 @@ import type {
   Manifest,
   ReviewUnits,
   Row,
+  RunLabels,
   SchemaSummary,
 } from "../types";
+import { routes } from "@/lib/routes";
 import { fixtureBasePath } from "./runResolver";
 
 export class SnapshotNotFoundError extends Error {
@@ -127,6 +129,12 @@ export function fetchDemoConfig(runId: string): Promise<DemoConfig | null> {
   return optionalJsonFetch<DemoConfig>(
     `${fixtureBasePath(runId)}/demo_config.json`
   );
+}
+
+export const NO_LABELS: RunLabels = { field_labels: {}, id_labels: {}, measure_labels: {}, frame_tags: {} };
+
+export async function fetchRunLabels(runId: string): Promise<RunLabels> {
+  return (await optionalJsonFetch<RunLabels>(routes.demo.labels(pathPart(runId)))) ?? NO_LABELS;
 }
 
 type EvidenceStore = {

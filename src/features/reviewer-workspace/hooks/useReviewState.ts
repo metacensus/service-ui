@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLocalReviewerPersistence } from "../data/persistence";
+import { reviewSeedQuery } from "../data/reviewSeed";
 import { reviewSeedForRun } from "../model/rowStatus";
 import type {
   NewReviewComment,
@@ -65,6 +66,8 @@ export function useReviewState(topicId: string, runId: string | null) {
     queryFn: () => requireAdapter(adapter).listComments(queryRunId),
     enabled,
   });
+
+  const seedQuery = useQuery({ ...reviewSeedQuery(queryRunId), enabled });
 
   const invalidateActions = () =>
     Promise.all([
@@ -136,6 +139,9 @@ export function useReviewState(topicId: string, runId: string | null) {
   return {
     actions: actionsQuery.data ?? [],
     /** The static seed baseline for this run, or null. Never stored. */
+    reviewSeed: reviewSeedForRun(seedQuery.data, runId),
+    /** True until the seed fetch settles (found, absent or failed): gate on it with the index. */
+    reviewSeedPending: enabled && seedQuery.isPending,
     actionHistory: actionHistoryQuery.data ?? [],
     comments: commentsQuery.data ?? [],
     reviewerName: reviewerNameQuery.data ?? null,

@@ -1,5 +1,6 @@
 // Schema-first selection over the per-paper counts in schema-index.json: group → category → item.
 
+import type { Row, RunLabels } from "@/features/reviewer-workspace/types";
 import { demoLabel } from "./drilldown/demoLabels";
 
 export const GROUPS = ["Variants", "Study context", "Outcomes", "Results", "Paper"] as const;
@@ -60,15 +61,21 @@ const prettifyId = (id: string) => {
 };
 
 export function categoryLabel(
+  labels: RunLabels,
   group: LayerGroup,
   value: string,
   curated: Map<string, string> = new Map()
 ): string {
   if (group === "Study context")
+    return curated.get(`study_design_id:${value}`) ?? demoLabel(labels, "study_design_id", value) ?? prettifyId(value);
+  if (group === "Outcomes") return demoLabel(labels, "outcome_category", value) ?? prettifyId(value);
+  if (group === "Results")
+    return demoLabel(labels, "effect_size_type", value) ?? labels.measure_labels[value] ?? prettifyId(value);
   return prettifyId(value);
 }
 
 export function itemLabel(
+  labels: RunLabels,
   group: LayerGroup,
   categoryKey: string,
   id: string,
@@ -81,6 +88,7 @@ export function itemLabel(
     if (group === "Variants" && /^c\./.test(known) && categoryKey !== "dpyd_variant") return `DPYD ${known}`;
     return known;
   }
+  let shown = demoLabel(labels, field, id);
   if (!shown) {
     const dpyd = /^dpyd_c(-?\d\S*)$/i.exec(id);
     if (dpyd) shown = `DPYD c.${dpyd[1].toUpperCase()}`;
@@ -90,6 +98,7 @@ export function itemLabel(
 }
 
 export function categoriesFor(
+  labels: RunLabels,
   group: LayerGroup,
   papers: PaperIndex[],
   curated: Map<string, string> = new Map()
@@ -101,6 +110,7 @@ export function categoriesFor(
       totals.set(value, (totals.get(value) ?? 0) + count);
   return [...totals.entries()]
     .sort((a, b) => b[1] - a[1])
+    .map(([value]) => ({ key: value, label: categoryLabel(labels, group, value, curated), values: [value] }));
 }
 
 export const hasItemLayer = (group: Group) => group === "Variants" || group === "Outcomes";
@@ -148,12 +158,14 @@ export type Term = {
 };
 
 export function termsOf(
+  labels: RunLabels,
   selection: SelectionState,
   catalog: (group: LayerGroup) => CategoryDef[],
   curated: Map<string, string>,
   paperName: (paperId: string) => string = (id) => id
 ): Term[] {
   const terms: Term[] = [];
+  const tag = labels.tag_variant;
   for (const group of LAYER_GROUPS) {
     const chosen = selection[group];
     if (!chosen) continue;
@@ -164,10 +176,15 @@ export function termsOf(
         terms.push({ key: `${group}|${category.key}`, group, category, label: category.label });
       } else {
         for (const item of items) {
+          const tagged = group === "Variants" && item === tag?.item && category.key === tag.category ? tag : undefined;
           terms.push({
             key: `${group}|${category.key}|${item}`,
             group,
+            category: tagged ? { ...category, values: tagged.values } : category,
             item,
+            label: tagged
+              ? `${itemLabel(labels, group, "tag", item, curated)} (${tagged.name})`
+              : itemLabel(labels, group, category.key, item, curated),
           });
         }
       }

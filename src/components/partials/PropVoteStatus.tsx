@@ -118,11 +118,13 @@ const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
                           {citationExcerpt ? (
                             <>
                               <br />
+                              <span className="text-xs italic text-muted-foreground">
                                 &ldquo;{citationExcerpt}&rdquo;
                               </span>
                             </>
                           ) : null}
                           <br />
+                          <span className="text-xs text-muted-foreground">
                             {formatIsoDate(vote.lastCast)}
                           </span>
                         </span>

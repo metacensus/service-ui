@@ -18,13 +18,16 @@ const VoteBar = ({ tally, className, showLegend = true }: VoteBarProps) => {
       <div
         role="img"
         aria-label={tally.total ? label : "No votes cast yet"}
+        className="flex h-2.5 w-full overflow-hidden rounded-full bg-secondary"
       >
         <div className="bg-emerald-500" style={{ width: `${pct.for}%` }} />
         <div className="bg-gray-400" style={{ width: `${pct.abstain}%` }} />
         <div className="bg-rose-500" style={{ width: `${pct.against}%` }} />
       </div>
       {showLegend && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {tally.total === 0 ? (
+            <span className="text-muted-foreground">No votes cast yet</span>
           ) : (
             <>
               <span className="inline-flex items-center gap-1">

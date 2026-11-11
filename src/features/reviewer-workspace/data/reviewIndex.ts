@@ -126,6 +126,7 @@ export class ReviewIndexNotFoundError extends Error {
 function reviewIndexBaseUrl(runId: string): string {
   const base =
     (import.meta.env.VITE_REVIEWER_INDEX_BASE_URL as string | undefined)?.replace(/\/+$/, "") ||
+    "/reviewer-snapshots/index";
   return `${base}/${encodeURIComponent(runId)}`;
 }
 

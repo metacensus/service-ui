@@ -14,10 +14,13 @@ import {
 
 describe("displayTitle", () => {
   it("drops a trailing PMID bracket", () => {
+    expect(displayTitle("Alpha 2001 (Journal A) [1000001]")).toBe(
+      "Alpha 2001 (Journal A)"
     );
   });
 
   it("leaves a title without a bracket alone", () => {
+    expect(displayTitle("Alpha 2001")).toBe("Alpha 2001");
   });
 
   it("keeps a bracket that is not a trailing PMID", () => {
@@ -68,9 +71,12 @@ describe("revised queries", () => {
 function evidenceItem(overrides: Partial<ExploreEvidence>): ExploreEvidence {
   return {
     evidence_id: "ev_a",
+    paper_id: "Foxtrot_2006_1000006",
     row_index: 16,
     field: "n_total",
     source_index: 0,
+    title: "Foxtrot 2006 (Journal F) [1000006]",
+    pdf_path: "pdfs/Foxtrot_2006_1000006.pdf",
     pdf_available: true,
     value: 46,
     quote: "All toxicities | YES | 174 | 48",
@@ -104,6 +110,8 @@ describe("revised queries and membership steps", () => {
 
 describe("stepLabel", () => {
   it("labels a confirmed working-set change with its summary", () => {
+    expect(stepLabel({ tool: "membership_update", summary: "Charlie_2003_1000003 -> active at revision 4" })).toBe(
+      "Working-set change · Charlie_2003_1000003 -> active at revision 4"
     );
   });
 
@@ -149,6 +157,7 @@ describe("valueSources", () => {
   const third = evidenceItem({ evidence_id: "ev_3", source_index: 2 });
   const otherField = evidenceItem({ evidence_id: "ev_4", field: "n_events" });
   const otherRow = evidenceItem({ evidence_id: "ev_5", row_index: 17 });
+  const otherPaper = evidenceItem({ evidence_id: "ev_6", paper_id: "Alpha_2001_1000001" });
 
   it("returns every source of the same paper, row and field in source_index order", () => {
     const sources = valueSources([third, otherField, first, otherRow, second, otherPaper], second);

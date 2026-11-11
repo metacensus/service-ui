@@ -6,6 +6,8 @@ import {
   redirect,
 } from "@tanstack/react-router";
 
+import { Footer, FooterColumn } from "@/components/Footer";
+import Navbar, { APP_LINKS } from "@/components/Navbar";
 import { Toaster } from "@/components/ui/toaster";
 import { apiClient } from "@/lib/apiClient";
 import Providers from "@/app/providers";
@@ -80,6 +82,9 @@ const authenticatedLayoutRoute = createRoute({
       <div className="min-h-screen bg-background font-sans antialiased mx-6 xl:mx-24 my-8">
         <Outlet />
       </div>
+      <Footer>
+        <FooterColumn title="App" links={APP_LINKS} />
+      </Footer>
     </>
   ),
 });

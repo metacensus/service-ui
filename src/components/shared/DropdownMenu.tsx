@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { styles } from "@/styles";
 
 import {
   Combobox,
@@ -58,11 +59,16 @@ export default function DropdownMenu({
       >
         {includeSearch && (
           <div className="relative">
+              className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-muted-foreground"
               aria-hidden="true"
             />
             <ComboboxInput
               autoFocus
               value={query}
+              className={cn(
+                "h-12 w-full border-0 bg-transparent pl-11 pr-4 focus-visible:-outline-offset-2 sm:text-sm",
+                styles.focusRing
+              )}
               placeholder="Search..."
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                 setQuery && setQuery(event.target.value)
@@ -73,13 +79,16 @@ export default function DropdownMenu({
 
         <ComboboxOptions
           static
+          className="max-h-72 scroll-py-2 overflow-y-auto text-sm"
         >
           {filteredOptions.map((option, index) => (
             <ComboboxOption
               key={option.id}
               value={option}
               className={cn(
+                "cursor-pointer select-none px-4 py-2 data-[focus]:bg-secondary border-b",
                 selectedItems?.map((item) => item?.id)?.includes(option.id) &&
+                  "bg-mc-fill-emphasis",
                 index === options.length - 1 && "rounded-b-lg border-none",
                 !includeSearch && index === 0 && "rounded-t-lg",
                 includeSearch && index === 0 && "border-t"
@@ -89,6 +98,7 @@ export default function DropdownMenu({
                 {selectedItems
                   ?.map((item) => item?.id)
                   ?.includes(option.id) && (
+                  <Check className="w-5 h-5" />
                 )}{" "}
                 {option.name}
               </span>

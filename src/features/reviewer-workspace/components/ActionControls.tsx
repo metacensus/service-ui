@@ -105,21 +105,26 @@ const ActionControls = ({
           </span>
         )}
         {!hasReviewer && (
+          <span className="text-xs text-muted-foreground">
             Set your reviewer name to enable decisions.
           </span>
         )}
         {hasReviewer && selectedCount === 0 && (
+          <span className="text-xs text-muted-foreground">
             Check at least one question to decide.
           </span>
         )}
         {hasReviewer && multi && selectedCount > 1 && (
+          <span className="text-xs text-muted-foreground">
             Correct… needs exactly one checked question.
           </span>
         )}
+        {error && <span className="text-xs text-mc-alert-ink">{error}</span>}
       </div>
 
       {form === "correct" && (
         <form
+          className="mt-3 flex flex-col gap-2 rounded-md border bg-secondary p-3"
           onSubmit={(e) => {
             e.preventDefault();
             const parsed = parseCorrectionValue(
@@ -139,6 +144,7 @@ const ActionControls = ({
             );
           }}
         >
+          <label className="text-xs font-bold text-foreground" htmlFor="corrected-value">
             Corrected value
           </label>
           <Input
@@ -149,6 +155,7 @@ const ActionControls = ({
             placeholder="The value the source supports"
             autoFocus
           />
+          <label className="text-xs font-bold text-foreground" htmlFor="corrected-note">
             Note (optional)
           </label>
           <Textarea
@@ -160,6 +167,7 @@ const ActionControls = ({
             placeholder="Why the extracted value was wrong"
           />
           <div className="flex gap-2">
+            <Button size="xs" variant="secondary" type="submit" disabled={busy || !correctedValue.trim()}>
               Save correction
             </Button>
             <Button size="xs" variant="ghost" type="button" onClick={() => setOpenForm(null)}>
@@ -171,6 +179,7 @@ const ActionControls = ({
 
       {form === "flag" && (
         <form
+          className="mt-3 flex flex-col gap-2 rounded-md border bg-secondary p-3"
           onSubmit={(e) => {
             e.preventDefault();
             if (!flagReason.trim()) return;
@@ -178,6 +187,7 @@ const ActionControls = ({
           }}
         >
           <label
+            className="text-xs font-bold text-foreground"
             htmlFor={multi ? "task-flag-reason" : "flag-reason"}
           >
             {multi ? "Why do the checked questions need attention?" : "Why does this need attention?"}
@@ -192,6 +202,7 @@ const ActionControls = ({
             autoFocus
           />
           <div className="flex gap-2">
+            <Button size="xs" variant="secondary" type="submit" disabled={busy || !flagReason.trim()}>
               {multi ? `Flag ${k} selected` : "Flag for follow-up"}
             </Button>
             <Button size="xs" variant="ghost" type="button" onClick={() => setOpenForm(null)}>

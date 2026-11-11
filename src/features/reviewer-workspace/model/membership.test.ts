@@ -25,6 +25,7 @@ import {
 
 function member(overrides: Partial<WorkingSetMember> = {}): WorkingSetMember {
   return {
+    paper_id: "Foxtrot_2006_1000006",
     membership: "excluded",
     decision_origin: "default",
     reason: null,
@@ -72,6 +73,8 @@ describe("membership state labels", () => {
   });
 
   it("builds the bubble aria-label from the title and full label", () => {
+    expect(bubbleAriaLabel("Foxtrot 2006 (Journal F)", excludedDefault)).toBe(
+      "Paper selection for Foxtrot 2006 (Journal F): Excluded by default — no decision recorded. Activate for reason and action."
     );
   });
 });
@@ -105,6 +108,8 @@ describe("membership editor", () => {
 describe("working-set summary", () => {
   const set = workingSet([
     includedManual,
+    member({ paper_id: "Alpha_2001_1000001" }),
+    member({ paper_id: "Bravo_2002_1000002", decision_origin: "manual", reason: "Out of scope" }),
   ]);
 
   it("counts included and excluded against the member count", () => {
@@ -124,13 +129,20 @@ describe("working-set summary", () => {
   it("splits the lists and keeps only recorded reasons", () => {
     const lists = summaryLists(set, (paperId) => `Title of ${paperId}`);
     expect(lists.included).toEqual([
+      { paperId: "Foxtrot_2006_1000006", title: "Title of Foxtrot_2006_1000006", reason: "In scope" },
     ]);
     expect(lists.excluded).toEqual([
+      { paperId: "Alpha_2001_1000001", title: "Title of Alpha_2001_1000001", reason: null },
+      { paperId: "Bravo_2002_1000002", title: "Title of Bravo_2002_1000002", reason: "Out of scope" },
     ]);
   });
 
   it("writes the Done text with the server's counts", () => {
+    expect(doneMessage("Bravo 2002 (Journal B)", "excluded", { included: 2, excluded: 41, total: 43 })).toBe(
+      "Done — Bravo 2002 (Journal B) is out of the set. 2 of 43 papers included."
     );
+    expect(doneMessage("Charlie 2003 (Journal C)", "active", { included: 4, excluded: 39, total: 43 })).toBe(
+      "Done — Charlie 2003 (Journal C) is in the set. 4 of 43 papers included."
     );
   });
 });

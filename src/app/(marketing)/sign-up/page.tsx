@@ -12,6 +12,7 @@ import { PasskeyError, registerPasskey } from "@/lib/passkey";
 import queryClient from "@/lib/queryClient";
 import { LOGIN_PATH } from "@/lib/session";
 import { ApiError } from "@metacensus/api";
+import { Button, Field, Input, Label, Notice, Select } from "@metacensus/library-ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLoaderData } from "@tanstack/react-router";
 import { useRouter } from "@/lib/next-navigation-compat";
@@ -20,6 +21,7 @@ import { useRef, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { countryOptions, isCountryCode } from "@/lib/countries";
+import { AuthShell, authLink, fieldError } from "../AuthShell";
 
 const SignUpFormSchema = z
   .object({
@@ -133,26 +135,41 @@ export default function SignUp() {
   return (
     <AuthShell title="Get started.">
       <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+          <Field error={fieldError(errors.name)}>
+            <Label>Name</Label>
+            <Input
               type="text"
               autoComplete="name"
               placeholder="Jane Smith"
               {...form.register("name", { required: true })}
             />
+          </Field>
 
+          <Field error={fieldError(errors.email)}>
+            <Label>Email</Label>
+            <Input
               type="email"
               autoComplete="email"
               placeholder="you@organization.org"
               {...form.register("email", { required: true })}
             />
             {passkey && (
+              <p className="text-sm" role="status">
                 This device already has a passkey, and registering replaces it. If you have an account,{" "}
+                <Link to={LOGIN_PATH} className={authLink}>
                   log in
                 </Link>{" "}
                 instead.
               </p>
             )}
+          </Field>
 
+          <Field error={fieldError(errors.country)}>
+            <Label>Country</Label>
+            <Select
               autoComplete="country"
+              className="h-[42px]"
               {...form.register("country", { required: true })}
             >
               <option value="">Select a country</option>
@@ -161,28 +178,50 @@ export default function SignUp() {
                   {country.name}
                 </option>
               ))}
+            </Select>
+          </Field>
 
+          <Field
+            error={errors.password?.message?.split("||").map((message) => (
+              <span className="block" role="alert" key={message}>
+                {message}
+              </span>
+            ))}
+          >
+            <Label>Password</Label>
+            <Input
               type="password"
               autoComplete="new-password"
               placeholder="Your password"
               {...form.register("password", { required: true })}
             />
+          </Field>
 
+          <Field error={fieldError(errors.passwordConfirmation)}>
+            <Label>Re-enter password</Label>
+            <Input
               type="password"
               autoComplete="new-password"
               placeholder="Re-enter your password"
               {...form.register("passwordConfirmation", { required: true })}
             />
+          </Field>
 
+          <div className="rounded-md border bg-card p-6">
+            <h2 className="text-xl font-medium">Create a passkey</h2>
+            <p className="mt-1 text-sm">
               Registering asks your device twice: once to create the passkey,
               then once to sign with it.
             </p>
+            <p className="mt-4 text-sm leading-relaxed">
               MetaCensus creates a passkey for each contributor, used to
               attribute the data you contribute. It is stored on this device,
               not on our servers, so we cannot help you recover it if it is lost.
             </p>
+            <p className="mt-4 text-sm font-medium">
               Before proceeding, please verify the following:
             </p>
+            <ul className="mt-2 list-disc pl-5 text-sm">
               <li>I am using a secure computer that is not shared with others</li>
               <li>I am not using incognito or private mode in my browser</li>
             </ul>
@@ -214,10 +253,18 @@ export default function SignUp() {
             />
           </div>
 
+          {notice &&
+            (notice.isError ? (
+              <Notice role="alert">{notice.text}</Notice>
+            ) : (
+              <p className="text-sm" role="status">
                 {notice.text}
               </p>
+            ))}
 
+          <Button type="submit" disabled={isSubmitting || !form.watch("verify")}>
             {isSubmitting ? "Registering…" : "Register"}
+          </Button>
         </form>
       </Form>
     </AuthShell>

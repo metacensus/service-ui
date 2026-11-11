@@ -27,7 +27,14 @@ describe("membership editor panel", () => {
     const html = panel({ reasonRequired: true });
     expect(html).toBe(
       [
+        '<h3 id="membership-editor-paper-1" class="text-[13px] font-bold text-foreground">Paper selection — Amstutz 2009 (Pharmacogenomics)</h3>',
+        '<p class="mt-1.5 text-xs leading-5 text-foreground">Current: Excluded by default — no decision recorded — no recorded reason</p>',
+        '<label for="membership-reason-paper-1" class="mt-2 block text-[11px] font-extrabold uppercase text-muted-foreground">Reason (required)</label>',
+        '<textarea id="membership-reason-paper-1" aria-label="Reason for changing paper selection" rows="3" class="mc-control mt-1 resize-y text-[13px]"></textarea>',
+        '<div role="alert" class="mt-1.5 min-h-0 text-xs text-mc-alert-ink"></div>',
         '<div class="mt-2.5 flex gap-2">',
+        '<button type="button" class="mc-button mc-button-primary min-h-10 flex-1 text-[13px] font-bold">Add to set</button>',
+        '<button type="button" class="mc-button mc-button-secondary min-h-10 flex-1 text-[13px] font-bold">Cancel</button>',
         "</div>",
       ].join("")
     );
@@ -41,7 +48,9 @@ describe("membership editor panel", () => {
       currentLine: "Current: 0 of 2 selected papers in the working set",
       confirmLabel: "Add to set",
     });
+    expect(html).toContain('<h3 id="membership-editor-table" class="text-[13px] font-bold text-foreground">Paper selection — 2 papers</h3>');
     expect(html).toContain(">Current: 0 of 2 selected papers in the working set</p>");
+    expect(html).toContain('<label for="membership-reason-table" class="mt-2 block text-[11px] font-extrabold uppercase text-muted-foreground">Reason (optional)</label>');
     expect(html).toContain('<textarea id="membership-reason-table" aria-label="Reason for changing paper selection (optional)" rows="3"');
     expect(html).toContain(">Add to set</button>");
     expect(html).toContain(">Cancel</button>");
@@ -57,6 +66,7 @@ describe("membership editor panel", () => {
     });
     expect(html).toContain(">stale check</textarea>");
     expect(html).toContain(
+      '<div role="alert" class="mt-1.5 min-h-0 text-xs text-mc-alert-ink">The working set changed elsewhere. It now shows the latest; try again.</div>'
     );
     expect(html).toContain(">Remove from set</button>");
   });

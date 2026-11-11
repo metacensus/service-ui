@@ -17,8 +17,10 @@ const ReviewDecidedHistory = ({ entries, taskHref }: ReviewDecidedHistoryProps) 
         type="button"
         data-testid="decided-history-toggle"
         aria-expanded={open}
+        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-bold text-foreground"
         onClick={() => setOpen(!open)}
       >
+        <span aria-hidden="true" className="text-xs text-muted-foreground">
           {open ? "▾" : "▸"}
         </span>
         Decided history ({entries.length.toLocaleString("en-US")})
@@ -26,6 +28,7 @@ const ReviewDecidedHistory = ({ entries, taskHref }: ReviewDecidedHistoryProps) 
       {open && (
         <ul
           data-testid="decided-history-list"
+          className="divide-y divide-border border-t px-4 py-2 text-xs text-foreground"
         >
           {entries.length === 0 && <li className="py-1">No tasks decided yet.</li>}
           {entries.map(({ row, action, seeded }) => (
@@ -36,6 +39,8 @@ const ReviewDecidedHistory = ({ entries, taskHref }: ReviewDecidedHistoryProps) 
                 className="hover:underline"
               >
                 {row.task.paperLabel} · {row.task.title} →{" "}
+                <strong className="font-bold text-foreground">{action}</strong>
+                {seeded && <span className="text-muted-foreground"> (simulated seed)</span>}
               </Link>
             </li>
           ))}

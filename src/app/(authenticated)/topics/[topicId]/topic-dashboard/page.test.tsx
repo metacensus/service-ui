@@ -12,6 +12,9 @@ vi.mock("@/hooks/useFetchData", () => ({
 vi.mock("@/hooks/useGetUserId", () => ({
   useGetUserId: () => ({ userId: undefined }),
 }));
+vi.mock("@/features/reviewer-workspace/hooks/useExtractionSummary", () => ({
+  useExtractionSummary: () => ({ isPending: true, isError: false }),
+}));
 vi.mock("@/components/shared/Link", () => ({
   default: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
@@ -22,5 +25,6 @@ describe("TopicDashboard", () => {
       <TopicDashboard params={{ topicId: "t1" }} />
     );
     expect(markup).toContain("Still trying");
+    expect(markup).not.toContain("No scientific question");
   });
 });

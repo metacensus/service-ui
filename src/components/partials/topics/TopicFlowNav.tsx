@@ -15,6 +15,8 @@ export const CHEVRON = "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 
 export const CHEVRON_FIRST = "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)";
 
 export const STATE_CLASSES: Record<TopicFlowState, string> = {
+  past: "bg-mc-tint-purple-fill text-mc-tint-purple-ink",
+  future: "bg-secondary text-muted-foreground hover:text-foreground",
 };
 
 type TopicFlowNavViewProps = {
@@ -39,6 +41,7 @@ export const TopicFlowNavView = ({ topicId, pathname }: TopicFlowNavViewProps) =
         aria-current={onDashboard ? "page" : undefined}
         className={cn(
           "rounded-md px-4 py-2 text-xs font-bold transition-colors",
+          STATE_CLASSES[onDashboard ? "current" : "future"]
         )}
       >
         Dashboard
@@ -53,6 +56,7 @@ export const TopicFlowNavView = ({ topicId, pathname }: TopicFlowNavViewProps) =
                 aria-current={state === "current" ? "page" : undefined}
                 data-state={state}
                 className={cn(
+                  "flex w-full items-center justify-center py-2 pl-4 pr-3 sm:px-6 text-center text-xs font-bold transition-colors hover:brightness-95",
                   STATE_CLASSES[state]
                 )}
                 style={{ clipPath: index === 0 ? CHEVRON_FIRST : CHEVRON }}

@@ -125,6 +125,7 @@ const CreateCustomProtocol = ({
               },
             ])
           }
+          className="flex justify-center py-4 bg-secondary items-center gap-2 text-sm font-bold text-foreground cursor-pointer hover:underline w-full"
         >
         </button>
       </Card>

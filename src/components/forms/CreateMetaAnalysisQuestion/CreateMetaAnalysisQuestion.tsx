@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAuthHeaders } from "@/functions/getAuthHeaders";
 import { useToast } from "@/hooks/use-toast";
 import queryClient from "@/lib/queryClient";
 import { routes } from "@/lib/routes";
+import { FieldError } from "@metacensus/library-ui";
 import React from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 
@@ -72,13 +74,19 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Meta Analysis Question */}
       <div className="mt-4">
+        <Label htmlFor="statement">Meta Analysis Question</Label>
         <Textarea
+          id="statement"
+          aria-invalid={!!errors.statement}
+          aria-describedby={errors.statement ? "statement-error" : undefined}
           {...register("statement", { required: "This field is required" })}
           placeholder="Enter the Meta Analysis Question here..."
           className="mt-1 block w-full"
         />
         {errors.statement && (
+          <FieldError id="statement-error">{errors.statement.message}</FieldError>
         )}
       </div>
 

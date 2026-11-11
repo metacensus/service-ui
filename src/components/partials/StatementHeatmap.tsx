@@ -19,6 +19,7 @@ export const StatementHeatmap = ({
 
   return (
     <div>
+      <p className="tracking-wide">
         {statementAsArray.map((char, index) => {
           // how many times is this index in a citation? half-open [start, end)
           const weight = citations.reduce((acc, citation) => {

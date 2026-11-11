@@ -22,6 +22,7 @@ const CardIndicators = ({
   return (
     <Card
       className={cn(
+        "bg-secondary w-fit h-full p-1 flex gap-1 items-center rounded-md text-muted-foreground",
         className,
         count === 0 && name !== "reviewers" && "opacity-50"
       )}

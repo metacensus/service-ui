@@ -73,8 +73,12 @@ export function ValueButton({
   const wrapValue = wrap || matched;
   const toneClass =
     tone === "identity"
+      ? "font-bold text-foreground"
       : tone === "number"
+        ? "font-medium tabular-nums text-foreground"
         : tone === "muted"
+          ? "text-muted-foreground"
+          : "text-foreground";
   return (
     <button
       type="button"
@@ -88,7 +92,10 @@ export function ValueButton({
         wrapValue ? "whitespace-normal break-words" : "truncate"
       } ${
         selected
+          ? "border-mc-line-accent bg-mc-fill-emphasis text-mc-ink-accent"
           : populated || provenance
+            ? `border-transparent hover:border-mc-line-accent hover:bg-secondary ${toneClass}`
+            : "border-transparent italic text-muted-foreground"
       }`}
     >
       <Highlight text={text} query={query} />
@@ -98,5 +105,6 @@ export function ValueButton({
 
 export function ColumnHeading({ children }: { children: ReactNode }) {
   return (
+    <div className="text-[11px] font-bold uppercase text-muted-foreground">{children}</div>
   );
 }

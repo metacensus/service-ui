@@ -90,6 +90,7 @@ const ReviewWorkspaceMenu = ({
         <DropdownMenuSeparator />
         {confirmingReset ? (
           <DropdownMenuItem
+            className="text-mc-alert-ink focus:text-mc-alert-ink"
             disabled={resetting}
             onSelect={(event) => {
               event.preventDefault();

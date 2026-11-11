@@ -27,18 +27,22 @@ const TopicPapersTableView = ({ papers, page, setPage, review, membership }: Pro
     () => [
       {
         content: <span>Papers</span>,
+        className: "text-lg",
         columnId: "papers",
       },
       {
         content: <span>Reviews</span>,
+        className: "text-lg",
         columnId: "reviews",
       },
       {
         content: <span>Votes</span>,
+        className: "text-lg",
         columnId: "votes",
       },
       {
         content: <span>Status</span>,
+        className: "text-lg",
         columnId: "status",
       },
     ],

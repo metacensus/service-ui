@@ -52,16 +52,21 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
       type="button"
       title="Show in PDF"
       onClick={() => onShowSource?.(sourceLocation ?? null)}
+      className="text-mc-ink-accent hover:opacity-70"
     >
     </button>
   ) : null;
 
+  const controlId = `field_${field.id}`;
+
   const renderLabel = () => (
+    <Label htmlFor={controlId} className="flex items-center gap-2">
       <span>
         {field.label}
         {field.required && (
           <>
             <span>*</span>
+            <span className="text-xs text-muted-foreground ml-1">(Required)</span>
           </>
         )}
       </span>
@@ -75,6 +80,7 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
         {renderLabel()}
         <div className="flex gap-2 items-center">
           <Input
+            id={controlId}
             type={type}
             disabled={viewOnly}
             value={value || ""}
@@ -84,6 +90,7 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
             }
           />
           {!value && selection?.text && !viewOnly && (
+              className="cursor-pointer text-mc-ink-accent h-5 w-5"
               onClick={() => {
                 if (type === "date") {
                   let parsedDate = null;
@@ -125,6 +132,7 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
         {renderLabel()}
         <div className="flex gap-2 items-center">
           <Textarea
+            id={controlId}
             disabled={viewOnly}
             value={value || ""}
             placeholder={field.placeholder}
@@ -133,6 +141,7 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
             }
           />
           {!value && selection?.text && !viewOnly && (
+              className="cursor-pointer text-mc-ink-accent h-5 w-5"
               onClick={() => {
                 onChange(selection.text, selection.sourceLocation);
                 resetSelection();
@@ -146,15 +155,22 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
 
   if (type === "checkbox" && field.options) {
     return (
+      <div className="mb-4" role="group" aria-labelledby={`${controlId}_label`}>
+        <span
+          id={`${controlId}_label`}
+          className="mc-label flex items-center gap-2 text-sm"
+        >
           <span>
             {field.label}
             {field.required && (
               <>
                 <span>*</span>
+                <span className="text-xs text-muted-foreground ml-1">(Required)</span>
               </>
             )}
           </span>
           {sourceButton}
+        </span>
         <div className="mt-2 space-y-2">
           {field.options.map((option, index) => (
             <div key={index} className="flex items-center">
@@ -177,9 +193,11 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
                   }
                   onChange(newValues, null);
                 }}
+                className="h-4 w-4"
               />
               <label
                 htmlFor={`field_${field.id}_option_${index}`}
+                className="ml-2 text-sm text-foreground"
               >
                 {option.name}
               </label>
@@ -192,15 +210,26 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
 
   if (type === "radio" && field.options) {
     return (
+      <div
+        className="mb-4"
+        role="radiogroup"
+        aria-labelledby={`${controlId}_label`}
+      >
+        <span
+          id={`${controlId}_label`}
+          className="mc-label flex items-center gap-2 text-sm"
+        >
           <span>
             {field.label}
             {field.required && (
               <>
                 <span>*</span>
+                <span className="text-xs text-muted-foreground ml-1">(Required)</span>
               </>
             )}
           </span>
           {sourceButton}
+        </span>
         <div className="mt-2 space-y-2">
           {field.options.map((option, index) => (
             <div key={index} className="flex items-center">
@@ -214,9 +243,11 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
                 onChange={(e: ChangeEvent<HTMLInputElement>) => {
                   onChange(e.target.value, null);
                 }}
+                className="h-4 w-4"
               />
               <label
                 htmlFor={`field_${field.id}_option_${index}`}
+                className="ml-2 text-sm text-foreground"
               >
                 {option.name}
               </label>

@@ -12,10 +12,12 @@ export function stateChipClass(state: RowReviewState): string {
     case "flagged":
       return "bg-amber-100 text-amber-800";
     default:
+      return "bg-secondary";
   }
 }
 
 /** A static baseline of whole papers approved by a simulated reviewer
+ *  (fetched from the demo by data/reviewSeed.ts). Model functions take it explicitly; none reads it. */
 export type ReviewSeed = {
   readonly runId: string;
   readonly reviewer: string;

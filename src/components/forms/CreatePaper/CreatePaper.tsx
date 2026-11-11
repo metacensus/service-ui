@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAuthHeaders } from "@/functions/getAuthHeaders";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +10,7 @@ import queryClient from "@/lib/queryClient";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { styles } from "@/styles";
+import { FieldError } from "@metacensus/library-ui";
 import axios from "axios";
 import { UploadIcon } from "lucide-react";
 import React, { useCallback, useReducer, useState } from "react";
@@ -210,9 +212,12 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
 
   return (
     <form onSubmit={handleSubmit}>
+      {/* PMID */}
       <div>
+        <Label htmlFor="paper-pmid">PMID</Label>
         <div className="flex items-center gap-2">
           <Input
+            id="paper-pmid"
             type="text"
             value={state.pmid}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,20 +247,27 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
             {pmidLookupLoading ? "Looking up…" : "Look up"}
           </Button>
         </div>
+        <p className="mt-1 text-xs text-muted-foreground">
           Enter a PMID and click Look up to auto-fill from PubMed.
         </p>
         {pmidLookupError && (
+          <FieldError className="mt-1">{pmidLookupError}</FieldError>
         )}
       </div>
 
+      {/* File Upload Section */}
       <div className="col-span-full mt-4">
+        <Label htmlFor="upload-paper">Upload Paper</Label>
 
         {state.file ? (
           // When a file is selected, display the file name and a 'Remove' button
           // When a file is selected, display the file name and a 'Remove' button
             <div className="flex items-center">
+              <UploadIcon className="w-6 h-6 text-foreground mr-2" />
+              <p className="text-sm text-foreground">{state.file.name}</p>
             </div>
             <Button
+              variant="secondary"
               onClick={() => dispatch({ type: "REMOVE_FILE" })}
             >
               Remove
@@ -266,31 +278,43 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
           <div
             {...getRootProps()}
           >
+            <input {...getInputProps()} id="upload-paper" className="sr-only" />
             <div className="text-center ">
+              <div className="mt-4 flex text-sm leading-6 text-foreground">
                 <button
                   type="button"
                   onClick={open}
+                  className={cn(
+                    styles.focusRing,
+                    "relative cursor-pointer rounded-md font-semibold text-mc-ink-accent hover:underline"
+                  )}
                 >
                   Upload a file
                 </button>
                 <p className="pl-1">or drag and drop</p>
               </div>
               <div className="pt-2">
+                <Button variant="secondary" type="button" onClick={open}>
                   <div className="flex gap-2 items-center">
                     <UploadIcon className="w-6 h-6 pr-2" />
                     <span>Upload</span>
                   </div>
                 </Button>
               </div>
+              {/* Display error message if any */}
               {errorMessage && (
+                <FieldError className="mt-2">{errorMessage}</FieldError>
               )}
             </div>
           </div>
         )}
       </div>
 
+      {/* Paper Title */}
       <div className="mt-4">
+        <Label htmlFor="paper-title">Paper Title</Label>
         <Input
+          id="paper-title"
           type="text"
           value={state.title}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -304,8 +328,11 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
         />
       </div>
 
+      {/* Paper URL */}
       <div className="mt-4">
+        <Label htmlFor="paper-url">Paper URL</Label>
         <Input
+          id="paper-url"
           type="url"
           value={state.url}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -314,8 +341,11 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
         />
       </div>
 
+      {/* DOI */}
       <div className="mt-4">
+        <Label htmlFor="paper-doi">DOI</Label>
         <Input
+          id="paper-doi"
           type="text"
           value={state.doi}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -324,10 +354,13 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
         />
       </div>
 
+      {/* Authors */}
       <div className="mt-4">
+        <Label htmlFor="author-0">Authors</Label>
         {state.authors.map((author, index) => (
           <div key={index} className="flex items-center mt-2">
             <Input
+              id={`author-${index}`}
               type="text"
               value={author}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -357,8 +390,11 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
         </Button>
       </div>
 
+      {/* Published Date */}
       <div className="mt-4">
+        <Label htmlFor="paper-published-date">Published Date</Label>
         <Input
+          id="paper-published-date"
           type="date"
           value={state.publishedDate}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -371,8 +407,11 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
         />
       </div>
 
+      {/* Description */}
       <div className="mt-4">
+        <Label htmlFor="paper-description">Description</Label>
         <Textarea
+          id="paper-description"
           value={state.description}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             dispatch({
@@ -385,7 +424,9 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
       </div>
 
       <div className="mt-4">
+        <Label htmlFor="paper-abstract">Abstract</Label>
         <Textarea
+          id="paper-abstract"
           value={state.abstract}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             dispatch({

@@ -12,10 +12,12 @@ const TopicAdministrators = ({ administrators }: TopicAdministratorsProps) => {
     () => [
       {
         content: <span>Name</span>,
+        className: "text-lg",
         columnId: "name",
       },
       {
         content: <span>Role</span>,
+        className: "text-lg",
         columnId: "role",
       },
     ],

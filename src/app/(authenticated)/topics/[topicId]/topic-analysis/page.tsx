@@ -50,6 +50,7 @@ const ANALYSIS_OPTIONS: readonly [AnalysisOption, AnalysisOption, AnalysisOption
 const TopicAnalysis = () => {
   return (
     <div className="mt-6">
+      <p className="text-xs font-bold uppercase tracking-widest text-mc-ink-accent">
         Analysis
       </p>
       <h1 className="mt-2 text-2xl font-bold">
@@ -59,6 +60,7 @@ const TopicAnalysis = () => {
         {ANALYSIS_OPTIONS.map((option) => (
           <li
             key={option.title}
+            className="flex items-start gap-4 rounded-md border border-border bg-secondary p-4"
           >
             <svg
               width="28"
@@ -68,11 +70,13 @@ const TopicAnalysis = () => {
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              className="mt-0.5 shrink-0 text-mc-ink-secondary"
             >
               {option.icon}
             </svg>
             <div>
               <h2 className="text-[15px] font-bold">{option.title}</h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 {option.body}
               </p>
             </div>

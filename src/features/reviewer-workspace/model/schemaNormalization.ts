@@ -86,6 +86,7 @@ function normalizationAssetRoot(): string {
   const configured = import.meta.env.VITE_REVIEWER_NORMALIZATION_BASE_URL
     ?.trim()
     .replace(/\/+$/, "");
+  return configured || "/reviewer-snapshots/normalization";
 }
 
 export function normalizationAssetUrl(runId: string, path: string): string {

@@ -33,6 +33,7 @@ import type {
   PaperMeta,
   ProvSource,
   Row,
+  RunLabels,
 } from "@/features/reviewer-workspace/types";
 import {
   parseSelectionParam,
@@ -50,6 +51,7 @@ export type PaperTreeState = Pick<TableState, "paper" | "q" | "field" | "status"
 type PaperTreeProps = {
   topicId: string;
   paper: PaperMeta;
+  labels: RunLabels;
   /** Show only findings in the schema selection; acts like a search (opens matching branches). */
   rowFilter?: (row: Row) => boolean;
   /** Seed/mirror for the URL restore: only the focused paper's tree state is carried. */
@@ -59,6 +61,7 @@ type PaperTreeProps = {
 
 const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
 
+export default function PaperTree({ topicId, paper, labels, rowFilter, initialState: seed, onStateChange }: PaperTreeProps) {
   const paperId = paper.paper_id;
   const {
     runId,
@@ -132,13 +135,17 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
   const tree = useMemo(
     () =>
       rows.length > 0
+        ? orderByHighlight(buildPaperTree(labels, rows, presentation, treeOrder))
         : null,
+    [labels, presentation, rows, treeOrder]
   );
 
   const matchedIndexes = useMemo(
     () =>
+      matchedRowIndexes(labels, rowFilter ? rows.filter(rowFilter) : rows, { query, fieldFilter, statusFilter }, presentation, (rowIndex, field) =>
         reviewStateFor(actions, paperId, rowIndex, field)
       ),
+    [actions, fieldFilter, labels, paperId, presentation, query, rowFilter, rows, statusFilter]
   );
 
   const filtersActive =
@@ -298,11 +305,13 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
             paper={paper}
             rows={rows}
             presentation={presentation}
+            labels={labels}
             query={query}
             selectedKey={selectedKeyText}
             onSelect={setSelection}
           />
           {rowsQuery.isError && (
+            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
               Could not load rows for the selected paper.
             </div>
           )}
@@ -321,6 +330,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
               expandedRows={expandedRows}
               onToggleRow={toggleRow}
               presentation={presentation}
+              labels={labels}
               narrow={narrow || sideBySide}
               renderDetail={(row: Row, node: TreeNode) => (
                 <RowDetail
@@ -331,6 +341,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
                   onSelect={setSelection}
                   groupVaryingCount={node.projection?.varyingCount ?? 0}
                   presentation={presentation}
+                  labels={labels}
                   compact={narrow || sideBySide}
                   hiddenFields={hiddenFieldsOf(row.row_index)}
                 />
@@ -338,6 +349,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
             />
           )}
           {filtersActive && rowsQuery.isSuccess && matchedIndexes.size === 0 && (
+            <p className="mt-6 text-sm text-muted-foreground">
               {queryActive && filterOnly
                 ? `No findings match “${query.trim()}” under the current filters.`
                 : queryActive
@@ -352,6 +364,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
           <aside
             className={
               overlay
+                ? "fixed inset-0 z-40 overflow-y-auto bg-background px-4 pb-10 pt-2 md:px-6"
                 : "sticky top-4 mt-3 min-w-0"
             }
           >
@@ -361,6 +374,7 @@ const NO_ACTIONS: Parameters<typeof reviewStateFor>[0] = [];
               selection={shownSelection}
               rowsByIndex={rowsByIndex}
               presentation={presentation}
+              labels={labels}
               activeSource={activeSource}
               onSourceSelect={setActiveSource}
               onClose={() => setSelection(null)}
@@ -387,14 +401,17 @@ function PaperTreeMoreFilters({
 }) {
   return (
     <details className="mt-3 border-t pt-3">
+      <summary className="cursor-pointer text-sm font-bold text-foreground">
         More filters
         {(fieldFilter !== "all" || statusFilter !== "all") && (
+          <span className="ml-2 text-xs font-normal text-mc-ink-accent">
             Filters applied
           </span>
         )}
       </summary>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:max-w-2xl">
         <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold uppercase text-muted-foreground">
             Field
           </span>
           <select
@@ -414,6 +431,7 @@ function PaperTreeMoreFilters({
           </select>
         </label>
         <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold uppercase text-muted-foreground">
             Review status
           </span>
           <select

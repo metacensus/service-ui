@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type {
   PaperMeta,
   Row,
+  RunLabels,
   SchemaPresentation,
 } from "@/features/reviewer-workspace/types";
 import { DETAIL_GROUPS } from "@/features/reviewer-workspace/model/drilldown/fieldMap";
@@ -25,6 +26,7 @@ export default function RowDetail({
   onSelect,
   groupVaryingCount,
   presentation,
+  labels,
   compact = false,
   hiddenFields,
 }: {
@@ -35,6 +37,7 @@ export default function RowDetail({
   onSelect: SelectHandler;
   groupVaryingCount: number;
   presentation?: SchemaPresentation;
+  labels: RunLabels;
   /** Narrow container (phone, or evidence pane open): one column, narrower labels. */
   compact?: boolean;
   /** Fields the text-highlight rule hid: left out of the list and of the empty-field count. */
@@ -77,8 +80,10 @@ export default function RowDetail({
     .filter((field) => shownAsOwnLine(field) && !present(field)).length;
 
   return (
+    <div className="mt-2 border-t pt-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <ColumnHeading>All extracted fields for this finding</ColumnHeading>
+        <span className="text-[11px] text-muted-foreground">
           {paper.paper_id} · row_index {row.row_index} · {groupVaryingCount} fields vary
           across this group
         </span>
@@ -91,20 +96,24 @@ export default function RowDetail({
           if (fields.length === 0) return null;
           return (
             <section key={group.id}>
+              <div className="text-[11px] font-bold uppercase text-muted-foreground">
                 {group.label}
               </div>
               <div className="mt-1 flex flex-col gap-0.5">
                 {fields.map((field) => (
                   <div key={field} className="flex min-w-0 items-baseline gap-2">
                     <span
+                      className={`${compact ? "w-[7.5rem]" : "w-[10rem]"} shrink-0 truncate text-[11px] text-muted-foreground`}
                       title={field}
                     >
+                      {fieldLabel(labels, field)}
                     </span>
                     <NormalizedValue
                       paperId={paper.paper_id}
                       rows={[row]}
                       field={field}
                       presentation={presentation}
+                      labels={labels}
                       query={query}
                       wrap
                       selectedKey={selectedKey}
@@ -121,6 +130,7 @@ export default function RowDetail({
       {emptyCount > 0 && (
         <button
           type="button"
+          className="mt-2 text-[11px] text-muted-foreground underline decoration-dotted"
           onClick={() => setShowEmpty((value) => !value)}
         >
           {showEmpty

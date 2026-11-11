@@ -31,10 +31,12 @@ const ContributorsTable = () => {
     () => [
       {
         content: <span>Name</span>,
+        className: "text-foreground text-lg",
         columnId: "name",
       },
       {
         content: <span>Topics</span>,
+        className: "text-foreground text-lg",
         columnId: "topics",
       },
       { content: <span></span>, className: "w-fit", columnId: "actions" },

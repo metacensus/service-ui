@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import type { Row, RunLabels, SchemaPresentation } from "@/features/reviewer-workspace/types";
 import type { Selection } from "./selection";
 import {
   cellText,
@@ -21,6 +22,7 @@ export default function NormalizedValue({
   rows,
   field,
   presentation,
+  labels,
   query,
   selectedKey,
   onSelect,
@@ -33,6 +35,7 @@ export default function NormalizedValue({
   rows: Row[];
   field: string;
   presentation?: SchemaPresentation;
+  labels: RunLabels;
   query: string;
   selectedKey: string;
   onSelect: (selection: Selection) => void;
@@ -90,6 +93,7 @@ export default function NormalizedValue({
             selected={selectedKey === keyOf(selection)}
             onSelect={() => onSelect(selection)}
           />
+          <span className="rounded-sm border border-dashed border-mc-ink-secondary px-1 text-[10px] text-foreground">
             no normalized value — as printed
           </span>
         </span>
@@ -126,7 +130,10 @@ export default function NormalizedValue({
         : `${forms.length} printed forms`;
   const toneClass =
     tone === "identity"
+      ? "font-bold text-foreground"
       : tone === "muted"
+        ? "text-muted-foreground"
+        : "text-foreground";
 
   return (
     <span className="inline-flex min-w-0 max-w-full flex-col items-start">
@@ -134,21 +141,27 @@ export default function NormalizedValue({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
+        title={`${fieldLabel(labels, field)} (${field}) — normalized value. Click to ${
           open ? "hide" : "show"
         } what the paper printed (${partner.field}).`}
         className={`inline-flex max-w-full items-baseline gap-1 rounded-sm border px-1 py-0.5 text-left text-xs ${
           anySelected || open
+            ? "border-mc-line-accent bg-secondary"
+            : "border-transparent hover:border-mc-line-accent hover:bg-secondary"
         }`}
       >
         <span className={`min-w-0 ${wrap ? "whitespace-normal break-words" : "truncate"} ${toneClass}`}>
           <Highlight text={displayText(anchor, field)} query={query} />
         </span>
+        <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] font-normal text-mc-ink-accent">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           {hint}
         </span>
       </button>
 
       {open && (
+        <span className="mt-0.5 ml-1 flex max-w-full flex-col gap-0.5 border-l-2 pl-2">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
             Printed in the paper
             {!single && ` · across ${rows.length} findings`}
           </span>
@@ -172,6 +185,7 @@ export default function NormalizedValue({
                   selected={selectedKey === keyOf(selection)}
                   onSelect={() => onSelect(selection)}
                 />
+                <span className="text-[10px] text-muted-foreground">
                   {!single &&
                     `${form.rowIndexes.length} ${
                       form.rowIndexes.length === 1 ? "finding" : "findings"
@@ -182,15 +196,18 @@ export default function NormalizedValue({
             );
           })}
           {forms.length === 0 && (
+            <span className="text-[11px] italic text-muted-foreground">
               No printed form recorded ({partner.field} is empty).
             </span>
           )}
           {forms.length > 0 && rowsWithoutPrinted.length > 0 && (
+            <span className="text-[10px] italic text-muted-foreground">
               {rowsWithoutPrinted.length} of {rows.length} findings record no printed form.
             </span>
           )}
           <button
             type="button"
+            className={`self-start text-[10px] font-medium text-mc-ink-accent hover:underline ${selectedKey === keyOf(normalizedSelection) ? "underline" : ""}`}
             onClick={() => onSelect(normalizedSelection)}
           >
             How this was normalized ›

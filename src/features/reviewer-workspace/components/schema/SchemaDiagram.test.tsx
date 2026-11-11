@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SchemaDiagram } from "./SchemaDiagram";
 import type { SchemaExplorerModel } from "../../model/schemaView";
 
+const RUN = "run-fixture";
 
 function renderDiagram(runId: string | null): string {
   return renderToString(

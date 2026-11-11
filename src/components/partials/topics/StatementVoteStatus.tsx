@@ -39,6 +39,7 @@ const StatementVoteStatus = ({
       {
         <div>
           {userVote && !votesLoading && (
+            <div className="text-xs text-muted-foreground">
               You voted &quot;{userVote.position}&quot; on this question on{" "}
               {formatIsoDate(userVote.lastCast)}
             </div>

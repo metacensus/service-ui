@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
+
 const config = {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
@@ -52,6 +53,7 @@ const config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
+        sans: ["var(--mc-font-sans)", ...fontFamily.sans],
         display: ["var(--font-display)", ...fontFamily.sans],
         body: ["var(--font-body)", ...fontFamily.sans],
         mono: ["var(--font-mono)", ...fontFamily.mono],

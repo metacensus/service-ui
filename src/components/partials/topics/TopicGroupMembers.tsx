@@ -39,32 +39,39 @@ const TopicGroupMembers = ({ topic }: { topic: Topic | null }) => {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <CardTitle className="text-xl">Group members</CardTitle>
         {members.length > 0 && (
+          <span className="text-xs text-muted-foreground">
             {members.length} {members.length === 1 ? "member" : "members"}
           </span>
         )}
       </div>
       <CardContent className="mt-4 p-0">
         {members.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No one has joined this topic yet.</p>
         ) : (
           <>
             <ul className="flex flex-wrap gap-3">
               {members.map((member) => (
                 <li
                   key={member.id}
+                  className="flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-3"
                 >
                   <span
                     aria-hidden
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-mc-tint-purple-fill text-[11px] font-bold text-mc-tint-purple-ink"
                   >
                     {initials(member.name)}
                   </span>
                   <span className="flex flex-col leading-tight">
+                    <span className="text-sm">{member.name}</span>
                     {member.hypothetical && (
+                      <span className="text-[10px] italic text-muted-foreground">hypothetical</span>
                     )}
                   </span>
                 </li>
               ))}
             </ul>
             {anyHypothetical && (
+              <p className="mt-4 text-xs text-muted-foreground">
               </p>
             )}
           </>

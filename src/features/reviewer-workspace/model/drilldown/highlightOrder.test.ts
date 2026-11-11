@@ -1,4 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { demoReachable, exportJson, loadExportRows } from "../../data/loadExportRows.testutil";
+import { NO_LABELS } from "../../data/snapshot";
 import type { Row, SchemaPresentation } from "../../types";
 import type { TreeOrder } from "./fieldMap";
 import { buildPaperTree, treeLeaves, type TreeNode } from "./groupedFindings";
@@ -13,11 +15,17 @@ import {
   type FindingLevel,
 } from "./highlightOrder";
 
+const DEMO_UP = await demoReachable();
 const withExport = (name: string, body: () => void) =>
+  describe.skipIf(!DEMO_UP)(
+    DEMO_UP ? name : `${name} (skipped: no demo at DEMO_BASE_URL)`,
     { timeout: 120000 },
     body
   );
 
+async function loadPaper(paperId: string): Promise<{ rows: Row[]; presentation?: SchemaPresentation }> {
+  const rows = await loadExportRows(paperId);
+  const config = await exportJson<{ schema_presentation?: SchemaPresentation }>("demo_config.json");
   return { rows, presentation: config.schema_presentation };
 }
 
@@ -245,9 +253,14 @@ const BOIGE_OUTCOME_D949V_POS = [146, 47, 65, 101, 83, 11, 29];
 withExport("highlight order export-backed", () => {
   // Read in beforeAll, not here: describe bodies run even when skipped.
   const cache = new Map<string, { rows: Row[]; presentation?: SchemaPresentation }>();
+  beforeAll(async () => {
+    for (const paperId of PAPERS) cache.set(paperId, await loadPaper(paperId));
+  }, 120000);
+  const paper = (paperId: string) => cache.get(paperId)!;
 
   function reorderedSequence(paperId: string, order: TreeOrder): number[] {
     const { rows, presentation } = paper(paperId);
+    const tree = orderByHighlight(buildPaperTree(NO_LABELS, rows, presentation, order));
     return treeLeaves(tree).flatMap((leaf) => leaf.rows.map((row) => row.row_index));
   }
 
@@ -295,12 +308,14 @@ withExport("highlight order export-backed", () => {
     for (const paperId of PAPERS) {
       for (const order of ["variant_first", "outcome_first"] as const) {
         const { rows, presentation } = paper(paperId);
+        visit(orderByHighlight(buildPaperTree(NO_LABELS, rows, presentation, order)), `${paperId} ${order}`);
       }
     }
   });
 
   it("Lee by variant: the FOLFOX branch precedes its No drug given sibling", () => {
     const { rows, presentation } = paper("Lee_2016_26658227");
+    const regimens = orderByHighlight(buildPaperTree(NO_LABELS, rows, presentation, "variant_first")).children;
     expect(regimens.map((child) => [child.field, child.valueText, child.rows.length])).toEqual([
       ["fp_exposure_id", "folfox", 242],
       ["fp_exposure_id", "no drug exposure", 4],

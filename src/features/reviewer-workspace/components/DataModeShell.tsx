@@ -96,6 +96,7 @@ const DataModeShell = ({
       <div
         role="group"
         aria-label="Data view"
+        className="mt-6 flex w-full flex-col gap-1 rounded-md bg-secondary p-1 sm:flex-row"
       >
         {(["chat", "table"] as const).map((candidate) => {
           const isActive = mode === candidate;
@@ -108,6 +109,8 @@ const DataModeShell = ({
               className={cn(
                 "flex min-h-12 flex-1 items-center justify-center rounded-sm px-3 py-2 text-center text-xs font-bold transition-colors",
                 isActive
+                  ? "bg-white text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-mc-ink-accent"
               )}
             >
               {DATA_MODE_LABEL[candidate]}

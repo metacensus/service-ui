@@ -3,6 +3,10 @@
 // mismatch needs investigating with evidence.
 
 import { beforeAll, describe, expect, it } from "vitest";
+import { routes } from "@/lib/routes";
+import { demoJson, demoReachable, EXPORT_RUN, exportJson } from "../../data/loadExportRows.testutil";
+import { NO_LABELS } from "../../data/snapshot";
+import type { Row, RunLabels, SchemaPresentation } from "../../types";
 import {
   dataWorkspaceRowMatchesField,
   dataWorkspaceValueText,
@@ -19,11 +23,23 @@ import {
   treeLeaves,
 } from "./groupedFindings";
 
+// No demo on CI: skip there.
+const DEMO_UP = await demoReachable();
+// The corpus loops read whole papers (Madi alone is 2,301 rows): the default
+// 5 s timed out on a loaded machine, so give them room.
 const withExport = (name: string, body: () => void) =>
+  describe.skipIf(!DEMO_UP)(
+    DEMO_UP ? name : `${name} (skipped: no demo at DEMO_BASE_URL)`,
     { timeout: 60000 },
     body
   );
 
+// The run's authored labels.
+const labels: RunLabels = DEMO_UP ? await demoJson<RunLabels>(routes.demo.labels(EXPORT_RUN)) : NO_LABELS;
+
+async function loadPaper(paperId: string): Promise<{ rows: Row[]; presentation?: SchemaPresentation }> {
+  const rows = await exportJson<Row[]>(`rows/${paperId}.json`);
+  const config = await exportJson<{ schema_presentation?: SchemaPresentation }>("demo_config.json");
   return { rows, presentation: config.schema_presentation };
 }
 
@@ -67,6 +83,7 @@ function storedOnlySet(rows: Row[], query: string, presentation?: SchemaPresenta
 function matchedSet(rows: Row[], query: string, presentation?: SchemaPresentation): Set<number> {
   const matched = new Set<number>();
   for (const row of rows) {
+    if (rowMatchesQuery(labels, row, query, presentation)) matched.add(row.row_index);
   }
   return matched;
 }
@@ -74,6 +91,8 @@ function matchedSet(rows: Row[], query: string, presentation?: SchemaPresentatio
 withExport("search over displayed values", () => {
   let rows: Row[] = [];
   let presentation: SchemaPresentation | undefined;
+  beforeAll(async () => {
+    ({ rows, presentation } = await loadPaper("Boige_2016_26794347"));
   });
 
   it("finds the same 63 rows for every case/whitespace form of diarrhea", () => {
@@ -97,9 +116,12 @@ withExport("search over displayed values", () => {
     expect(matchedSet(rows, "grade 3 diarrhea", presentation).size).toBe(0);
   });
 
+  it("matches Lee 89/89 and Jennings 0/0", async () => {
+    const lee = await loadPaper("Lee_2016_26658227");
     expect(lee.rows).toHaveLength(246);
     expect(matchedSet(lee.rows, "diarrhea", lee.presentation).size).toBe(89);
     expect(matchedSet(lee.rows, "neutropenia", lee.presentation).size).toBe(89);
+    const jennings = await loadPaper("Jennings_2013_24167597");
     expect(jennings.rows).toHaveLength(351);
     expect(matchedSet(jennings.rows, "diarrhea", jennings.presentation).size).toBe(0);
     expect(matchedSet(jennings.rows, "neutropenia", jennings.presentation).size).toBe(0);
@@ -109,6 +131,8 @@ withExport("search over displayed values", () => {
 withExport("literal matching", () => {
   let rows: Row[] = [];
   let presentation: SchemaPresentation | undefined;
+  beforeAll(async () => {
+    ({ rows, presentation } = await loadPaper("Boige_2016_26794347"));
   });
 
   it("does not search field names and does not expand synonyms", () => {
@@ -124,6 +148,8 @@ withExport("literal matching", () => {
 });
 
 withExport("displayed labels", () => {
+  it("finds the Loganayagam label-only rows: diarrhea 181, neutropenia 180", async () => {
+    const { rows, presentation } = await loadPaper("Loganayagam_2013_23736036");
     expect(rows).toHaveLength(277);
     const diarrhea = matchedSet(rows, "diarrhea", presentation);
     expect(diarrhea.size).toBe(181);
@@ -152,6 +178,7 @@ withExport("displayed labels", () => {
     }
   });
 
+    const logan = await loadPaper("Loganayagam_2013_23736036");
     // Every Loganayagam diarrhea match is label-only, so this exercises the label path.
     expect(storedOnlySet(logan.rows, "Diarrhea", logan.presentation).size).toBe(0);
     const diarrhea = matchedSet(logan.rows, "diarrhea", logan.presentation);
@@ -163,15 +190,20 @@ withExport("displayed labels", () => {
     const neutropenia = matchedSet(logan.rows, "NEUTROPENIA", logan.presentation);
     expect(neutropenia.size).toBe(180);
     expect(neutropenia).toEqual(matchedSet(logan.rows, "neutropenia", logan.presentation));
+    const boige = await loadPaper("Boige_2016_26794347");
     const boigeDiarrhea = matchedSet(boige.rows, "Diarrhea", boige.presentation);
     expect(boigeDiarrhea.size).toBe(63);
     expect(boigeDiarrhea).toEqual(matchedSet(boige.rows, "diarrhea", boige.presentation));
   });
 
+  it("finds Madi 158 and Rosmarin 94 for diarrhea", async () => {
+    const madi = await loadPaper("Madi_2018_30114658");
     expect(matchedSet(madi.rows, "diarrhea", madi.presentation).size).toBe(158);
+    const rosmarin = await loadPaper("Rosmarin_2015_24647007");
     expect(matchedSet(rosmarin.rows, "diarrhea", rosmarin.presentation).size).toBe(94);
   });
 
+  it("matches the six small-paper diarrhea totals", async () => {
     const expected: Array<[string, number]> = [
       ["falvella_2015_25782327", 3],
       ["Kristensen_2010_20819423", 10],
@@ -181,10 +213,13 @@ withExport("displayed labels", () => {
       ["Iachetta_2019_30858516", 1],
     ];
     for (const [paperId, total] of expected) {
+      const { rows, presentation } = await loadPaper(paperId);
       expect(matchedSet(rows, "diarrhea", presentation).size, paperId).toBe(total);
     }
   });
 
+  it("Lee neutropenia/Diarrhoea totals hold", async () => {
+    const { rows, presentation } = await loadPaper("Lee_2016_26658227");
     expect(matchedSet(rows, "neutropenia", presentation).size).toBe(89);
     expect(matchedSet(rows, "Diarrhoea", presentation).size).toBe(12);
   });
@@ -193,6 +228,8 @@ withExport("displayed labels", () => {
 withExport("search composed with filters", () => {
   let rows: Row[] = [];
   let presentation: SchemaPresentation | undefined;
+  beforeAll(async () => {
+    ({ rows, presentation } = await loadPaper("Boige_2016_26794347"));
   });
   const querySet = () => matchedSet(rows, "diarrhea", presentation);
 
@@ -215,6 +252,7 @@ withExport("search composed with filters", () => {
     );
     expect(
       matchedRowIndexes(
+        labels,
         rows,
         { query: "diarrhea", fieldFilter: nonEmpty!, statusFilter: "all" },
         presentation,
@@ -231,6 +269,7 @@ withExport("search composed with filters", () => {
     expect(emptyField, "a field with an empty intersection").toBeDefined();
     expect(
       matchedRowIndexes(
+        labels,
         rows,
         { query: "diarrhea", fieldFilter: emptyField!, statusFilter: "all" },
         presentation,
@@ -250,6 +289,7 @@ withExport("search composed with filters", () => {
       approved.has(rowIndex) ? "approved" : "open";
     expect(
       matchedRowIndexes(
+        labels,
         rows,
         { query: "diarrhea", fieldFilter: "all", statusFilter: "approved" },
         presentation,
@@ -263,6 +303,7 @@ withExport("search composed with filters", () => {
     // same structure. Rebuilding twice from the same rows proves the build is
     // query-independent; matching against each query then proves the filters
     // narrow within it without redefining membership.
+    const context = buildPaperContext(labels, rows, presentation);
     const lifted = new Set<string>([
       ...context.lifted.map((chip) => chip.field),
       ...context.lifted.flatMap((chip) => (chip.partner ? [chip.partner.field] : [])),
@@ -273,6 +314,7 @@ withExport("search composed with filters", () => {
     // rebuilds) and that each query's matches sit strictly inside the
     // full-set leaves — filters narrow within the tree, never reshape it.
     const structureOf = (order: "variant_first" | "outcome_first") =>
+      treeLeaves(buildTieredTree(labels, rows, presentation, lifted, order)).map(
         (leaf) => `${leaf.key}:${leaf.rows.length}`
       );
     const variant = structureOf("variant_first");
@@ -280,12 +322,14 @@ withExport("search composed with filters", () => {
     const outcome = structureOf("outcome_first");
     expect(structureOf("outcome_first"), "outcome_first is deterministic").toEqual(outcome);
     const leafRows = new Set(
+      treeLeaves(buildTieredTree(labels, rows, presentation, lifted, "variant_first")).flatMap((leaf) =>
         leaf.rows.map((row) => row.row_index)
       )
     );
     expect(leafRows.size, "full-set tree covers every row").toBe(rows.length);
     for (const query of ["diarrhea", "neutropenia", "zzz-no-match"]) {
       const narrowed = matchedRowIndexes(
+        labels,
         rows,
         { query, fieldFilter: "all", statusFilter: "all" },
         presentation,

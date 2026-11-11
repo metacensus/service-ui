@@ -28,16 +28,31 @@ const TopicScientificQuestion = ({
   votesQuery,
   onCreate,
 }: TopicScientificQuestionProps) => {
+  const body = (question: Prop) => {
     const closed = isPropVoteClosed(question);
     return (
       <div className="flex flex-col gap-6">
+        <h2 className="text-2xl font-semibold leading-snug underline decoration-mc-line-accent decoration-2 underline-offset-[6px] md:text-3xl md:leading-snug">
           {question.description}
         </h2>
         <div className="flex max-w-xl flex-col gap-2">
+          <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
             Group vote
           </div>
+          <AsyncSection
+            query={votesQuery}
+            isEmpty={() => false}
+            empty={null}
+            loading={<Skeleton className="h-3 w-full rounded-full" />}
+            error={
+              <p className="text-xs text-mc-alert-ink">
                 Could not load the votes on this question.
               </p>
+            }
+          >
+            {(votes) => <VoteBar tally={tallyVotes(votes)} />}
+          </AsyncSection>
+          <p className="text-xs text-muted-foreground">
             {closed
               ? `Voting ${question.conclusion} on ${formatIsoDate(question.concluded)}. `
               : ""}
@@ -51,21 +66,39 @@ const TopicScientificQuestion = ({
   return (
     <Card id="topic-question" className="scroll-mt-24 p-6 md:p-8">
       <div className="mb-4 flex items-center justify-between gap-2">
+        <span className="text-sm font-bold uppercase tracking-wide text-mc-tint-purple-ink">
           Scientific question
         </span>
         {question && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
             Locked
           </span>
         )}
       </div>
+      <CardContent className="p-0">
+        <AsyncSection
+          query={propsQuery}
+          isEmpty={() => !question}
+          empty={
             <div className="flex flex-col items-start gap-3">
+              <p className="text-sm text-muted-foreground">
                 No scientific question has been set for this topic.
               </p>
+              <Button size="sm" variant="secondary" className="px-3 text-xs" onClick={onCreate}>
                 Propose a scientific question
               </Button>
             </div>
+          }
+          loading={<Skeleton className="h-16 rounded-xl" />}
+          error={
+            <p className="text-sm text-mc-alert-ink">
               Could not load the scientific question for this topic.
             </p>
+          }
+        >
+          {() => question && body(question)}
+        </AsyncSection>
+      </CardContent>
     </Card>
   );
 };

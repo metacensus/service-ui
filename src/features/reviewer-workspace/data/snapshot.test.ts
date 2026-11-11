@@ -1,3 +1,5 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fetchRunLabels, NO_LABELS, validatePaperRows } from "./snapshot";
 
 function rowWith(provenance: Record<string, unknown>) {
   return [{ row_index: 0, identity: {}, fields: {}, provenance }];
@@ -48,5 +50,22 @@ describe("reviewer snapshot provenance contract", () => {
         "Amstutz"
       )
     ).toThrow("malformed source component");
+  });
+});
+
+describe("fetchRunLabels", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("reads the run's labels from the demo", async () => {
+    const labels = { ...NO_LABELS, field_labels: { "field-a": "Field A" } };
+    const fetchMock = vi.fn(async () => Response.json(labels));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(fetchRunLabels("run-fixture")).resolves.toEqual(labels);
+    expect(fetchMock.mock.calls[0]).toEqual(["/metacensus/demo/labels/run-fixture.json"]);
+  });
+
+  it("shows values as stored for a run without labels", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("not found", { status: 404 })));
+    await expect(fetchRunLabels("run-fixture")).resolves.toBe(NO_LABELS);
   });
 });

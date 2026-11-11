@@ -105,6 +105,7 @@ export async function fetchWorkingSet(
   deps: WorkingSetDeps = {}
 ): Promise<WorkingSet> {
   const url = routes.api.workingSet(topicId, runId);
+  const headers = deps.headers ?? getAuthHeaders();
   const fetchFn = deps.fetchFn ?? fetch;
   const response = await fetchFn(url, { method: "GET", headers });
   if (!response.ok) {
@@ -163,6 +164,7 @@ export async function saveWorkingSetMembership(
     origin: "manual",
     expected_revision: change.expectedRevision,
   };
+  const headers = deps.headers ?? getAuthHeaders();
   const fetchFn = deps.fetchFn ?? fetch;
   const response = await fetchFn(url, { method: "POST", headers, body: JSON.stringify(body) });
   const payload = (await response.json().catch(() => null)) as Record<string, unknown> | null;
