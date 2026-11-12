@@ -1,12 +1,11 @@
 "use client";
 
-import { useFetchData } from "@/hooks/useFetchData";
+import { useTopics } from "@/hooks/useTopics";
 import Link from "@/components/shared/Link";
 import { useMemo } from "react";
 import { statusMap } from "../../../types/enums";
 import TextBubble from "../shared/TextBubble";
 import { Topic } from "../../../types/Topic";
-import { routes } from "@/lib/routes";
 
 type PageHeaderProps = {
   pageName: string;
@@ -15,9 +14,7 @@ type PageHeaderProps = {
 };
 
 const PageHeader = ({ pageName, id, titleProp }: PageHeaderProps) => {
-  const { data: topics } = useFetchData<undefined, Topic[]>(routes.api.topic, [
-    "topics",
-  ]);
+  const { data: topics } = useTopics();
   const topic = topics?.find((item) => item.id === id) || null;
 
   const title = useMemo(() => {

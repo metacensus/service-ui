@@ -1,29 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Prop } from "../../../../types/Prop";
-import type { Topic } from "../../../../types/Topic";
 import TopicGroupMembers, { groupMembers } from "./TopicGroupMembers";
 import { dashboardStatements } from "./TopicStatementsCard";
 import { ExtractionHeatmap } from "./TopicExtractionCard";
 import type { ExtractionSummary } from "@/features/reviewer-workspace/model/extractionSummary";
 
-const topic = {
-  topicContributors: [
-    { contributor: { id: 12, name: "Sophia Taylor", role: "contributor" } },
-    { contributor: { id: 27, name: "Ada Lovelace (hypothetical)", role: "contributor" } },
-  ],
-} as unknown as Topic;
+const members = [
+  { id: "user:12", name: "Sophia Taylor" },
+  { id: "user:27", name: "Ada Lovelace (hypothetical)" },
+];
 
 describe("group members", () => {
   it("turns the hypothetical suffix into a flag", () => {
-    expect(groupMembers(topic)).toEqual([
-      { id: 12, name: "Sophia Taylor", role: "contributor", hypothetical: false },
-      { id: 27, name: "Ada Lovelace", role: "contributor", hypothetical: true },
+    expect(groupMembers(members)).toEqual([
+      { id: "user:12", name: "Sophia Taylor", hypothetical: false },
+      { id: "user:27", name: "Ada Lovelace", hypothetical: true },
     ]);
   });
 
   it("marks hypothetical members and explains them", () => {
-    const html = renderToStaticMarkup(<TopicGroupMembers topic={topic} />);
+    const html = renderToStaticMarkup(<TopicGroupMembers members={members} />);
     expect(html).toContain("Group members");
     expect(html).toContain("Ada Lovelace");
     expect(html).toContain(">hypothetical<");
@@ -31,7 +28,7 @@ describe("group members", () => {
   });
 
   it("has an empty state", () => {
-    const html = renderToStaticMarkup(<TopicGroupMembers topic={null} />);
+    const html = renderToStaticMarkup(<TopicGroupMembers members={[]} />);
     expect(html).toContain("No one has joined this topic yet.");
   });
 });

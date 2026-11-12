@@ -5,14 +5,12 @@ import TopicDetailsCard from "@/components/partials/topics/TopicDetailsCard";
 import TopicProtocolCard from "@/components/partials/topics/TopicProtocolCard";
 import AsyncSection from "@/components/shared/AsyncSection";
 import { Card } from "@/components/ui/card";
-import { useFetchData } from "@/hooks/useFetchData";
+import { useTopic } from "@/hooks/useTopics";
 import { cn } from "@/lib/utils";
 import { styles } from "@/styles";
 import { useMemo } from "react";
 import { Contributor } from "../../../../../../types/Contributor";
 import { Protocol } from "../../../../../../types/Protocol";
-import { Topic } from "../../../../../../types/Topic";
-import { routes } from "@/lib/routes";
 
 interface Props {
   params: { topicId: string };
@@ -22,10 +20,7 @@ const TopicDetails = ({ params }: Props) => {
   const { topicId: topicIdEncoded } = params;
   const topicId = topicIdEncoded; // TanStack Router already decodes path params
 
-  const topicQuery = useFetchData<undefined, Topic>(
-    `${routes.api.topic}/${topicId}`,
-    [`topic-details-${topicId}`]
-  );
+  const topicQuery = useTopic(topicId);
 
   const topic = topicQuery.data || null;
 
@@ -59,7 +54,7 @@ const TopicDetails = ({ params }: Props) => {
           <TopicProtocolCard
             protocol={protocol}
             topicName={topic?.name || ""}
-            topicId={topic.id!}
+            topicId={topic.id}
           />
         )}
 
