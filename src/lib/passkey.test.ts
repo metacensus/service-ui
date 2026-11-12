@@ -117,8 +117,21 @@ describe("registerPasskey", () => {
     expect(store.size).toBe(0);
   });
 
+  it("rejects unsupported, without a sheet, when the browser has no credentials API", async () => {
     vi.stubGlobal("navigator", {});
 
+    await expectRejection({ reason: "unsupported" });
+  });
+
+  it("rejects unsupported, without a sheet, below the toBase64 floor", async () => {
+    const toBase64 = Object.getOwnPropertyDescriptor(Uint8Array.prototype, "toBase64")!;
+    delete (Uint8Array.prototype as { toBase64?: unknown }).toBase64;
+    try {
+      await expectRejection({ reason: "unsupported" });
+    } finally {
+      Object.defineProperty(Uint8Array.prototype, "toBase64", toBase64);
+    }
+    expect(create).not.toHaveBeenCalled();
     expect(store.size).toBe(0);
   });
 });

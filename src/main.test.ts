@@ -8,6 +8,7 @@ vi.mock("./router", () => ({ router: {} }));
 const store = new Map<string, unknown>();
 
 beforeEach(() => {
+  for (const key of ["keys", "currentKey", "token", "passkey", "recentlyViewedTopics"]) store.set(key, {});
   del.mockImplementation(async (key: string) => {
     store.delete(key);
   });
@@ -21,6 +22,7 @@ afterEach(() => {
   vi.resetModules();
 });
 
+it("deletes the demo's signing key and session token and keeps the passkey and recent topics", async () => {
   await import("./main");
 
   expect([...store.keys()]).toStrictEqual(["passkey", "recentlyViewedTopics"]);

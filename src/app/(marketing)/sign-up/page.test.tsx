@@ -76,11 +76,23 @@ describe("signUpNotice", () => {
   it.each([
     ["a cancelled prompt", cancelled, false],
     ["a failed passkey", new PasskeyError("failed"), true],
+    ["a browser below the passkey floor", new PasskeyError("unsupported"), true],
     ["a rejected sign-up", new ApiError("POST", "/signup", 409, ""), true],
   ])("says whether %s is an error, in words of its own", (_, error, isError) => {
     const notice = signUpNotice(error);
     expect(notice.isError).toBe(isError);
     expect(notice.text).not.toBe(error.message);
+  });
+
+  it("says the browser can't create a passkey when it is below the passkey floor", async () => {
+    const { registerPasskey } = await vi.importActual<typeof import("@/lib/passkey")>("@/lib/passkey");
+    const toBase64 = Object.getOwnPropertyDescriptor(Uint8Array.prototype, "toBase64")!;
+    delete (Uint8Array.prototype as { toBase64?: unknown }).toBase64;
+    const error = await registerPasskey(input).catch((e) => e);
+    Object.defineProperty(Uint8Array.prototype, "toBase64", toBase64);
+
+    expect(error).toMatchObject({ reason: "unsupported" });
+    expect(signUpNotice(error)).toEqual({ text: expect.stringContaining("can't create a passkey"), isError: true });
   });
 });
 

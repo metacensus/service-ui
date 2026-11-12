@@ -10,11 +10,25 @@ export interface Passkey {
 
 export class PasskeyError extends Error {
   constructor(
+    readonly reason: "cancelled" | "failed" | "unsupported",
     options?: ErrorOptions
   ) {
     super(`Passkey ${reason}`, options);
     this.name = "PasskeyError";
   }
+}
+
+/**
+ * Below Safari 18.2 and Chrome 140, `encodePublicKey` and `keyId` find no
+ * `Uint8Array.prototype.toBase64` and throw after the sheet has been answered,
+ * so the check runs before the sheet is shown.
+ */
+function passkeysSupported(): boolean {
+  return (
+    typeof navigator !== "undefined" &&
+    navigator.credentials !== undefined &&
+    "toBase64" in Uint8Array.prototype
+  );
 }
 
 /**
@@ -24,6 +38,7 @@ export class PasskeyError extends Error {
 export async function passkeyCeremony(
   call: () => Promise<Credential | null>
 ): Promise<PublicKeyCredential> {
+  if (!passkeysSupported()) throw new PasskeyError("unsupported");
   let credential: Credential | null;
   try {
     credential = await call();

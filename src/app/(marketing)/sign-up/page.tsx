@@ -88,6 +88,16 @@ export async function submitSignUp(
 
 export function signUpNotice(error: unknown): { text: string; isError: boolean } {
   if (error instanceof PasskeyError) {
+    if (error.reason === "cancelled") {
+      return { text: "The passkey prompt didn't finish. Select Register to try again.", isError: false };
+    }
+    if (error.reason === "unsupported") {
+      return {
+        text: "This browser can't create a passkey. Update it to Safari 18.2 or Chrome 140 or later, or use another browser.",
+        isError: true,
+      };
+    }
+    return { text: "Your device couldn't create or use a passkey.", isError: true };
   }
   if (error instanceof ApiError) {
     return { text: "We couldn't create your account. Check your details and try again.", isError: true };

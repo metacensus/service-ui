@@ -17,3 +17,5 @@ ReactDOM.createRoot(rootElement).render(
   </React.StrictMode>
 );
 
+// Browsers that used the demo still hold its signing key and session token.
+Promise.allSettled([del("keys"), del("currentKey"), del("token")]);
