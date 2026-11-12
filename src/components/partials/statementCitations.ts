@@ -1,13 +1,11 @@
-import { Vote } from "../../../types/vote";
-
-export type StatementCitation = NonNullable<Vote["citations"]>[number];
+import { Vote_Position, type PropCitation, type VoteRecord } from "@metacensus/api";
 
 /**
  * Against-vote spans over a statement. Ranges are half-open [start, end) and may start at index 0.
  */
 export function parseStatementCitation(
   value: unknown
-): StatementCitation | undefined {
+): PropCitation | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   if (!("start" in value) || !("end" in value)) return undefined;
 
@@ -28,9 +26,9 @@ export function parseStatementCitation(
   return { start, end };
 }
 
-export function citationsFromVotes(votes: Vote[]): StatementCitation[] {
+export function citationsFromVotes(votes: VoteRecord[]): PropCitation[] {
   return votes
-    .filter((vote) => vote.position === "Against")
+    .filter((vote) => vote.position === Vote_Position.Against)
     .flatMap((vote) => vote.citations ?? [])
     .flatMap((citation) => {
       const parsed = parseStatementCitation(citation);
@@ -43,7 +41,7 @@ export function selectionOffsetsWithin({
   element,
 }: {
   element: HTMLElement;
-}): StatementCitation | undefined {
+}): PropCitation | undefined {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0 || !selection.toString()) {
     return undefined;
@@ -70,7 +68,7 @@ export function excerptForCitation({
   citation,
 }: {
   statement: string;
-  citation: StatementCitation | undefined;
+  citation: PropCitation | undefined;
 }): string {
   if (!citation) return "";
   return statement.substring(citation.start, citation.end);

@@ -16,12 +16,11 @@ export function findVoteForUser<T extends { userId: string }>(
 const CLOSED_CONCLUSIONS = new Set(["passed", "failed", "expired"]);
 
 /** True only for terminal conclusions — not `"open"` (truthy but still votable). */
-export function isPropVoteClosed(
-  prop: {
-    concluded?: string;
-    conclusion?: string;
-  } | null | undefined
-): boolean {
+export function isPropVoteClosed<
+  T extends { concluded?: string; conclusion?: string },
+>(
+  prop: T | null | undefined
+): prop is T & { concluded: string; conclusion: string } {
   if (!prop?.concluded) return false;
   return CLOSED_CONCLUSIONS.has(prop.conclusion ?? "");
 }

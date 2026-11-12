@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { Prop_Type } from "@metacensus/api";
 import type { Prop } from "../../../../types/Prop";
 import TopicGroupMembers, { groupMembers } from "./TopicGroupMembers";
 import { dashboardStatements } from "./TopicStatementsCard";
@@ -33,23 +34,23 @@ describe("group members", () => {
   });
 });
 
-const prop = (id: string, type: Prop["type"], created: string): Prop =>
-  ({ id, type, created, description: id, authorId: "1", concluded: "", conclusion: "open" }) as Prop;
+const prop = (id: string, type: Prop_Type, recorded: string): Prop =>
+  ({ id, type, recorded, topicId: "topic:1", description: id });
 
 describe("dashboard statements", () => {
   it("previews up to three statements, oldest first, skipping the question", () => {
     const rows = [
-      prop("q", "TopicQuestion", "2026-01-01"),
-      prop("s4", "Statement", "2026-01-05"),
-      prop("s2", "Statement", "2026-01-03"),
-      prop("s1", "Statement", "2026-01-02"),
-      prop("s3", "Statement", "2026-01-04"),
+      prop("q", Prop_Type.TopicQuestion, "2026-01-01"),
+      prop("s4", Prop_Type.Statement, "2026-01-05"),
+      prop("s2", Prop_Type.Statement, "2026-01-03"),
+      prop("s1", Prop_Type.Statement, "2026-01-02"),
+      prop("s3", Prop_Type.Statement, "2026-01-04"),
     ];
     expect(dashboardStatements(rows).map((p) => p.id)).toEqual(["s1", "s2", "s3"]);
   });
 
   it("is empty for a topic with a question and no statements", () => {
-    expect(dashboardStatements([prop("q", "TopicQuestion", "2026-01-01")])).toEqual([]);
+    expect(dashboardStatements([prop("q", Prop_Type.TopicQuestion, "2026-01-01")])).toEqual([]);
   });
 });
 

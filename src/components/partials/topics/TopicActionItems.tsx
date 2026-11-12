@@ -8,11 +8,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useFetchData } from "@/hooks/useFetchData";
 import { useGetUserId } from "@/hooks/useGetUserId";
+import { useProps } from "@/hooks/useProps";
 import { routes } from "@/lib/routes";
 import Link from "@/components/shared/Link";
+import { Prop_Type } from "@metacensus/api";
 import { useMemo } from "react";
 import { Paper } from "../../../../types/Paper";
-import { Prop } from "../../../../types/Prop";
 import { ChevronRight, CircleCheck, Clipboard } from "lucide-react";
 
 type TopicActionItemsProps = {
@@ -36,14 +37,9 @@ const CATEGORY_ORDER = [
 const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
   const { userId } = useGetUserId();
 
-  // Reuse the dashboard's query keys so these hit React Query's cache instead
-  // of re-fetching.
-  const { data: props } = useFetchData<undefined, Prop[]>(
-    `${routes.api.topic}/${topicId}/prop`,
-    [`props-${topicId}`],
-    "GET"
-  );
+  const { data: props } = useProps(topicId);
 
+  // The dashboard's key, so this hits React Query's cache instead of re-fetching.
   const papersBody = { topicId, page: 1, limit: 30 };
   const { data: papers } = useFetchData<typeof papersBody, Paper[]>(
     routes.api.paper,
@@ -58,7 +54,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
       (props ?? []).filter(
         // The scientific question is locked on the dashboard, so it
         // is never an open action; only statements are voted on here.
-        (p) => p.type === "Statement" && (!p.conclusion || p.conclusion === "open")
+        (p) => p.type === Prop_Type.Statement && (!p.conclusion || p.conclusion === "open")
       ),
     [props]
   );
