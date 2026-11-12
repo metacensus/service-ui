@@ -1,12 +1,10 @@
 "use client";
 
 import formatIsoDate from "@/functions/formatIsoDate";
-import { useFetchData } from "@/hooks/useFetchData";
+import { useUsers } from "@/hooks/useUsers";
 import { sameEntityId } from "@/lib/entityId";
-import { routes } from "@/lib/routes";
 import { Vote_Position, type VoteRecord } from "@metacensus/api";
 import { useState } from "react";
-import { Contributor } from "../../../types/Contributor";
 import { Prop } from "../../../types/Prop";
 import MyDrawer from "../shared/Drawer";
 import TableSimple from "../shared/TableSimple";
@@ -33,11 +31,7 @@ const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
     }, 0);
   };
 
-  const { data: contributors } = useFetchData<undefined, Contributor[]>(
-    `${routes.api.user}`,
-    ["contributors"],
-    "GET"
-  );
+  const { data: contributors } = useUsers();
 
   return (
     <div>
