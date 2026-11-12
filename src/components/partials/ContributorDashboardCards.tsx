@@ -1,8 +1,7 @@
 "use client";
 
 import AsyncSection from "@/components/shared/AsyncSection";
-import { useFetchData } from "@/hooks/useFetchData";
-import { routes } from "@/lib/routes";
+import { useTopics } from "@/hooks/useTopics";
 import { styles } from "@/styles";
 import Link from "@/components/shared/Link";
 import { Topic } from "../../../types/Topic";
@@ -50,13 +49,7 @@ const DashboardCard = ({ title, count, items }: DashboardCardProps) => {
 };
 
 const ContributorDashboardCards = () => {
-  const topicsQueryBody = { limit: 4, page: 1 };
-  const topicsQuery = useFetchData<typeof topicsQueryBody, Topic[]>(
-    routes.api.topic,
-    ["topics"],
-    "GET",
-    undefined
-  );
+  const topicsQuery = useTopics();
 
   return (
     <AsyncSection

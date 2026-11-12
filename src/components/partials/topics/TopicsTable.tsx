@@ -3,12 +3,11 @@
 import AsyncSection from "@/components/shared/AsyncSection";
 import TablePagination from "@/components/shared/TablePagination";
 import TextBubble from "@/components/shared/TextBubble";
-import { useFetchData } from "@/hooks/useFetchData";
-import { routes } from "@/lib/routes";
+import { topicsQuery } from "@/hooks/useTopics";
+import { useQuery } from "@tanstack/react-query";
 import Link from "@/components/shared/Link";
 import { useQueryState } from "@/lib/nuqs-compat";
 import { useMemo, useState } from "react";
-import { Topic } from "../../../../types/Topic";
 import TableSimple from "../../shared/TableSimple";
 import { Ellipsis } from "lucide-react";
 
@@ -18,23 +17,14 @@ const PILL = "mr-2 bg-secondary w-fit rounded-lg";
 const TopicsTable = () => {
   const [page, setPage] = useState(1);
 
-  const topicsQuery = useFetchData<undefined, Topic[]>(
-    routes.api.topic,
-    ["topics"],
-    "GET",
-    undefined,
-    {
-      // refetch every 10 seconds
-      refetchInterval: 10_000,
-    }
-  );
+  const query = useQuery({ ...topicsQuery, refetchInterval: 10_000 });
 
   const [searchTerm, _setSearchTerm] = useQueryState("search", {
     defaultValue: "",
     clearOnDefault: true,
   });
 
-  const topics = (topicsQuery.data || []).filter((topic) => {
+  const topics = (query.data || []).filter((topic) => {
     return topic.name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -161,7 +151,7 @@ const TopicsTable = () => {
   );
   return (
     <AsyncSection
-      query={topicsQuery}
+      query={query}
       isEmpty={() => false}
       empty={null}
       loading={
@@ -183,7 +173,7 @@ const TopicsTable = () => {
           tableTitle="Loading Topics..."
         />
       }
-      error={<div>Error loading data: {topicsQuery.error?.message}</div>}
+      error={<div>Error loading data: {query.error?.message}</div>}
     >
       {() => (
         <div className="w-full flex flex-col gap-2">

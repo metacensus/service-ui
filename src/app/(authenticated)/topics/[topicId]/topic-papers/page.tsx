@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fetchAllTopicPapers } from "@/functions/fetchAllTopicPapers";
 import { useFetchData } from "@/hooks/useFetchData";
+import { useTopics } from "@/hooks/useTopics";
 import { usePaperReviewProgress } from "@/hooks/usePaperReviewProgress";
 import { usePapersMembership } from "@/hooks/usePapersMembership";
 import { routes } from "@/lib/routes";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Paper } from "../../../../../../types/Paper";
-import { Topic } from "../../../../../../types/Topic";
 import { Columns3, FilePlus, Table } from "lucide-react";
 
 interface Props {
@@ -55,9 +55,7 @@ const TopicPapers = ({ params }: Props) => {
     return null;
   }, [data]);
 
-  const { data: topics } = useFetchData<undefined, Topic[]>(routes.api.topic, [
-    "topics",
-  ]);
+  const { data: topics } = useTopics();
 
   const topic = topics?.find((item) => item.id === topicId) || null;
 

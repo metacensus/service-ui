@@ -5,10 +5,10 @@ import IconButton from "@/components/shared/IconButton";
 import TextBubble from "@/components/shared/TextBubble";
 import { getPaperStatusCount } from "@/functions/getPaperStatusCount";
 import { useFetchData } from "@/hooks/useFetchData";
+import { useTopic } from "@/hooks/useTopics";
 import { routes } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Paper } from "../../../../types/Paper";
-import { Topic } from "../../../../types/Topic";
 import { FilePlus, Layers } from "lucide-react";
 
 type TopicPaperStatusesProps = {
@@ -32,10 +32,7 @@ const TopicPaperStatuses = ({ topicId }: TopicPaperStatusesProps) => {
     { topicId, page, limit }
   );
 
-  const { data: topic } = useFetchData<undefined, Topic>(
-    routes.api.topicById(topicId),
-    [`topic-details-${topicId}`]
-  );
+  const { data: topic } = useTopic(topicId);
 
   const papers = useMemo(() => {
     if (data) {

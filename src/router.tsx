@@ -12,12 +12,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { apiClient } from "@/lib/apiClient";
 import Providers from "@/app/providers";
 import { DocumentHead } from "@/components/DocumentHead";
-import { fetchData } from "@/hooks/useFetchData";
+import { topicsQuery } from "@/hooks/useTopics";
 import { pageHead } from "@/lib/head";
 import { getPasskey } from "@/lib/passkey";
 import queryClient from "@/lib/queryClient";
-import { routes } from "@/lib/routes";
-import type { Topic } from "../types/Topic";
 import { LOGIN_PATH } from "@/lib/session";
 
 // Auth pages. The public pages are a separate site.
@@ -99,16 +97,11 @@ const authenticatedLayoutRoute = createRoute({
 const topicLayoutRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: "/topics/$topicId",
-  // Loads the topic's name for the tab title. Shares its cache entry with the
-  // `useFetchData(routes.api.topic, ["topics"])` call in PageHeader, whose key
-  // is `["topics", JSON.stringify(undefined)]`. A failed fetch only costs the
+  // Loads the topic's name for the tab title. A failed fetch only costs the
   // name: the page's own queries surface the error.
   loader: async ({ params }) => {
     const topics = await queryClient
-      .ensureQueryData({
-        queryKey: ["topics", undefined],
-        queryFn: () => fetchData<undefined, Topic[]>(routes.api.topic),
-      })
+      .ensureQueryData(topicsQuery)
       .catch(() => undefined);
     return { topicName: topics?.find((t) => t.id === params.topicId)?.name };
   },
