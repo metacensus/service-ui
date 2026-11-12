@@ -20,12 +20,12 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useExtractionSummary } from "@/features/reviewer-workspace/hooks/useExtractionSummary";
 import { useFetchData } from "@/hooks/useFetchData";
+import { useProps, useVotes } from "@/hooks/useProps";
 import { useMembers, useTopics } from "@/hooks/useTopics";
 import { routes } from "@/lib/routes";
+import { Prop_Type } from "@metacensus/api";
 import { useMemo, useState } from "react";
-import { Prop } from "../../../../../../types/Prop";
 import { Protocol } from "../../../../../../types/Protocol";
-import { Vote } from "../../../../../../types/vote";
 import { Eye, FilePlus, Plus, SquarePen } from "lucide-react";
 
 interface Props {
@@ -46,27 +46,16 @@ const TopicsDashboard = ({ params }: Props) => {
   const topic = topicsQuery.data?.find((item) => item.id === topicId) || null;
   const { data: members = [] } = useMembers(topicId);
 
-  const propsQuery = useFetchData<undefined, Prop[]>(
-    `${routes.api.topic}/${topicId}/prop`,
-    [`props-${topicId}`],
-    "GET"
-  );
+  const propsQuery = useProps(topicId);
 
   const question = useMemo(
-    () => propsQuery.data?.find((item) => item.type === "TopicQuestion") ?? null,
+    () =>
+      propsQuery.data?.find((item) => item.type === Prop_Type.TopicQuestion) ??
+      null,
     [propsQuery.data]
   );
 
-  // Keyed and gated on the question's id: keyed on the topic alone, the
-  // request made before props arrived (`/prop/undefined/vote`) was cached
-  // under the same key and never replaced.
-  const votesQuery = useFetchData<undefined, Vote[]>(
-    `${routes.api.topic}/${topicId}/prop/${question?.id}/vote`,
-    [`meta-vote-${topicId}-${question?.id}`],
-    "GET",
-    undefined,
-    { enabled: !!question?.id }
-  );
+  const votesQuery = useVotes(topicId, question?.id);
 
   const protocolQuery = useFetchData<undefined, Protocol | null>(
     routes.api.topicProtocol(topicId),

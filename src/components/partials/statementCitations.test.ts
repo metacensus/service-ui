@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Vote } from "../../../types/vote";
+import { Vote_Position, type VoteRecord } from "@metacensus/api";
 import {
   citationsFromVotes,
   excerptForCitation,
@@ -7,12 +7,13 @@ import {
 } from "./statementCitations";
 
 const against = (
-  citations: Vote["citations"],
-  extras: Partial<Vote> = {}
-): Vote => ({
-  position: "Against",
+  citations: VoteRecord["citations"],
+  extras: Partial<VoteRecord> = {}
+): VoteRecord => ({
+  position: Vote_Position.Against,
   explanation: "obj",
-  lastCast: "2026-01-01T00:00:00.000Z",
+  recorded: "2026-01-01T00:00:00Z",
+  topicId: "topic:1",
   userId: "1",
   propId: "1",
   citations,
@@ -53,15 +54,8 @@ describe("citationsFromVotes", () => {
       citationsFromVotes([
         against([{ start: 4, end: 4 }]),
         against([{ start: 2, end: 1 }]),
-        against(undefined),
-        {
-          position: "For",
-          explanation: "",
-          lastCast: "",
-          userId: "2",
-          propId: "1",
-          citations: [{ start: 0, end: 5 }],
-        },
+        against([]),
+        against([{ start: 0, end: 5 }], { position: Vote_Position.For }),
       ])
     ).toEqual([]);
   });
