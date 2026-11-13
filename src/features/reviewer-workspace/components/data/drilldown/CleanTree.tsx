@@ -593,6 +593,7 @@ export function CleanControls({
           if (event.key === "Escape") onQueryChange("");
         }}
         placeholder="Search"
+        className="h-10 min-w-0 rounded-md border border-mc-line-input bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/20 md:w-64"
       />
       <div className="inline-flex h-10 shrink-0 self-start rounded-md bg-secondary p-1 text-sm md:ml-auto md:self-auto">
         {(["variant_first", "outcome_first"] as TreeOrder[]).map((value) => (

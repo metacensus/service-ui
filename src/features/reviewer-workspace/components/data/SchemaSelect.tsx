@@ -104,6 +104,7 @@ function Segmented<T extends string>({
           >
             {option.label}
             {count > 0 && (
+              <span className="rounded-full bg-mc-fill-solid px-1.5 text-[11px] font-semibold leading-4 text-mc-ink-on-fill">{count}</span>
             )}
           </button>
         );
@@ -372,6 +373,7 @@ export default function SchemaSelect({
         {state.scope === "one" && (
           <select
             aria-label="Paper"
+            className="h-10 min-w-0 rounded-md border border-mc-line-input bg-white px-3 text-sm font-medium text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/20 md:max-w-md md:flex-1"
             value={state.scopePaper}
             onChange={(event) => setState((current) => ({ ...current, scopePaper: event.target.value }))}
           >
@@ -583,6 +585,7 @@ export default function SchemaSelect({
               aria-label="Sort papers"
               value={state.sort}
               onChange={(event) => setState((current) => ({ ...current, sort: event.target.value as SortMode }))}
+              className="h-9 rounded-md border border-mc-line-input bg-white px-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
             >
               <option value="custom">Sort: custom order</option>
               <option value="matches">Sort: most matches</option>
@@ -609,6 +612,7 @@ export default function SchemaSelect({
                 <button
                   type="button"
                   aria-disabled={actionDisabled}
+                  className="h-9 rounded-md border border-mc-line-input bg-white px-3 text-sm font-medium text-foreground shadow-sm hover:bg-secondary/50 aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:hover:bg-white"
                 >
                   {button.label}
                 </button>
@@ -630,6 +634,7 @@ export default function SchemaSelect({
                 <button
                   type="button"
                   aria-disabled={clearDisabled}
+                  className="h-9 rounded-md border border-mc-line-input bg-white px-3 text-sm font-medium text-mc-alert-ink shadow-sm hover:bg-mc-alert-fill aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:hover:bg-white"
                 >
                   Clear working set
                 </button>
@@ -849,6 +854,7 @@ function ItemPanel({
                 if (event.key === "Escape") setQuery("");
               }}
               placeholder={`Search ${items.length} items`}
+              className="h-9 w-full rounded-md border border-mc-line-input bg-white pl-8 pr-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
             />
           </div>
         )}
@@ -921,6 +927,7 @@ function PaperPicker({
         <PopoverTrigger asChild>
           <button
             type="button"
+            className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-md border border-mc-line-input bg-white px-3 text-sm font-medium text-foreground shadow-sm hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring/20 md:w-96"
           >
             <span className={picked.length ? "" : "text-muted-foreground"}>
               {picked.length === 0 ? "Select papers" : `${picked.length} ${picked.length === 1 ? "paper" : "papers"} selected`}
@@ -938,6 +945,7 @@ function PaperPicker({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Author, year or journal"
+                className="h-9 w-full rounded-md border border-mc-line-input bg-white pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
               />
             </div>
           </div>
@@ -956,6 +964,7 @@ function PaperPicker({
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-secondary/50"
                 >
                   <span
+                    className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${on ? "border-transparent text-white" : "border-mc-line-input"}`}
                     style={on ? { backgroundColor: color?.dot ?? "var(--mc-ink)" } : undefined}
                   >
                     {on && <Check className="h-3 w-3" aria-hidden />}

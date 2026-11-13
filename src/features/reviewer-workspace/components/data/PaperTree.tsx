@@ -415,6 +415,7 @@ function PaperTreeMoreFilters({
             Field
           </span>
           <select
+            className="h-10 rounded-md border border-mc-line-input bg-white px-3 text-sm"
             value={fieldFilter}
             onChange={(event) => onFieldFilterChange(event.target.value)}
           >
@@ -435,6 +436,7 @@ function PaperTreeMoreFilters({
             Review status
           </span>
           <select
+            className="h-10 rounded-md border border-mc-line-input bg-white px-3 text-sm"
             value={statusFilter}
             onChange={(event) =>
               onStatusFilterChange(event.target.value as DataWorkspaceStatusFilter)

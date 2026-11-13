@@ -55,6 +55,7 @@ const Navbar: FC = () => {
       actions={
         <>
           {userName && <span className="hidden text-sm sm:ml-4 sm:inline">{userName}</span>}
+          <Button variant="secondary" onClick={logOut}>
             Log out
           </Button>
         </>

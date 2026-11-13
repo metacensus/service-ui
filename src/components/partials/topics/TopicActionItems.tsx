@@ -144,6 +144,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
         >
           <span className="text-xs">Action Items</span>
           {count > 0 && (
+            <span className="ml-1 inline-flex items-center justify-center rounded-full bg-mc-fill-solid text-mc-ink-on-fill text-[10px] font-semibold h-4 min-w-4 px-1">
               {count}
             </span>
           )}

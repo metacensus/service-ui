@@ -21,6 +21,7 @@ const DOT_CLASS: Record<MembershipDot, string> = {
   "included-default": "rounded-full border border-solid border-mc-fill-solid bg-mc-fill-solid",
   "included-recorded": "rounded-[2px] border border-dashed border-mc-line-accent bg-mc-line-accent",
   "excluded-recorded": "rounded-full border-2 border-solid border-mc-alert-border bg-white",
+  "excluded-default": "rounded-full border-2 border-dashed border-mc-line-input bg-white",
 };
 
 const BUBBLE_CLASS =

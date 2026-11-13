@@ -262,6 +262,7 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
         {state.file ? (
           // When a file is selected, display the file name and a 'Remove' button
           // When a file is selected, display the file name and a 'Remove' button
+          <div className="mt-2 flex justify-between items-center rounded-lg border border-mc-line-input px-6 py-4">
             <div className="flex items-center">
               <UploadIcon className="w-6 h-6 text-foreground mr-2" />
               <p className="text-sm text-foreground">{state.file.name}</p>
@@ -277,6 +278,7 @@ const CreatePaper: React.FC<CreatePaperProps> = ({
           // When no file is selected, display the upload prompts
           <div
             {...getRootProps()}
+            className="mt-2 flex flex-col items-center justify-center rounded-lg border border-dashed border-mc-line-input px-6 py-10 cursor-pointer"
           >
             <input {...getInputProps()} id="upload-paper" className="sr-only" />
             <div className="text-center ">

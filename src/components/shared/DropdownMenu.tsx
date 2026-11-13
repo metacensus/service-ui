@@ -39,6 +39,7 @@ export default function DropdownMenu({
         );
 
   return (
+    <div className="border border-mc-line-input bg-card shadow-lg rounded-lg w-full">
       <Combobox
         onChange={(value: { id: number; name: string } | null) => {
           if (

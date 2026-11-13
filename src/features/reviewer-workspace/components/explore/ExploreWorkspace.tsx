@@ -527,6 +527,7 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
             >
               {turns.length === 0 && !loading && (
                 <div className="mx-auto max-w-xl py-8">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-md bg-mc-fill-solid text-mc-ink-on-fill"><FileSearch className="h-5 w-5" /></div>
                   <h2 className="mt-5 text-lg font-bold text-foreground">Start with an evidence question</h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">Ask about studies, variants, outcomes, effect estimates, or the strength of the extracted evidence.</p>
                   <div className="mt-6 space-y-2">
@@ -620,6 +621,7 @@ const ExploreWorkspace = ({ topicId }: { topicId: string }) => {
             )}
             <form onSubmit={submit} className="border-t bg-secondary/50 p-4">
               <label htmlFor="explore-question" className="sr-only">Ask the reviewed evidence</label>
+              <div className="flex items-end gap-2 rounded-md border border-mc-line-input bg-white p-2 shadow-sm focus-within:border-mc-line-accent">
                 <textarea id="explore-question" rows={2} value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submit(); } }} placeholder="Ask about variants, outcomes, effect estimates, or extraction quality…" className="min-h-12 flex-1 resize-none px-2 py-2 text-sm focus:outline-none" />
                 <button disabled={!question.trim() || !runId || loading} className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-30" aria-label="Search the evidence"><ArrowRight className="h-4 w-4" /></button>
               </div>

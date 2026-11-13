@@ -53,6 +53,7 @@ const MultiSelectMenu = ({
         id={id}
         aria-expanded={open}
         className={cn(
+          "w-full min-h-10 h-fit py-2 border border-mc-line-input bg-card rounded-md flex items-center mb-1 text-left",
           styles.focusRing
         )}
         onClick={() => setOpen(!open)}

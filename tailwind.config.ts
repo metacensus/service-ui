@@ -1,10 +1,13 @@
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
+const preset = require("@metacensus/library-ui/tailwind3");
+const { mc } = preset.theme.extend.colors;
 
 const config = {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  presets: [preset],
   prefix: "",
   safelist: [
     "bg-sky-200",
@@ -32,19 +35,40 @@ const config = {
     },
     extend: {
       colors: {
+        border: mc.hairline,
+        input: mc["line-input"],
+        ring: mc["line-accent"],
+        // Palette steps, not roles: no `/NN` modifier.
+        mc: { "blue-bold": "var(--mc-blue-bold)", "blue-mid": "var(--mc-blue-mid)" },
+        background: mc.ground,
+        foreground: mc.ink,
         primary: {
+          DEFAULT: mc.action,
+          foreground: mc["ink-on-fill"],
         },
         secondary: {
+          DEFAULT: mc.surface,
+          foreground: mc.ink,
         },
         destructive: {
+          DEFAULT: mc["alert-border"],
+          foreground: mc["ink-on-fill"],
         },
         muted: {
+          DEFAULT: mc.surface,
+          foreground: mc.ink,
         },
         accent: {
+          DEFAULT: mc.surface,
+          foreground: mc.ink,
         },
         popover: {
+          DEFAULT: mc.card,
+          foreground: mc.ink,
         },
         card: {
+          DEFAULT: mc.card,
+          foreground: mc.ink,
         },
       },
       borderRadius: {

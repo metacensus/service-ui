@@ -16,6 +16,7 @@ export const CHEVRON_FIRST = "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(1
 
 export const STATE_CLASSES: Record<TopicFlowState, string> = {
   past: "bg-mc-tint-purple-fill text-mc-tint-purple-ink",
+  current: "bg-mc-fill-solid text-mc-ink-on-fill",
   future: "bg-secondary text-muted-foreground hover:text-foreground",
 };
 
