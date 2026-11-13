@@ -8,13 +8,18 @@ on:
   push:
     branches: [main]
 
+# A newer run on a pull request cancels an older one. On main a newer run
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The checks build the image with `load: true` and never push it; on a push to
 # main, once they pass, the publish job builds it again for linux/arm64 and
 permissions:
   contents: read
+
+env:
+  AWS_REGION: us-east-2
 
 jobs:
   checks:
@@ -88,6 +93,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      current: ${{ steps.head.outputs.current }}
     permissions:
       contents: read
       id-token: write
@@ -170,7 +177,41 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  # pull Always, the restart runs the image publish just moved main to. A run
+  # for a commit that is no longer main's head moved nothing, so it skips this.
+  restart-staging:
+    name: Restart staging
+    needs: publish
+    if: needs.publish.outputs.current == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+    env:
+      CLUSTER: metacensus-main
+      NAMESPACE: staging
+      DEPLOYMENT: ui
+    steps:
+      - name: Require the rollout role
+        env:
+          STAGING_ROLLOUT_ROLE_ARN: ${{ vars.STAGING_ROLLOUT_ROLE_ARN }}
+        run: |
+          if [ -z "$STAGING_ROLLOUT_ROLE_ARN" ]; then
+            exit 1
+          fi
+
       - uses: aws-actions/configure-aws-credentials@v6
         with:
+          role-to-assume: ${{ vars.STAGING_ROLLOUT_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Connect to the cluster
+        run: aws eks update-kubeconfig --name "$CLUSTER" --region "$AWS_REGION"
+
+      - name: Restart
+        run: kubectl --namespace "$NAMESPACE" rollout restart "deployment/$DEPLOYMENT"
+
+      # The Deployment's progress deadline fails a rollout that stalls.
+      - name: Wait for the rollout
+        run: kubectl --namespace "$NAMESPACE" rollout status "deployment/$DEPLOYMENT" --timeout=10m
