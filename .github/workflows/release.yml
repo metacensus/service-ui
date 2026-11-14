@@ -19,7 +19,7 @@ jobs:
     permissions:
       contents: read
 
-    name: Publish ui
+    name: Publish service-ui
 
     steps:
       - name: Checkout repository
@@ -46,7 +46,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.ORG }}/ui
+          images: ${{ env.REGISTRY }}/${{ env.ORG }}/service-ui
           tags: |
             type=ref,event=tag
             type=sha,format=short
