@@ -9,6 +9,7 @@ import { ProtocolSection } from "../../../../types/ProtocolSection";
 import CreateProtocolElement, {
   CustomProtocolElement,
 } from "./CreateProtocolElement";
+import { ArrowDown, ArrowUp, Plus, SquarePen, Trash2 } from "lucide-react";
 
 type ProtocolElementCardProps = {
   element: ProtocolElement;
@@ -51,21 +52,29 @@ const ProtocolElementCard = ({
           <ProtocolElementRow element={element} />
           <div className="flex gap-4 ml-auto">
             {index !== 0 && (
+              <ArrowUp
+                className="size-[1em] cursor-pointer"
                 onClick={() => {
                   updateSortOrderElements(element.id, "up");
                 }}
               />
             )}
             {index !== protocolElements.length - 1 && (
+              <ArrowDown
+                className="size-[1em] cursor-pointer"
                 onClick={() => {
                   updateSortOrderElements(element.id, "down");
                 }}
               />
             )}
+            <SquarePen
+              className="size-[1em] cursor-pointer"
               onClick={() => {
                 setIsEditMode(true);
               }}
             />
+            <Trash2
+              className="size-[1em] cursor-pointer"
               onClick={() => {
                 const newProtocolElements = [...protocolElements];
                 newProtocolElements.splice(index, 1);
@@ -305,17 +314,22 @@ const CreateProtocolSection = ({
           </div>
           <div className="flex gap-4 ml-auto">
             {section.sortOrder !== 0 && (
+              <ArrowUp
+                className="size-[1em] cursor-pointer"
                 onClick={() => {
                   updateSortOrder(section.id, "up");
                 }}
               />
             )}
             {section.sortOrder !== sectionsLength - 1 && (
+              <ArrowDown
+                className="size-[1em] cursor-pointer"
                 onClick={() => {
                   updateSortOrder(section.id, "down");
                 }}
               />
             )}
+            <Trash2 className="size-[1em] cursor-pointer" />
           </div>
         </div>
         <div className="flex flex-col gap-2">
@@ -348,6 +362,7 @@ const CreateProtocolSection = ({
             onClick={() => setOpenAddProtocolElement(true)}
             className="flex justify-center py-4 bg-secondary items-center gap-2 text-sm font-bold text-foreground cursor-pointer hover:underline w-full"
           >
+            <Plus className="h-3 w-3" /> Add Part
           </button>
         </Card>
       </div>

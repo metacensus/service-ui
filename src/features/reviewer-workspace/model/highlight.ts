@@ -1,4 +1,5 @@
 // What counts as a text highlight: the one rule the Data and Review views, and
+// the index builders, use to decide whether a value can open on marked text.
 
 /** Anything that may carry a `highlight` list, such as a provenance source. */
 export type HighlightCarrier = { highlight?: unknown } | null | undefined;

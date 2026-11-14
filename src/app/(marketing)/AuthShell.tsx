@@ -1,5 +1,6 @@
 import { Header } from "@metacensus/library-ui";
 import type { ReactNode } from "react";
+import { publicUrl } from "@/lib/publicUrl";
 import { Footer } from "@/components/Footer";
 
 export const authLink =
@@ -17,6 +18,7 @@ export function AuthShell({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
+      <Header homeHref={publicUrl("/")} />
       <main className="flex-1 px-4 py-14 lg:py-20">
         <div className="mx-auto w-full max-w-lg">
           <h1 className="text-4xl font-medium sm:text-5xl">{title}</h1>

@@ -36,6 +36,7 @@ import { Dispatch, FC, SetStateAction, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { PubMedSearchSummary } from "../../../../types/PubMed";
+import { Calendar as CalendarIcon, ChevronDown, Search } from "lucide-react";
 
 const fieldNames = [
   { name: "Affiliation", fieldQueryName: "Affiliation", type: "string" },
@@ -358,6 +359,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
                         !fieldStart && "text-muted-foreground"
                       )}
                     >
+                      <CalendarIcon className="size-[1em]" />
                       {fieldStart ? (
                         format(fieldStart, "PPP")
                       ) : (
@@ -393,6 +395,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
                         !fieldEnd && "text-muted-foreground"
                       )}
                     >
+                      <CalendarIcon className="size-[1em]" />
                       {fieldEnd ? (
                         format(fieldEnd, "PPP")
                       ) : (
@@ -440,6 +443,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
                     type="button"
                     variant="secondary"
                   >
+                    <ChevronDown className="size-[1em]" />
                   </Button>
                 </DropdownMenuTrigger>
 
@@ -485,6 +489,7 @@ export const BulkImportPapers: FC<BulkImportPapersProps> = ({
           </div>
           <div>
             <Button variant="secondary" className="gap-2" type="submit">
+              <Search className="size-[1em]" />
               <span>Search</span>
             </Button>
           </div>

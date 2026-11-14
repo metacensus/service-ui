@@ -72,6 +72,8 @@ const TopicGroupMembers = ({ topic }: { topic: Topic | null }) => {
             </ul>
             {anyHypothetical && (
               <p className="mt-4 text-xs text-muted-foreground">
+                Members marked hypothetical are demo stand-ins. They are not real
+                accounts, and no vote or view is attributed to a real person.
               </p>
             )}
           </>

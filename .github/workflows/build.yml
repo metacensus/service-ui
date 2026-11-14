@@ -2,6 +2,9 @@ name: Build
 
 # Validates the production artifact at the source: builds the published image
 # and smoke-tests that it does its job — the SPA host serves the app (root,
+# deep-link SPA fallback, and a 404 for a missing asset). This is what lets
+# consumers run the UI from the Vite dev server for hot reload without risking
+# dev-vs-build drift going undetected — build correctness is proven here.
 
 on:
   pull_request:
@@ -9,12 +12,14 @@ on:
     branches: [main]
 
 # A newer run on a pull request cancels an older one. On main a newer run
+# waits instead, so it never stops a rollout midway.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The checks build the image with `load: true` and never push it; on a push to
 # main, once they pass, the publish job builds it again for linux/arm64 and
+# pushes it to the container registry.
 permissions:
   contents: read
 
@@ -87,6 +92,8 @@ jobs:
         if: always()
         run: docker rm -f ui-ci || true
 
+  # Main builds go to this app's private registry repository, for environments
+  # that track main; releases go to public Docker Hub (release.yml).
   publish:
     name: Publish main to ECR
     needs: [checks, build-and-smoke-test]
@@ -106,6 +113,7 @@ jobs:
           MAIN_IMAGE_ROLE_ARN: ${{ vars.MAIN_IMAGE_ROLE_ARN }}
         run: |
           if [ -z "$MAIN_IMAGE_ROLE_ARN" ]; then
+            echo "::error title=Missing variable::MAIN_IMAGE_ROLE_ARN is not set. Set it to the ARN of the role that may push this app's images: gh variable set MAIN_IMAGE_ROLE_ARN --repo $GITHUB_REPOSITORY --body <arn>"
             exit 1
           fi
 
@@ -178,6 +186,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  # The rollout role may only restart this app's Deployment in its environment; with
   # pull Always, the restart runs the image publish just moved main to. A run
   # for a commit that is no longer main's head moved nothing, so it skips this.
   restart-staging:
@@ -198,6 +207,7 @@ jobs:
           STAGING_ROLLOUT_ROLE_ARN: ${{ vars.STAGING_ROLLOUT_ROLE_ARN }}
         run: |
           if [ -z "$STAGING_ROLLOUT_ROLE_ARN" ]; then
+            echo "::error title=Missing variable::STAGING_ROLLOUT_ROLE_ARN is not set. Set it to the ARN of the role that may restart this app's Deployment: gh variable set STAGING_ROLLOUT_ROLE_ARN --repo $GITHUB_REPOSITORY --body <arn>"
             exit 1
           fi
 

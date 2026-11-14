@@ -1,5 +1,6 @@
 // Search over displayed raw and normalized field values, the printed wording
 // and the displayed label, composed with the Field and Review-status filters.
+// Expected counts are frozen from the reference implementation — never edit them; a
 // mismatch needs investigating with evidence.
 
 import { beforeAll, describe, expect, it } from "vitest";
@@ -178,6 +179,7 @@ withExport("displayed labels", () => {
     }
   });
 
+  it("matches displayed labels case-insensitively", async () => {
     const logan = await loadPaper("Loganayagam_2013_23736036");
     // Every Loganayagam diarrhea match is label-only, so this exercises the label path.
     expect(storedOnlySet(logan.rows, "Diarrhea", logan.presentation).size).toBe(0);

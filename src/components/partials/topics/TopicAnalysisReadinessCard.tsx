@@ -4,6 +4,7 @@ import Link from "@/components/shared/Link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import type { Progress } from "@/features/reviewer-workspace/model/extractionSummary";
+import { TriangleAlert } from "lucide-react";
 
 interface TopicAnalysisReadinessCardProps {
   topicId: string;
@@ -22,6 +23,7 @@ export const TopicAnalysisReadinessCard = ({
     <Card className="flex h-full flex-col p-6">
       <CardTitle className="text-xl">Analysis &amp; results</CardTitle>
       <CardContent className="flex flex-1 flex-col items-center justify-center gap-3 px-0 py-6 text-center">
+        <TriangleAlert className="h-8 w-8 text-amber-500" aria-hidden />
         <p className="text-lg font-semibold">
           Further adjudication needed before analysis
         </p>

@@ -9,6 +9,7 @@ import { styles } from "@/styles";
 import { useState } from "react";
 import { Protocol } from "../../../../types/Protocol";
 import TopicProtocolView from "./TopicProtocolView";
+import { Eye, Plus, SquarePen } from "lucide-react";
 
 type ProtocolRowProps = {
   label: string;
@@ -64,6 +65,7 @@ const TopicProtocolCard = ({
           {protocol ? (
             <>
               <IconButton
+                icon={<Eye className="size-[1em]" />}
                 text="View Protocol"
                 onClick={() => {
                   setViewProtocolOpen(true);
@@ -71,6 +73,7 @@ const TopicProtocolCard = ({
                 type="button"
               />
               <IconButton
+                icon={<SquarePen className="size-[1em]" />}
                 text="Edit Protocol"
                 onClick={() => {
                   setEditProtocolOpen(true);
@@ -80,6 +83,7 @@ const TopicProtocolCard = ({
             </>
           ) : (
             <IconButton
+              icon={<Plus className="size-[1em]" />}
               text="Create Protocol"
               onClick={() => {
                 setCreateProtocolOpen(true);

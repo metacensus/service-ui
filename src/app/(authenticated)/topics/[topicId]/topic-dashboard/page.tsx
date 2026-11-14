@@ -26,11 +26,13 @@ import { Prop } from "../../../../../../types/Prop";
 import { Protocol } from "../../../../../../types/Protocol";
 import { Topic } from "../../../../../../types/Topic";
 import { Vote } from "../../../../../../types/vote";
+import { Eye, FilePlus, Plus, SquarePen } from "lucide-react";
 
 interface Props {
   params: { topicId: string };
 }
 
+/** The scope of the effort. */
 const INVESTIGATIONAL_APPROACHES = [
   "Systematic review",
   "Meta-analysis",
@@ -107,6 +109,7 @@ const TopicsDashboard = ({ params }: Props) => {
             className="gap-2 px-2 py-1"
             onClick={() => setCreatePaperOpen(true)}
           >
+            <FilePlus className="size-[1em] text-lg" />
             <span className="text-xs">Submit Paper</span>
           </Button>
         )}
@@ -142,6 +145,7 @@ const TopicsDashboard = ({ params }: Props) => {
               isEmpty={(value) => !value}
               empty={
                 <IconButton
+                  icon={<Plus className="size-[1em]" />}
                   text="Create Protocol"
                   onClick={() => setCreateProtocolOpen(true)}
                   type="button"
@@ -157,11 +161,13 @@ const TopicsDashboard = ({ params }: Props) => {
               {() => (
                 <div className="flex gap-2 flex-wrap">
                   <IconButton
+                    icon={<Eye className="size-[1em]" />}
                     text="View Protocol"
                     onClick={() => setViewProtocolOpen(true)}
                     type="button"
                   />
                   <IconButton
+                    icon={<SquarePen className="size-[1em]" />}
                     text="Edit Protocol"
                     onClick={() => setEditProtocolOpen(true)}
                     type="button"

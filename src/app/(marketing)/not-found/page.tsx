@@ -1,6 +1,7 @@
 import { Button, Header } from "@metacensus/library-ui";
 import { useLocation } from "@tanstack/react-router";
 import { Footer } from "@/components/Footer";
+import { publicUrl } from "@/lib/publicUrl";
 import { LOGIN_PATH } from "@/lib/session";
 
 export default function NotFoundPage() {
@@ -8,6 +9,7 @@ export default function NotFoundPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <Header homeHref={publicUrl("/")} />
       <main className="flex-1 px-4 py-16 lg:py-24">
         <div className="mx-auto w-full max-w-3xl">
           <p className="text-sm font-medium">404 · Page not found</p>
@@ -21,6 +23,7 @@ export default function NotFoundPage() {
             typo.
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
+            <Button href={publicUrl("/")}>Back to the home page</Button>
             <Button href={LOGIN_PATH} variant="secondary">
               Log in
             </Button>

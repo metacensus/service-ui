@@ -10,6 +10,7 @@ import {
   type TopicFlowState,
 } from "./topicFlow";
 
+// Interlocking chevrons, after a pipeline-spine diagram:
 // each segment points right and is notched on the left so the next one nests.
 export const CHEVRON = "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)";
 export const CHEVRON_FIRST = "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)";

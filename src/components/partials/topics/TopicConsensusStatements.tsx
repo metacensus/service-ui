@@ -10,6 +10,7 @@ import { Contributor } from "../../../../types/Contributor";
 import { Prop } from "../../../../types/Prop";
 import StatementVote from "./StatementVote";
 import StatementVoteStatus from "./StatementVoteStatus";
+import { ChevronDown } from "lucide-react";
 
 interface Props {
   statements: Prop[];
@@ -46,10 +47,14 @@ const TopicConsensusStatementTable = ({
               className="h-8 w-8 p-0"
               onClick={toggleSort}
             >
+              <ChevronDown
                 className={cn(
                   "h-4 w-4 transition-transform",
                   !sortNewest && "rotate-180"
                 )}
+              >
+                <title>{sortNewest ? "Newest First" : "Oldest First"}</title>
+              </ChevronDown>
             </Button>
           </div>
         ),

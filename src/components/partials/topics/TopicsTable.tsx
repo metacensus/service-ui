@@ -10,6 +10,7 @@ import { useQueryState } from "@/lib/nuqs-compat";
 import { useMemo, useState } from "react";
 import { Topic } from "../../../../types/Topic";
 import TableSimple from "../../shared/TableSimple";
+import { Ellipsis } from "lucide-react";
 
 // TextBubble supplies the padding.
 const PILL = "mr-2 bg-secondary w-fit rounded-lg";
@@ -150,6 +151,7 @@ const TopicsTable = () => {
             columnId: "contributors",
           },
           {
+            content: <Ellipsis className="h-5 w-5 cursor-pointer" />,
             className: "",
             columnId: "actions",
           },

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Protocol } from "../../../../types/Protocol";
 import { ProtocolSection } from "../../../../types/ProtocolSection";
 import CreateProtocolSection from "../CreateProtocol/CreateProtocolSection";
+import { Plus } from "lucide-react";
 
 const EditProtocol = ({
   setDrawerOpen,
@@ -104,6 +105,7 @@ const EditProtocol = ({
           }
           className="flex justify-center py-4 bg-secondary items-center gap-2 text-sm font-bold text-foreground cursor-pointer hover:underline w-full"
         >
+          <Plus className="h-3 w-3" /> Add Section
         </button>
       </Card>
       <div className="flex mt-4 gap-4">

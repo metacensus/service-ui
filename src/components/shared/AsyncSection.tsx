@@ -32,6 +32,7 @@ type AsyncSectionProps<T> = {
  * React Query already knows which of the four a request is in. Deriving that
  * from the value instead loses it — `undefined` collapses loading, failure and
  * absence into one, and `[]` is truthy, so an empty list reads as a full one.
+ * Both mistakes shipped before this existed.
  */
 const AsyncSection = <T,>({
   query,

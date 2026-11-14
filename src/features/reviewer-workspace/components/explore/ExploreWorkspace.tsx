@@ -114,6 +114,7 @@ function sourceCaption(item: Evidence): string {
 
 function EvidenceProvenanceLink({ evidence, sources, children, onSelect }: {
   evidence: Evidence;
+  /** Every source of the linked value, in source_index order. */
   sources: Evidence[];
   children: ReactNode;
   onSelect: (evidence: Evidence) => void;

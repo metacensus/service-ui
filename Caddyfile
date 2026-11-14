@@ -1,4 +1,6 @@
 # Static file host for the built SPA. Not an edge/reverse-proxy — routing
+# /metacensus/* to the API belongs to whatever fronts this container (a load
+# balancer, ingress or local proxy). The only non-trivial job here is the SPA history
 # fallback required by TanStack Router's client-side routing.
 :8080 {
 	root * /srv

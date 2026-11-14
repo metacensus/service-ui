@@ -6,6 +6,7 @@ import CreateTopic from "../forms/CreateTopic";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import MyDrawer from "./Drawer";
+import { Plus } from "lucide-react";
 
 const TopicFilters = () => {
   const [openCreateTopic, setOpenCreateTopic] = useState(false);
@@ -33,6 +34,7 @@ const TopicFilters = () => {
           className="gap-2"
           onClick={() => setOpenCreateTopic(true)}
         >
+          <Plus className="size-[1em] text-lg" /> <span>Create Topic</span>
         </Button>
       </div>
       {openCreateTopic && (

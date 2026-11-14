@@ -670,6 +670,7 @@ function buildResult(labels: RunLabels, row: Row, presentation?: SchemaPresentat
 
   // One "as printed" line carries the audit copies of both the estimate and
   // the count cell, so the label is never ambiguous between two rows.
+  // The printed count is the printed form of n_events /
   // n_total. It shows here only when neither was parsed (e.g. "65%"); otherwise
   // it stays in "All extracted fields" and the evidence panel.
   const printed = [RESULT_FIELDS.estimatePrinted, RESULT_FIELDS.countPrinted].filter(
@@ -1132,6 +1133,7 @@ export type TreeNode = {
 const EMPTY_KEY = "∅";
 
 /**
+ * Tiered study tree for one paper (ported from the reference implementation). Tiers fix the
  * order of importance (who → compared → measured, or measured before
  * compared); inside a tier the split is the varying candidate that makes the
  * most other fields constant, weighted by child size, ÷ log2(values + 1).

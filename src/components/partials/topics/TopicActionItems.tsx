@@ -13,6 +13,7 @@ import Link from "@/components/shared/Link";
 import { useMemo } from "react";
 import { Paper } from "../../../../types/Paper";
 import { Prop } from "../../../../types/Prop";
+import { ChevronRight, CircleCheck, Clipboard } from "lucide-react";
 
 type TopicActionItemsProps = {
   topicId: string;
@@ -55,6 +56,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
   const votableProps = useMemo(
     () =>
       (props ?? []).filter(
+        // The scientific question is locked on the dashboard, so it
         // is never an open action; only statements are voted on here.
         (p) => p.type === "Statement" && (!p.conclusion || p.conclusion === "open")
       ),
@@ -142,6 +144,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
           variant="secondary"
           className="gap-2 px-2 py-1 relative"
         >
+          <Clipboard className="size-[1em] text-base" />
           <span className="text-xs">Action Items</span>
           {count > 0 && (
             <span className="ml-1 inline-flex items-center justify-center rounded-full bg-mc-fill-solid text-mc-ink-on-fill text-[10px] font-semibold h-4 min-w-4 px-1">
@@ -160,6 +163,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
 
         {count === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+            <CircleCheck className="size-[1em] text-2xl text-emerald-500" />
             <p className="text-sm font-medium">You&apos;re all caught up</p>
             <p className="text-xs text-muted-foreground">
               No actions need your attention right now.
@@ -181,6 +185,7 @@ const TopicActionItems = ({ topicId }: TopicActionItemsProps) => {
                     <span className="text-xs line-clamp-2 flex-1">
                       {item.label}
                     </span>
+                    <ChevronRight className="size-[1em] text-mc-ink-secondary shrink-0" />
                   </Link>
                 ))}
               </div>

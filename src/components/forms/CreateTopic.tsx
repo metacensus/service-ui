@@ -4,6 +4,7 @@ import { getAuthHeaders } from "@/functions/getAuthHeaders";
 import { useFetchData } from "@/hooks/useFetchData";
 import useOnClickOutside from "@/hooks/useOnClickOutside";
 import { FieldError } from "@metacensus/library-ui";
+import { PlusIcon, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Category } from "../../../types/Category";
@@ -267,6 +268,7 @@ const CreateTopic = ({ setOpen }: CreateTopicProps) => {
           size="sm"
           onClick={() => setOpen(false)}
         >
+          <X className="w-5 h-5 mr-2" />
           <span>Cancel</span>
         </Button>
       </div>

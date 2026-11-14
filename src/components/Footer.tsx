@@ -1,5 +1,6 @@
 import { Footer as PackageFooter, type NavLink } from "@metacensus/library-ui";
 import type { ReactNode } from "react";
+import { publicUrl } from "@/lib/publicUrl";
 
 const FooterColumn = ({ title, links }: { title: string; links: NavLink[] }) => (
   <div>
@@ -18,11 +19,14 @@ const FooterColumn = ({ title, links }: { title: string; links: NavLink[] }) => 
 
 const Footer = ({ children }: { children?: ReactNode }) => (
   <PackageFooter
+    homeHref={publicUrl("/")}
     tagline={<>&copy; 2023-{new Date().getFullYear()} MetaCensus. All rights reserved.</>}
   >
     <FooterColumn
       title="General"
       links={[
+        { href: publicUrl("/"), label: "Home" },
+        { href: publicUrl("/stewards"), label: "About" },
       ]}
     />
     {children}

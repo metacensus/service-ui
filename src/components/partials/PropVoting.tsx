@@ -13,6 +13,7 @@ import {
   selectionOffsetsWithin,
   type StatementCitation,
 } from "./statementCitations";
+import { Check, Circle, TextCursor, X } from "lucide-react";
 
 type PropVotingProps = {
   topicId: string;
@@ -209,18 +210,21 @@ const PropVoting = ({
               value={votingOptionMap.accept}
               aria-label="Toggle accept"
             >
+              <Check className="h-4 w-4" />
               <span>Accept</span>
             </ToggleGroupItem>
             <ToggleGroupItem
               value={votingOptionMap.reject}
               aria-label="Toggle reject"
             >
+              <X className="h-4 w-4" />
               <span>Reject</span>
             </ToggleGroupItem>
             <ToggleGroupItem
               value={votingOptionMap.abstain}
               aria-label="Toggle abstain"
             >
+              <Circle className="h-4 w-4" />
               <span>Abstain</span>
             </ToggleGroupItem>
           </ToggleGroup>
@@ -252,6 +256,7 @@ const PropVoting = ({
           </div>
           {!selectedText && (
             <p className="italic flex gap-1 items-center">
+              <TextCursor className="size-[1em]" /> Select text from the statement above to add a
               citation
             </p>
           )}

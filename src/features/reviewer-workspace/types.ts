@@ -328,6 +328,7 @@ export type DemoReviewState = {
 
 /**
  * Explore (agentic evidence search) wire types, mirroring the API's
+ * `POST /explore/query` response.
  */
 export type ExploreEvidence = {
   evidence_id: string;

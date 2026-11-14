@@ -51,6 +51,7 @@ export const GROUP_BY_MODES = [
     inMenu: true,
     hint: "who (analysis population, FP exposure) → what's measured (outcome type → normalized outcome) → what's compared (variant type → variant; comparison frame → compared group) → findings",
   },
+  // Flat groupings from an earlier study design. Kept in code for comparison, not offered in the menu.
   {
     id: "outcome_normalized",
     label: "Outcome — normalized ID",
@@ -325,6 +326,7 @@ export const DETAIL_GROUPS: { id: string; label: string; fields: string[] }[] = 
 /**
  * Study tree (tiered drill-down). The tiers fix the order of importance; inside
  * a tier the data picks the split. Qualifiers and results are never levels.
+ * Mirrors the reference tiered-tree implementation.
  */
 export type TreeTierId = "who" | "compared" | "measured";
 export type TreeOrder = "variant_first" | "outcome_first";

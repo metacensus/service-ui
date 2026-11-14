@@ -17,6 +17,7 @@ import {
   excerptForCitation,
   parseStatementCitation,
 } from "./statementCitations";
+import { Check, Circle, X } from "lucide-react";
 
 type PropVoteStatusProps = {
   votes: Vote[];
@@ -42,14 +43,17 @@ const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
     <div>
       <div className="flex gap-2">
         <CardIndicators
+          icon={<Check className="h-4 w-4" />}
           count={getCounts("For")}
           textSize="text-sm"
         />
         <CardIndicators
+          icon={<X className="h-4 w-4" />}
           count={getCounts("Against")}
           textSize="text-sm"
         />
         <CardIndicators
+          icon={<Circle className="h-4 w-4" />}
           count={getCounts("Abstain")}
           textSize="text-sm"
         />

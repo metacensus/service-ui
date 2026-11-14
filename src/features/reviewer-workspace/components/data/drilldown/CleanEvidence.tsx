@@ -1,3 +1,5 @@
+// Clean evidence card: tidy styling that keeps every piece of information
+// needed to understand the provenance. Same data as EvidenceAside, same product EvidencePanel below.
 //
 // Everything that explains provenance is shown, open, in labelled sections:
 // derivation kind, certainty, every source (with location quality and table

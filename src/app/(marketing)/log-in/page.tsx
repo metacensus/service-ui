@@ -5,6 +5,7 @@ import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 
 import { apiClient } from "@/lib/apiClient";
+import { publicUrl } from "@/lib/publicUrl";
 import queryClient from "@/lib/queryClient";
 import { useRouter } from "@/lib/next-navigation-compat";
 import { AuthShell, authLink, fieldError } from "../AuthShell";
@@ -86,7 +87,9 @@ export default function LogIn() {
       </p>
       <p className="mt-2 text-sm">
         Not sure MetaCensus is for you yet?{" "}
+        <a href={publicUrl("/partner")} className={authLink}>
           Talk to us
+        </a>
       </p>
     </AuthShell>
   );

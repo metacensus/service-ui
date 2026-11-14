@@ -11,6 +11,7 @@ import type { Prop } from "../../../../types/Prop";
 import type { Vote } from "../../../../types/vote";
 import VoteBar from "../VoteBar";
 import { tallyVotes } from "../voteTally";
+import { Lock } from "lucide-react";
 
 type TopicScientificQuestionProps = {
   question: Prop | null;
@@ -71,6 +72,7 @@ const TopicScientificQuestion = ({
         </span>
         {question && (
           <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" aria-hidden />
             Locked
           </span>
         )}

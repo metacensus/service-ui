@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/apiClient";
 import { del } from "@/lib/indexdb";
 import { usePathname, useRouter } from "@/lib/next-navigation-compat";
 import queryClient from "@/lib/queryClient";
+import { publicUrl } from "@/lib/publicUrl";
 import { LOGIN_PATH } from "@/lib/session";
 
 export const APP_LINKS = [
@@ -21,6 +22,7 @@ const Navbar: FC = () => {
   const { toast } = useToast();
 
   const userName = useSelf().data?.name;
+  const links = [...APP_LINKS, { href: publicUrl("/stewards"), label: "About" }];
 
   const logOut = async () => {
     try {
@@ -47,6 +49,7 @@ const Navbar: FC = () => {
       homeHref="/dashboard"
       nav={
         <Nav
+          links={links.map((link) => ({
             ...link,
             current: pathName.includes(link.href),
           }))}

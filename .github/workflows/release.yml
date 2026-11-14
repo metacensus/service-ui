@@ -1,5 +1,8 @@
 name: Release
 
+# Publishes this repo's image — the static SPA host — to Docker Hub: multi-arch,
+# tagged with the release tag, the short SHA and latest, so a tag produces an
+# image that can be consumed as-is.
 
 on:
   push:

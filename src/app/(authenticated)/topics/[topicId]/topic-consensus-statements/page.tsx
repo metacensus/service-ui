@@ -12,6 +12,7 @@ import Link from "@/components/shared/Link";
 import { useMemo, useState } from "react";
 import { Prop } from "../../../../../../types/Prop";
 import { Topic } from "../../../../../../types/Topic";
+import { Vote } from "lucide-react";
 
 interface Props {
   params: { topicId: string };
@@ -79,6 +80,7 @@ const TopicConsensusStatements = ({ params }: Props) => {
                   className="gap-2 px-2 py-1"
                   onClick={() => setCreateStatementOpen(true)}
                 >
+                  <Vote className="size-[1em] text-lg" />
                   <span className="text-xs">Create Consensus Statement</span>
                 </Button>
               </div>

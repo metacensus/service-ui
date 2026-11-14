@@ -1,3 +1,4 @@
+// Clean study tree, ruthlessly simplified. One line per
 // node — value and count. Findings are plain rows: what they are, then the
 // result. Values are clickable: normalized → printed forms → evidence. No
 // explanatory text, no status or evidence columns, no field names on screen

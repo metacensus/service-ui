@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type TablePaginationProps = {
   incrementPage: (incrementCount?: number) => void;
@@ -17,11 +18,13 @@ const TablePagination = ({
         className="border border-mc-line-input rounded-lg cursor-pointer"
         onClick={() => decrementPage(1)}
       >
+        <ChevronLeft className="h-8 w-8 text-muted-foreground" />
       </div>
       <div
         className="border border-mc-line-input rounded-lg cursor-pointer"
         onClick={() => incrementPage(1)}
       >
+        <ChevronRight className="h-8 w-8 text-muted-foreground" />
       </div>
     </div>
   );

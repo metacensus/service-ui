@@ -1,4 +1,6 @@
 // Corpus-wide invariant audit for the tiered study tree, ported verbatim from
+// the reference audit: reads the real export from a local server.
+// Expected numbers are frozen from the reference implementation —
 // never edit them to make a test pass; a mismatch is a QUESTION: with evidence.
 
 import { describe, expect, it } from "vitest";
@@ -19,6 +21,7 @@ const ORDERS: TreeOrder[] = ["variant_first", "outcome_first"];
 const DEMO_UP = await demoReachable();
 const SUITE = DEMO_UP ? "study tree corpus audit" : "study tree corpus audit (skipped: no demo at DEMO_BASE_URL)";
 
+/** Findings-table counts from the reference tiered-tree implementation, for parity. */
 const PYTHON_TABLES: Record<string, Record<TreeOrder, number>> = {
   Boige_2016_26794347: { variant_first: 53, outcome_first: 23 },
   toffoli_2015_26099996: { variant_first: 27, outcome_first: 23 },

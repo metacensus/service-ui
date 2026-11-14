@@ -20,6 +20,7 @@ import { routes } from "@/lib/routes";
 import type { Topic } from "../types/Topic";
 import { LOGIN_PATH } from "@/lib/session";
 
+// Auth pages. The public pages are a separate site.
 import LogIn from "@/app/(marketing)/log-in/page";
 import SignUp from "@/app/(marketing)/sign-up/page";
 import NotFoundPage from "@/app/(marketing)/not-found/page";
@@ -136,9 +137,15 @@ const topicHead =
     return pageHead({ title: topicName ? `${section} · ${topicName}` : section });
   };
 
+// --- Auth routes -----------------------------------------------------------
+// The app's own hostname has no landing page: `/` goes to the dashboard, which
+// sends a signed-out visitor on to log-in.
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
+  beforeLoad: () => {
+    throw redirect({ to: "/dashboard" });
+  },
 });
 
 const logInRoute = createRoute({
@@ -346,6 +353,7 @@ const routeTree = rootRoute.addChildren([
 
 // `root` mode renders the 404 at the root route instead of inside the deepest
 // matched layout, so an unknown path under `/topics/$topicId` gets the
+// not-found page rather than the page nested in the app shell.
 export const router = createRouter({
   routeTree,
   notFoundMode: "root",

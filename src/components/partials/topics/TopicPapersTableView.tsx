@@ -11,6 +11,7 @@ import { PaperMembership } from "./PaperLifecycleDetails";
 import CardIndicators from "../CardIndicators";
 import type { PapersReview } from "@/hooks/usePaperReviewProgress";
 import type { PapersMembership } from "@/hooks/usePapersMembership";
+import { Search, ThumbsDown, ThumbsUp } from "lucide-react";
 
 interface Props {
   papers: Paper[];
@@ -68,6 +69,7 @@ const TopicPapersTableView = ({ papers, page, setPage, review, membership }: Pro
           {
             content: (
               <CardIndicators
+                icon={<Search className="h-4 w-4" />}
                 count={+paper?.paperContributors?.length || 0}
                 name="reviewers"
                 textSize="text-sm"
@@ -80,10 +82,12 @@ const TopicPapersTableView = ({ papers, page, setPage, review, membership }: Pro
             content: (
               <div className="flex gap-2">
                 <CardIndicators
+                  icon={<ThumbsUp className="h-4 w-4" />}
                   count={getPaperVoteCount(paper, "approval")}
                   textSize="text-sm"
                 />
                 <CardIndicators
+                  icon={<ThumbsDown className="h-4 w-4" />}
                   count={getPaperVoteCount(paper, "rejection")}
                   textSize="text-sm"
                 />

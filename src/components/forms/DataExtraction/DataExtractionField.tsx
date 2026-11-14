@@ -7,6 +7,7 @@ import { format, isValid, parse } from "date-fns";
 import React, { ChangeEvent } from "react";
 import { SourceLocation } from "../../../../types/DataExtraction";
 import { ProtocolElement } from "../../../../types/ProtocolElement";
+import { Copy, MapPin } from "lucide-react";
 
 interface DataExtractionFieldProps {
   field: ProtocolElement;
@@ -54,6 +55,7 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
       onClick={() => onShowSource?.(sourceLocation ?? null)}
       className="text-mc-ink-accent hover:opacity-70"
     >
+      <MapPin className="h-4 w-4" />
     </button>
   ) : null;
 
@@ -90,6 +92,7 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
             }
           />
           {!value && selection?.text && !viewOnly && (
+            <Copy
               className="cursor-pointer text-mc-ink-accent h-5 w-5"
               onClick={() => {
                 if (type === "date") {
@@ -141,6 +144,7 @@ const DataExtractionField: React.FC<DataExtractionFieldProps> = ({
             }
           />
           {!value && selection?.text && !viewOnly && (
+            <Copy
               className="cursor-pointer text-mc-ink-accent h-5 w-5"
               onClick={() => {
                 onChange(selection.text, selection.sourceLocation);

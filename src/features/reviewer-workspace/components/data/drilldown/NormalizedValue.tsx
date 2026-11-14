@@ -1,3 +1,4 @@
+// Normalized first: a paired field shows only its
 // normalized value. Clicking it reveals the printed form(s) the paper used,
 // in place; clicking a printed form opens its evidence. Three quantities stay
 // separate in the reveal: distinct printed forms, findings carrying each, and

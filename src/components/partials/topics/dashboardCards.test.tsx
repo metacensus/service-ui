@@ -10,6 +10,7 @@ import type { ExtractionSummary } from "@/features/reviewer-workspace/model/extr
 const topic = {
   topicContributors: [
     { contributor: { id: 12, name: "Sophia Taylor", role: "contributor" } },
+    { contributor: { id: 27, name: "Ada Lovelace (hypothetical)", role: "contributor" } },
   ],
 } as unknown as Topic;
 
@@ -17,13 +18,16 @@ describe("group members", () => {
   it("turns the hypothetical suffix into a flag", () => {
     expect(groupMembers(topic)).toEqual([
       { id: 12, name: "Sophia Taylor", role: "contributor", hypothetical: false },
+      { id: 27, name: "Ada Lovelace", role: "contributor", hypothetical: true },
     ]);
   });
 
   it("marks hypothetical members and explains them", () => {
     const html = renderToStaticMarkup(<TopicGroupMembers topic={topic} />);
     expect(html).toContain("Group members");
+    expect(html).toContain("Ada Lovelace");
     expect(html).toContain(">hypothetical<");
+    expect(html).toContain("not real accounts");
   });
 
   it("has an empty state", () => {
@@ -47,6 +51,7 @@ describe("dashboard statements", () => {
     expect(dashboardStatements(rows).map((p) => p.id)).toEqual(["s1", "s2", "s3"]);
   });
 
+  it("is empty for a topic with a question and no statements", () => {
     expect(dashboardStatements([prop("q", "TopicQuestion", "2026-01-01")])).toEqual([]);
   });
 });

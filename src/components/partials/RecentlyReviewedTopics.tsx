@@ -12,6 +12,7 @@ import TableSimple from "../shared/TableSimple";
 import TextBubble from "../shared/TextBubble";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
+import { Ellipsis, FileText } from "lucide-react";
 
 const RecentlyReviewedTopics = () => {
   const topicsQuery = useFetchData<undefined, Topic[]>(routes.api.topic, [
@@ -64,6 +65,7 @@ const RecentlyReviewedTopics = () => {
               className="flex items-center gap-2"
             >
               <div>
+                <FileText className="h-6 w-6" />
               </div>
 
               <span className="text-muted-foreground">{topic.name}</span>
@@ -115,6 +117,7 @@ const RecentlyReviewedTopics = () => {
           className: "",
         },
         {
+          content: <Ellipsis className="h-5 w-5" />,
           className: "",
           columnId: "actions",
         },

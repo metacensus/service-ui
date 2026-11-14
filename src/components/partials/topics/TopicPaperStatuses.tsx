@@ -9,6 +9,7 @@ import { routes } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Paper } from "../../../../types/Paper";
 import { Topic } from "../../../../types/Topic";
+import { FilePlus, Layers } from "lucide-react";
 
 type TopicPaperStatusesProps = {
   topicId: string;
@@ -80,6 +81,7 @@ const TopicPaperStatuses = ({ topicId }: TopicPaperStatusesProps) => {
       </div>
       <div className="flex gap-2 flex-wrap mt-4">
         <IconButton
+          icon={<Layers className="size-[1em]" />}
           text="Bulk Import"
           onClick={() => {
             setIsBulkImportPaperDrawerOpen(true);
@@ -87,6 +89,7 @@ const TopicPaperStatuses = ({ topicId }: TopicPaperStatusesProps) => {
           type="button"
         />
         <IconButton
+          icon={<FilePlus className="size-[1em]" />}
           text="Single Submission"
           onClick={() => {
             setIsSubmitSinglePaperDrawerOpen(true);

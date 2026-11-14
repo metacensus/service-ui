@@ -10,9 +10,11 @@ import { routes } from "@/lib/routes";
 import { useMemo } from "react";
 import { Contributor } from "../../../../types/Contributor";
 import UserAvatar from "../UserAvatar";
+import { Send } from "lucide-react";
 
 const ContributorsTable = () => {
   const contributorsQuery = useFetchData<undefined, Contributor[]>(
+    routes.api.user,
     ["users"]
   );
   const data = contributorsQuery.data;
@@ -100,6 +102,7 @@ const ContributorsTable = () => {
             variant="primary"
             className="gap-2 px-2 py-1 my-0 items-center"
           >
+            <Send className="size-[1em] text-lg" />
             <span className="text-xs">Invite Contributor</span>
           </Button>
         </div>

@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Paper } from "../../../../../../types/Paper";
 import { Topic } from "../../../../../../types/Topic";
+import { Columns3, FilePlus, Table } from "lucide-react";
 
 interface Props {
   params: { topicId: string };
@@ -70,10 +71,12 @@ const TopicPapers = ({ params }: Props) => {
               <IconCard
                 active={activeView === "grid"}
                 onClick={() => setActiveView("grid")}
+                icon={<Columns3 className="h-full w-full" />}
               />
               <IconCard
                 active={activeView === "table"}
                 onClick={() => setActiveView("table")}
+                icon={<Table className="h-full w-full" />}
               />
             </div>
             {/* {activeView === "table" && (
@@ -92,6 +95,7 @@ const TopicPapers = ({ params }: Props) => {
             className="gap-2 px-2 py-1"
             onClick={() => setCreatePaperOpen(true)}
           >
+            <FilePlus className="size-[1em] text-lg" />
             <span className="text-xs">Submit Paper</span>
           </Button>
         </div>

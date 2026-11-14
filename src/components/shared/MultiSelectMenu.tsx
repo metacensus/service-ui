@@ -1,4 +1,5 @@
 import useOnClickOutside from "@/hooks/useOnClickOutside";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { styles } from "@/styles";
 import { useId, useRef, useState } from "react";
@@ -71,6 +72,7 @@ const MultiSelectMenu = ({
               color="gray"
               className="w-fit cursor-default text-nowrap"
               iconEnd={
+                <X
                   className="w-3 h-3 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();

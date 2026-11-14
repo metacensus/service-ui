@@ -16,6 +16,7 @@ RUN npm ci
 COPY . .
 
 # The SPA calls the API with relative /metacensus/* paths and lets whatever
+# fronts it (a load balancer, ingress or local proxy) route those to the API on the
 # same origin.
 RUN npm run build
 

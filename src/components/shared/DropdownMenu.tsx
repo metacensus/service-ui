@@ -9,6 +9,7 @@ import {
   ComboboxOption,
   ComboboxOptions,
 } from "@headlessui/react";
+import { Check, Search } from "lucide-react";
 
 type DropdownMenuProps = {
   options: { id: number | string; name: string }[];
@@ -60,6 +61,7 @@ export default function DropdownMenu({
       >
         {includeSearch && (
           <div className="relative">
+            <Search
               className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-muted-foreground"
               aria-hidden="true"
             />
