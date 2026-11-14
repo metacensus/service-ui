@@ -1,6 +1,6 @@
 # MetaCensus UI
 
-The MetaCensus application: log-in, sign-up and everything after them, a single-page React application built with Vite and TanStack Router, served as static assets and published as the **`metacensus/ui`** container image. It talks to the MetaCensus API for authentication, topics, papers, protocols, data extraction, and consensus voting.
+The MetaCensus application: log-in, sign-up and everything after them, a single-page React application built with Vite and TanStack Router, served as static assets and published as the **`metacensus/service-ui`** container image. It talks to the MetaCensus API for authentication, topics, papers, protocols, data extraction, and consensus voting.
 
 The SPA host never proxies to an API. Putting the SPA and the API on one origin is the job of whatever reverse proxy fronts them (a load balancer, ingress or local proxy) — which is what lets one image work in every environment.
 
@@ -60,7 +60,7 @@ npm test
 npm run build
 ```
 
-CI also builds the `metacensus/ui` image and smoke-tests that it serves `/` and SPA deep links; run that only if you changed the Dockerfile or Caddy config.
+CI also builds the `metacensus/service-ui` image and smoke-tests that it serves `/` and SPA deep links; run that only if you changed the Dockerfile or Caddy config.
 
 For a browser check of the vote list, start an API on `:3001` (for example [service-api-standard](https://github.com/metacensus/service-api-standard), following its README, with seed data), then:
 
@@ -82,12 +82,12 @@ See `.env.example` for the full list. Key values:
 
 ## Container images
 
-### `metacensus/ui` — the SPA host
+### `metacensus/service-ui` — the SPA host
 
-The published `metacensus/ui` image (`Dockerfile`, served by Caddy) is a static host
+The published `metacensus/service-ui` image (`Dockerfile`, served by Caddy) is a static host
 for the built SPA — it does **not** proxy or route to the API itself.
 
-- **Listens on port `8080`** — e.g. `docker run -p 8080:8080 metacensus/ui`.
+- **Listens on port `8080`** — e.g. `docker run -p 8080:8080 metacensus/service-ui`.
 - **Requires the fronting proxy/ingress to route `/metacensus/*` to the API.** Same-origin routing is the consumer's edge concern (a load balancer, ingress or local proxy) and is deliberately not baked into the image.
 
 ### Publishing

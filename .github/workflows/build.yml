@@ -63,12 +63,12 @@ jobs:
           context: .
           file: Dockerfile
           load: true
-          tags: metacensus/ui:ci
+          tags: metacensus/service-ui:ci
           platforms: linux/amd64
 
       - name: Smoke test the served SPA
         run: |
-          docker run -d --name ui-ci -p 8080:8080 metacensus/ui:ci
+          docker run -d --name service-ui-ci -p 8080:8080 metacensus/service-ui:ci
           # Wait for Caddy to accept connections.
           for i in $(seq 1 30); do
             if curl -sf -o /dev/null http://localhost:8080/; then break; fi
@@ -86,11 +86,11 @@ jobs:
 
       - name: Container logs on failure
         if: failure()
-        run: docker logs ui-ci || true
+        run: docker logs service-ui-ci || true
 
       - name: Cleanup
         if: always()
-        run: docker rm -f ui-ci || true
+        run: docker rm -f service-ui-ci || true
 
   # Main builds go to this app's private registry repository, for environments
   # that track main; releases go to public Docker Hub (release.yml).
@@ -106,14 +106,14 @@ jobs:
       contents: read
       id-token: write
     env:
-      ECR_REPOSITORY: metacensus/ui
+      ECR_REPOSITORY: metacensus/service-ui
     steps:
       - name: Require the push role
         env:
           MAIN_IMAGE_ROLE_ARN: ${{ vars.MAIN_IMAGE_ROLE_ARN }}
         run: |
           if [ -z "$MAIN_IMAGE_ROLE_ARN" ]; then
-            echo "::error title=Missing variable::MAIN_IMAGE_ROLE_ARN is not set. Set it to the ARN of the role that may push this app's images: gh variable set MAIN_IMAGE_ROLE_ARN --repo $GITHUB_REPOSITORY --body <arn>"
+            echo "::error title=Missing variable::MAIN_IMAGE_ROLE_ARN is not set. Set it to the ARN of the role that may push this app's images: gh variable set MAIN_IMAGE_ROLE_ARN --repo metacensus/service-ui --body <arn>"
             exit 1
           fi
 
@@ -207,7 +207,7 @@ jobs:
           STAGING_ROLLOUT_ROLE_ARN: ${{ vars.STAGING_ROLLOUT_ROLE_ARN }}
         run: |
           if [ -z "$STAGING_ROLLOUT_ROLE_ARN" ]; then
-            echo "::error title=Missing variable::STAGING_ROLLOUT_ROLE_ARN is not set. Set it to the ARN of the role that may restart this app's Deployment: gh variable set STAGING_ROLLOUT_ROLE_ARN --repo $GITHUB_REPOSITORY --body <arn>"
+            echo "::error title=Missing variable::STAGING_ROLLOUT_ROLE_ARN is not set. Set it to the ARN of the role that may restart this app's Deployment: gh variable set STAGING_ROLLOUT_ROLE_ARN --repo metacensus/service-ui --body <arn>"
             exit 1
           fi
 
