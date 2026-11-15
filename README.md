@@ -92,7 +92,7 @@ for the built SPA — it does **not** proxy or route to the API itself.
 
 ### Publishing
 
-`.github/workflows/release.yml` publishes the image multi-arch (`linux/amd64,linux/arm64`) to Docker Hub on `v*` tags, tagged with the git tag, short SHA, and `latest`. `.github/workflows/build.yml` type-checks, tests, and builds and smoke-tests the image on every PR. On every push to `main`, once those pass, it pushes a linux/arm64 image tagged `sha-<short>` and `main` to a private registry repository (not Docker Hub), for environments that track `main`; it signs in through the role in the repository variable `MAIN_IMAGE_ROLE_ARN`. It then restarts the `ui` Deployment and waits for the rollout, through the role in `STAGING_ROLLOUT_ROLE_ARN`. Both jobs fail until those variables are set.
+`.github/workflows/release.yml` publishes the image multi-arch (`linux/amd64,linux/arm64`) to Docker Hub on `v*` tags, tagged with the git tag, short SHA, and `latest`. `.github/workflows/build.yml` type-checks, tests, and builds and smoke-tests the image on every PR. On every push to `main`, once those pass, it pushes a linux/arm64 image tagged `sha-<short>` and `main` to a private registry repository (not Docker Hub), for environments that track `main`; it signs in through the role in the repository variable `MAIN_IMAGE_ROLE_ARN`. It then restarts the `service-ui` Deployment in staging and waits for the rollout, through the role in `STAGING_ROLLOUT_ROLE_ARN`. Both jobs fail until those variables are set.
 
 ## Project structure
 
