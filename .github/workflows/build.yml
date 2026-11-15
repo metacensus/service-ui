@@ -200,7 +200,7 @@ jobs:
     env:
       CLUSTER: metacensus-main
       NAMESPACE: staging
-      DEPLOYMENT: ui
+      DEPLOYMENT: service-ui
     steps:
       - name: Require the rollout role
         env:
