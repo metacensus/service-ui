@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Maximize2, ZoomIn, ZoomOut } from "lucide-re
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SourceLocation } from "../../../types/DataExtraction";
+import { openPdf } from "./openPdf";
 
 // The worker is vendored in public/ and must match the installed pdfjs-dist.
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.js";
@@ -159,7 +160,7 @@ export default function ViewPDF({
 
   useEffect(() => {
     let cancelled = false;
-    const task = pdfjs.getDocument(fileLocation);
+    const task = openPdf(fileLocation);
     setPdf(null);
     setSizes([]);
     setZoom(1);
