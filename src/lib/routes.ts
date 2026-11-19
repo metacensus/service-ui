@@ -6,11 +6,8 @@ import { apiPrefix } from "@metacensus/api";
 // image never proxies to an API itself, which is what lets one build run
 // everywhere.
 //
-// Naming follows the production backend convention: SINGULAR resource nouns
-// (`/topic`, `/user`, `/paper`, `/domain`, …), collection ops on the noun, and
-// nested sub-resources under their parent. When you add a backend call, add its
-// path here (singular) and reference it via `routes.api.*` — never hardcode a
-// path string at the callsite.
+// Paths the generated Client doesn't serve yet; each leaves when
+// metacensus/api declares its route.
 
 export const routes = {
   api: {
@@ -19,7 +16,6 @@ export const routes = {
 
     // Topics
     topic: apiPrefix + "/topic",
-    topicById: (topicId: string) => `${apiPrefix}/topic/${topicId}`,
     topicProtocol: (topicId: string) =>
       `${apiPrefix}/topic/${topicId}/protocol`,
     topicMyVotes: (topicId: string) => `${apiPrefix}/topic/${topicId}/my-votes`,
@@ -27,10 +23,6 @@ export const routes = {
       `${apiPrefix}/topic/${topicId}/runs/${runId}/working-set`,
     workingSetMembership: (topicId: string, runId: string) =>
       `${apiPrefix}/topic/${topicId}/runs/${runId}/working-set/membership`,
-
-    // Taxonomy
-    domain: apiPrefix + "/domain",
-    category: apiPrefix + "/category",
 
     // Papers
     paper: apiPrefix + "/paper",

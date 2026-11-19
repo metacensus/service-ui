@@ -30,9 +30,9 @@ const TopicDetailsCard = ({ topic }: TopicDetailsCardProps) => {
       </div>
       <div className="grid grid-cols-5 mt-6 gap-6 text-sm">
         <TopicDetailRow label="Topic Name">{topic?.name}</TopicDetailRow>
-        {topic?.created && (
+        {topic?.recorded && (
           <TopicDetailRow label="Created">
-            {new Date(topic?.created).toLocaleDateString()}
+            {new Date(topic?.recorded).toLocaleDateString()}
           </TopicDetailRow>
         )}
 

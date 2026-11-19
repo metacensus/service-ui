@@ -6,6 +6,9 @@ import Dashboard from "./page";
 vi.mock("@/hooks/useFetchData", () => ({
   useFetchData: () => ({ isPending: true, failureCount: 1 }),
 }));
+vi.mock("@/hooks/useTopics", () => ({
+  useTopics: () => ({ isPending: true, failureCount: 1 }),
+}));
 vi.mock("@/hooks/useGetUserId", () => ({
   useSelf: () => ({ isPending: true, failureCount: 1 }),
 }));

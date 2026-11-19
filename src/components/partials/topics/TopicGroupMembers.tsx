@@ -1,24 +1,21 @@
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import type { Topic } from "../../../../types/Topic";
+import type { NamedMember } from "@/hooks/useTopics";
 
 const HYPOTHETICAL = /\s*\(hypothetical\)\s*$/i;
 
 export type GroupMember = {
-  id: number;
+  id: string;
   name: string;
-  role: string;
   hypothetical: boolean;
 };
 
-/** The topic's contributors as group members. Seeded stand-ins carry a
- *  "(hypothetical)" suffix in their name; it becomes a flag so the chip can
- *  mark it without repeating it inline. */
-export function groupMembers(topic: Pick<Topic, "topicContributors"> | null): GroupMember[] {
-  return (topic?.topicContributors ?? []).map(({ contributor }) => ({
-    id: contributor.id,
-    name: contributor.name.replace(HYPOTHETICAL, ""),
-    role: contributor.role,
-    hypothetical: HYPOTHETICAL.test(contributor.name),
+/** Seeded stand-ins carry a "(hypothetical)" suffix in their name; it becomes
+ *  a flag so the chip can mark it without repeating it inline. */
+export function groupMembers(members: Pick<NamedMember, "id" | "name">[]): GroupMember[] {
+  return members.map(({ id, name }) => ({
+    id,
+    name: name.replace(HYPOTHETICAL, ""),
+    hypothetical: HYPOTHETICAL.test(name),
   }));
 }
 
@@ -30,8 +27,8 @@ const initials = (name: string) =>
     .filter((_, i, all) => i === 0 || i === all.length - 1)
     .join("");
 
-const TopicGroupMembers = ({ topic }: { topic: Topic | null }) => {
-  const members = groupMembers(topic);
+const TopicGroupMembers = (props: { members: NamedMember[] }) => {
+  const members = groupMembers(props.members);
   const anyHypothetical = members.some((m) => m.hypothetical);
 
   return (

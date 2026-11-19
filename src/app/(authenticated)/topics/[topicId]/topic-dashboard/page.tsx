@@ -20,11 +20,11 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useExtractionSummary } from "@/features/reviewer-workspace/hooks/useExtractionSummary";
 import { useFetchData } from "@/hooks/useFetchData";
+import { useMembers, useTopics } from "@/hooks/useTopics";
 import { routes } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Prop } from "../../../../../../types/Prop";
 import { Protocol } from "../../../../../../types/Protocol";
-import { Topic } from "../../../../../../types/Topic";
 import { Vote } from "../../../../../../types/vote";
 import { Eye, FilePlus, Plus, SquarePen } from "lucide-react";
 
@@ -42,10 +42,9 @@ const INVESTIGATIONAL_APPROACHES = [
 const TopicsDashboard = ({ params }: Props) => {
   const { topicId } = params; // TanStack Router already decodes path params
 
-  const topicsQuery = useFetchData<undefined, Topic[]>(routes.api.topic, [
-    "topics",
-  ]);
+  const topicsQuery = useTopics();
   const topic = topicsQuery.data?.find((item) => item.id === topicId) || null;
+  const { data: members = [] } = useMembers(topicId);
 
   const propsQuery = useFetchData<undefined, Prop[]>(
     `${routes.api.topic}/${topicId}/prop`,
@@ -196,7 +195,7 @@ const TopicsDashboard = ({ params }: Props) => {
         <TopicStatementsCard topicId={topicId} propsQuery={propsQuery} />
       </div>
 
-      <TopicGroupMembers topic={topic} />
+      <TopicGroupMembers members={members} />
 
       {createProtocolOpen && (
         <MyDrawer

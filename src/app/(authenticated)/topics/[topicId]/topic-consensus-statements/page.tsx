@@ -7,11 +7,11 @@ import MyDrawer from "@/components/shared/Drawer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useFetchData } from "@/hooks/useFetchData";
+import { useTopics } from "@/hooks/useTopics";
 import { routes } from "@/lib/routes";
 import Link from "@/components/shared/Link";
 import { useMemo, useState } from "react";
 import { Prop } from "../../../../../../types/Prop";
-import { Topic } from "../../../../../../types/Topic";
 import { Vote } from "lucide-react";
 
 interface Props {
@@ -40,9 +40,7 @@ const TopicConsensusStatements = ({ params }: Props) => {
     return null;
   }, [props]);
 
-  const { data: topics } = useFetchData<undefined, Topic[]>(routes.api.topic, [
-    "topics",
-  ]);
+  const { data: topics } = useTopics();
 
   const topic = topics?.find((item) => item.id === topicId) || null;
 

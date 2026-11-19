@@ -9,6 +9,10 @@ vi.mock("@/hooks/useFetchData", () => ({
       ? { isPending: true, failureCount: 1 }
       : { isPending: false, isError: false, data: undefined },
 }));
+vi.mock("@/hooks/useTopics", () => ({
+  useTopics: () => ({ isPending: false, isError: false, data: [] }),
+  useMembers: () => ({ data: undefined }),
+}));
 vi.mock("@/hooks/useGetUserId", () => ({
   useGetUserId: () => ({ userId: undefined }),
 }));

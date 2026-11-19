@@ -1,8 +1,7 @@
 "use client";
 
-import { useFetchData } from "@/hooks/useFetchData";
+import { useTopics } from "@/hooks/useTopics";
 import { get } from "@/lib/indexdb";
-import { routes } from "@/lib/routes";
 import { styles } from "@/styles";
 import Link from "@/components/shared/Link";
 import { useEffect, useMemo, useState } from "react";
@@ -15,9 +14,7 @@ import { Card } from "../ui/card";
 import { Ellipsis, FileText } from "lucide-react";
 
 const RecentlyReviewedTopics = () => {
-  const topicsQuery = useFetchData<undefined, Topic[]>(routes.api.topic, [
-    "topics",
-  ]);
+  const topicsQuery = useTopics();
   const topics = topicsQuery.data;
 
   const [recentlyViewedTopics, setRecentlyViewedTopics] = useState<Topic[]>([]);
@@ -107,7 +104,7 @@ const RecentlyReviewedTopics = () => {
           columnId: "reviewers",
         },
         {
-          content: (
+          content: topic.status && (
             <TextBubble
               text={topic.status}
               color="gray"
