@@ -83,8 +83,8 @@ const TopicConsensusStatementTable = ({
   const sortedStatements = useMemo(() => {
     if (!statements) return [];
     return [...statements].sort((a, b) => {
-      const dateA = new Date(a.created).getTime();
-      const dateB = new Date(b.created).getTime();
+      const dateA = new Date(a.recorded ?? 0).getTime();
+      const dateB = new Date(b.recorded ?? 0).getTime();
       return sortNewest ? dateB - dateA : dateA - dateB;
     });
   }, [statements, sortNewest]);

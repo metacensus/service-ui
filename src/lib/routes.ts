@@ -15,7 +15,6 @@ export const routes = {
     user: apiPrefix + "/user",
 
     // Topics
-    topic: apiPrefix + "/topic",
     topicProtocol: (topicId: string) =>
       `${apiPrefix}/topic/${topicId}/protocol`,
     topicMyVotes: (topicId: string) => `${apiPrefix}/topic/${topicId}/my-votes`,

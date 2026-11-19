@@ -6,9 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import formatIsoDate from "@/functions/formatIsoDate";
 import { isPropVoteClosed } from "@/lib/entityId";
+import type { VoteRecord } from "@metacensus/api";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { Prop } from "../../../../types/Prop";
-import type { Vote } from "../../../../types/vote";
 import VoteBar from "../VoteBar";
 import { tallyVotes } from "../voteTally";
 import { Lock } from "lucide-react";
@@ -16,7 +16,7 @@ import { Lock } from "lucide-react";
 type TopicScientificQuestionProps = {
   question: Prop | null;
   propsQuery: UseQueryResult<Prop[], Error>;
-  votesQuery: UseQueryResult<Vote[], Error>;
+  votesQuery: UseQueryResult<VoteRecord[], Error>;
   onCreate: () => void;
 };
 

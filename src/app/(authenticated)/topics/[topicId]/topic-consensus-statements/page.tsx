@@ -6,12 +6,11 @@ import AsyncSection from "@/components/shared/AsyncSection";
 import MyDrawer from "@/components/shared/Drawer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useFetchData } from "@/hooks/useFetchData";
+import { useProps } from "@/hooks/useProps";
 import { useTopics } from "@/hooks/useTopics";
-import { routes } from "@/lib/routes";
 import Link from "@/components/shared/Link";
+import { Prop_Type } from "@metacensus/api";
 import { useMemo, useState } from "react";
-import { Prop } from "../../../../../../types/Prop";
 import { Vote } from "lucide-react";
 
 interface Props {
@@ -26,16 +25,12 @@ const TopicConsensusStatements = ({ params }: Props) => {
 
   const [page, setPage] = useState(1);
 
-  const propsQuery = useFetchData<undefined, Prop[]>(
-    `${routes.api.topic}/${topicId}/prop`,
-    [`statements-${topicId}`],
-    "GET"
-  );
+  const propsQuery = useProps(topicId);
   const props = propsQuery.data;
 
   const statements = useMemo(() => {
     if (props && props.length > 0) {
-      return props.filter((item) => item.type === "Statement");
+      return props.filter((item) => item.type === Prop_Type.Statement);
     }
     return null;
   }, [props]);

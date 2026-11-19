@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getAuthHeaders } from "@/functions/getAuthHeaders";
+import { SignPrompt, signedWriteError } from "@/components/shared/SignedWrite";
 import { useToast } from "@/hooks/use-toast";
+import { propsQuery } from "@/hooks/useProps";
+import { apiClient } from "@/lib/apiClient";
 import queryClient from "@/lib/queryClient";
-import { routes } from "@/lib/routes";
+import { Prop_Type } from "@metacensus/api";
 import { FieldError } from "@metacensus/library-ui";
 import React from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -33,22 +35,17 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
-      const headers = getAuthHeaders();
-      const response = await fetch(`${routes.api.topic}/${topicId}/prop`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          type: "TopicQuestion",
+      await apiClient.createProp({
+        topicId,
+        content: {
+          topicId,
+          type: Prop_Type.TopicQuestion,
           description: data.statement,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create Meta Analysis Question");
-      }
-
       await queryClient.invalidateQueries({
-        queryKey: [`props-${topicId}`],
+        queryKey: propsQuery(topicId).queryKey,
       });
 
       toast({
@@ -66,7 +63,7 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
       console.error("Error creating Meta Analysis Question:", error);
       toast({
         title: "Meta Analysis Question",
-        description: "Unable to create Meta Analysis Question. Please try again.",
+        description: signedWriteError(error),
         variant: "destructive",
       });
     }
@@ -95,6 +92,9 @@ const CreateMetaAnalysisQuestion: React.FC<CreateMetaAnalysisQuestionProps> = ({
         <Button type="submit" variant="primary" disabled={isSubmitting}>
           {isSubmitting ? "Submitting..." : "Submit"}
         </Button>
+      </div>
+      <div className="mt-2">
+        <SignPrompt action="Proposing a question" />
       </div>
     </form>
   );
