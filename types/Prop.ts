@@ -1,6 +1,6 @@
 import type { PropRecord } from "@metacensus/api";
 
-/** Fields the contract's Prop lacks; the Client never fills them. metacensus/service-ui#8 drops them. */
+/** Fields the contract's Prop lacks; the Client never fills them. They stay until the contract decides them. */
 export type Prop = PropRecord & {
   authorId?: string;
   concluded?: string;
