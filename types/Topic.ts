@@ -1,6 +1,6 @@
 import type { TopicRecord } from "@metacensus/api";
 
-/** Fields the contract's Topic lacks; the Client never fills them. metacensus/service-ui#8 drops them. */
+/** Fields the contract's Topic lacks; the Client never fills them. #11 drops domain and categories; the rest wait on the contract. */
 export type Topic = TopicRecord & {
   question?: string;
   status?: string;
