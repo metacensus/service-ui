@@ -44,7 +44,8 @@ const StatementVote = ({ topicId, prop }: StatementVoteProps) => {
           title="Vote on statement"
         >
           <PropVoting
-            propId={prop.id}
+            prop={prop}
+            hasVoted={!!userVote}
             topicId={topicId}
             handleClose={() => setOpenDrawer(false)}
           />

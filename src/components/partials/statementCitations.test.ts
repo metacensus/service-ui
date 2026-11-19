@@ -6,18 +6,16 @@ import {
   parseStatementCitation,
 } from "./statementCitations";
 
-const against = (
+const vote = (
   citations: VoteRecord["citations"],
-  extras: Partial<VoteRecord> = {}
+  position = Vote_Position.Against
 ): VoteRecord => ({
-  position: Vote_Position.Against,
+  position,
   explanation: "obj",
-  recorded: "2026-01-01T00:00:00Z",
   topicId: "topic:1",
   userId: "1",
   propId: "1",
   citations,
-  ...extras,
 });
 
 describe("parseStatementCitation", () => {
@@ -44,7 +42,7 @@ describe("parseStatementCitation", () => {
 
 describe("citationsFromVotes", () => {
   it("keeps citations that start at index 0", () => {
-    expect(citationsFromVotes([against([{ start: 0, end: 12 }])])).toEqual([
+    expect(citationsFromVotes([vote([{ start: 0, end: 12 }])])).toEqual([
       { start: 0, end: 12 },
     ]);
   });
@@ -52,10 +50,10 @@ describe("citationsFromVotes", () => {
   it("ignores For/Abstain and empty/invalid spans", () => {
     expect(
       citationsFromVotes([
-        against([{ start: 4, end: 4 }]),
-        against([{ start: 2, end: 1 }]),
-        against([]),
-        against([{ start: 0, end: 5 }], { position: Vote_Position.For }),
+        vote([{ start: 4, end: 4 }]),
+        vote([{ start: 2, end: 1 }]),
+        vote([]),
+        vote([{ start: 0, end: 5 }], Vote_Position.For),
       ])
     ).toEqual([]);
   });
@@ -63,8 +61,8 @@ describe("citationsFromVotes", () => {
   it("flattens multiple Against citations", () => {
     expect(
       citationsFromVotes([
-        against([{ start: 0, end: 3 }]),
-        against([{ start: 10, end: 15 }]),
+        vote([{ start: 0, end: 3 }]),
+        vote([{ start: 10, end: 15 }]),
       ])
     ).toEqual([
       { start: 0, end: 3 },

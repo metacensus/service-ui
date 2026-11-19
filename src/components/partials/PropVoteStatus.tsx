@@ -3,7 +3,8 @@
 import formatIsoDate from "@/functions/formatIsoDate";
 import { useUsers } from "@/hooks/useUsers";
 import { sameEntityId } from "@/lib/entityId";
-import { Vote_Position, type VoteRecord } from "@metacensus/api";
+import { tallyVotes } from "./voteTally";
+import type { VoteRecord } from "@metacensus/api";
 import { useState } from "react";
 import { Prop } from "../../../types/Prop";
 import MyDrawer from "../shared/Drawer";
@@ -25,11 +26,7 @@ type PropVoteStatusProps = {
 const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const getCounts = (type: Vote_Position) => {
-    return votes.reduce((acc, vote) => {
-      return vote.position === type ? acc + 1 : acc;
-    }, 0);
-  };
+  const tally = tallyVotes(votes);
 
   const { data: contributors } = useUsers();
 
@@ -38,17 +35,17 @@ const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
       <div className="flex gap-2">
         <CardIndicators
           icon={<Check className="h-4 w-4" />}
-          count={getCounts(Vote_Position.For)}
+          count={tally.for}
           textSize="text-sm"
         />
         <CardIndicators
           icon={<X className="h-4 w-4" />}
-          count={getCounts(Vote_Position.Against)}
+          count={tally.against}
           textSize="text-sm"
         />
         <CardIndicators
           icon={<Circle className="h-4 w-4" />}
-          count={getCounts(Vote_Position.Abstain)}
+          count={tally.abstain}
           textSize="text-sm"
         />
       </div>

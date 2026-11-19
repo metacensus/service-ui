@@ -32,8 +32,8 @@ const StatementVoteStatus = ({
         <div>
           {userVote && !votesLoading && (
             <div className="text-xs text-muted-foreground">
-              You voted &quot;{userVote.position}&quot; on this question on{" "}
-              {userVote.recorded && formatIsoDate(userVote.recorded)}
+              You voted &quot;{userVote.position}&quot; on this statement
+              {userVote.recorded && ` on ${formatIsoDate(userVote.recorded)}`}.
             </div>
           )}
         </div>

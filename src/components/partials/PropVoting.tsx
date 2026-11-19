@@ -1,10 +1,10 @@
 import { SignPrompt, signedWriteError } from "@/components/shared/SignedWrite";
 import { useToast } from "@/hooks/use-toast";
 import { useGetUserId } from "@/hooks/useGetUserId";
-import { useProps } from "@/hooks/useProps";
+import { voteKey } from "@/hooks/useProps";
 import { apiClient } from "@/lib/apiClient";
 import queryClient from "@/lib/queryClient";
-import { Prop_Type, Vote_Position, type PropCitation } from "@metacensus/api";
+import { Vote_Position, type PropCitation, type PropRecord } from "@metacensus/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
@@ -17,9 +17,9 @@ import { Check, Circle, TextCursor, X } from "lucide-react";
 
 type PropVotingProps = {
   topicId: string;
-  propId: string;
+  prop: PropRecord;
   handleClose?: () => void;
-  userVote?: unknown;
+  hasVoted: boolean;
 };
 
 const votingOptionMap = {
@@ -38,9 +38,9 @@ function parseVotingOption(value: string): VotingOption | "" {
 
 const PropVoting = ({
   topicId,
-  propId,
+  prop,
   handleClose,
-  userVote,
+  hasVoted,
 }: PropVotingProps) => {
   const { toast } = useToast();
   const { userId } = useGetUserId();
@@ -52,12 +52,7 @@ const PropVoting = ({
     undefined
   );
 
-  const { data: propsData } = useProps(topicId);
-
-  const prop =
-    propsData
-      ?.filter((item) => item.type === Prop_Type.Statement)
-      .find((item) => item.id === propId) || null;
+  const propId = prop.id;
 
   const handleSubmitVote = async () => {
     if (!propId || !votingOption || !topicId || !userId) {
@@ -74,7 +69,6 @@ const PropVoting = ({
           userId,
           position: votingOption,
           explanation: votingComment,
-          // Citations are meaningful for Against only (contract).
           citations:
             votingOption === votingOptionMap.reject && selection
               ? [selection]
@@ -91,7 +85,7 @@ const PropVoting = ({
     }
 
     await queryClient.invalidateQueries({
-      queryKey: ["votes", topicId, propId],
+      queryKey: voteKey(topicId, propId),
     });
     toast({
       title: "Vote submitted",
@@ -111,14 +105,14 @@ const PropVoting = ({
   const selectedText = useMemo(
     () =>
       excerptForCitation({
-        statement: prop?.description ?? "",
+        statement: prop.description,
         citation: selection,
       }),
-    [prop?.description, selection]
+    [prop.description, selection]
   );
 
   const statementNodes = useMemo(() => {
-    const text = prop?.description;
+    const text = prop.description;
     if (!text) return null;
     if (!selection) return text;
 
@@ -131,7 +125,7 @@ const PropVoting = ({
         {text.slice(selection.end)}
       </>
     );
-  }, [prop?.description, selection]);
+  }, [prop.description, selection]);
 
   const captureSelection = () => {
     const element = statementRef.current;
@@ -148,7 +142,7 @@ const PropVoting = ({
 
   return (
     <div className="grid gap-6">
-      {prop?.description && (
+      {prop.description && (
         <div
           className="border rounded-md border-dashed border-mc-ink-secondary px-6 py-4"
           data-vaul-no-drag
@@ -166,7 +160,7 @@ const PropVoting = ({
       )}
       <div className="grid gap-2">
         <div className="text-sm font-bold">
-          {!userVote ? "Vote" : "Recast Vote"}
+          {hasVoted ? "Recast Vote" : "Vote"}
         </div>
 
         <div className="flex gap-2">

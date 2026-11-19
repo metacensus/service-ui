@@ -10,9 +10,12 @@ export const propsQuery = (topicId: string) =>
 
 export const useProps = (topicId: string) => useQuery(propsQuery(topicId));
 
+export const voteKey = (topicId: string, propId: string | undefined) =>
+  ["votes", topicId, propId] as const;
+
 export const useVotes = (topicId: string, propId: string | undefined) =>
   useQuery({
-    queryKey: ["votes", topicId, propId],
+    queryKey: voteKey(topicId, propId),
     queryFn: () => apiClient.listVotes({ topicId, propId: propId! }),
     enabled: !!propId,
   });
