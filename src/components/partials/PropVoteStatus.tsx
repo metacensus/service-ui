@@ -1,13 +1,12 @@
 "use client";
 
 import formatIsoDate from "@/functions/formatIsoDate";
-import { useFetchData } from "@/hooks/useFetchData";
+import { useUsers } from "@/hooks/useUsers";
 import { sameEntityId } from "@/lib/entityId";
-import { routes } from "@/lib/routes";
+import { tallyVotes } from "./voteTally";
+import type { VoteRecord } from "@metacensus/api";
 import { useState } from "react";
-import { Contributor } from "../../../types/Contributor";
 import { Prop } from "../../../types/Prop";
-import { Vote } from "../../../types/vote";
 import MyDrawer from "../shared/Drawer";
 import TableSimple from "../shared/TableSimple";
 import { Button } from "../ui/button";
@@ -20,41 +19,33 @@ import {
 import { Check, Circle, X } from "lucide-react";
 
 type PropVoteStatusProps = {
-  votes: Vote[];
+  votes: VoteRecord[];
   prop?: Prop;
 };
 
 const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const getCounts = (type: "For" | "Against" | "Abstain") => {
-    return votes.reduce((acc, vote) => {
-      return vote.position === type ? acc + 1 : acc;
-    }, 0);
-  };
+  const tally = tallyVotes(votes);
 
-  const { data: contributors } = useFetchData<undefined, Contributor[]>(
-    `${routes.api.user}`,
-    ["contributors"],
-    "GET"
-  );
+  const { data: contributors } = useUsers();
 
   return (
     <div>
       <div className="flex gap-2">
         <CardIndicators
           icon={<Check className="h-4 w-4" />}
-          count={getCounts("For")}
+          count={tally.for}
           textSize="text-sm"
         />
         <CardIndicators
           icon={<X className="h-4 w-4" />}
-          count={getCounts("Against")}
+          count={tally.against}
           textSize="text-sm"
         />
         <CardIndicators
           icon={<Circle className="h-4 w-4" />}
-          count={getCounts("Abstain")}
+          count={tally.abstain}
           textSize="text-sm"
         />
       </div>
@@ -129,7 +120,7 @@ const PropVoteStatus = ({ votes, prop }: PropVoteStatusProps) => {
                           ) : null}
                           <br />
                           <span className="text-xs text-muted-foreground">
-                            {formatIsoDate(vote.lastCast)}
+                            {vote.recorded && formatIsoDate(vote.recorded)}
                           </span>
                         </span>
                       ),

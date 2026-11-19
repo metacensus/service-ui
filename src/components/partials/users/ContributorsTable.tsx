@@ -5,29 +5,14 @@ import TableSimple from "@/components/shared/TableSimple";
 import TopicFilterOption from "@/components/shared/TopicFilterOption";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFetchData } from "@/hooks/useFetchData";
-import { routes } from "@/lib/routes";
+import { useUsers } from "@/hooks/useUsers";
 import { useMemo } from "react";
-import { Contributor } from "../../../../types/Contributor";
 import UserAvatar from "../UserAvatar";
 import { Send } from "lucide-react";
 
 const ContributorsTable = () => {
-  const contributorsQuery = useFetchData<undefined, Contributor[]>(
-    routes.api.user,
-    ["users"]
-  );
-  const data = contributorsQuery.data;
-
-  const contributors = useMemo(() => {
-    if (data) {
-      return data?.map((item: any) => ({
-        ...item,
-        topics: item?.topicContributors?.map((el: any) => el?.topic?.name),
-      }));
-    }
-    return [];
-  }, [data]);
+  const contributorsQuery = useUsers();
+  const contributors = contributorsQuery.data;
 
   const columns = useMemo(
     () => [

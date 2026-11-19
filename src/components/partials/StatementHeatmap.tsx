@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Vote } from "../../../types/vote";
+import type { VoteRecord } from "@metacensus/api";
 import { citationsFromVotes } from "./statementCitations";
 
 export const StatementHeatmap = ({
@@ -9,7 +9,7 @@ export const StatementHeatmap = ({
   votes = [],
 }: {
   statement: string;
-  votes: Vote[];
+  votes: VoteRecord[];
 }) => {
   const citations = useMemo(() => citationsFromVotes(votes), [votes]);
 

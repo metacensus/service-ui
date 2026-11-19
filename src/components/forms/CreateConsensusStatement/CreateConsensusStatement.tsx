@@ -3,10 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getAuthHeaders } from "@/functions/getAuthHeaders";
+import { SignPrompt, signedWriteError } from "@/components/shared/SignedWrite";
 import { useToast } from "@/hooks/use-toast";
+import { propsQuery } from "@/hooks/useProps";
+import { apiClient } from "@/lib/apiClient";
 import queryClient from "@/lib/queryClient";
-import { routes } from "@/lib/routes";
+import { Prop_Type } from "@metacensus/api";
 import { FieldError } from "@metacensus/library-ui";
 import React from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -35,22 +37,17 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
-      const headers = getAuthHeaders();
-      const response = await fetch(`${routes.api.topic}/${topicId}/prop`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          type: "Statement",
+      await apiClient.createProp({
+        topicId,
+        content: {
+          topicId,
+          type: Prop_Type.Statement,
           description: data.statement,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create Consensus Statement");
-      }
-
       await queryClient.invalidateQueries({
-        queryKey: [`statements-${topicId}`],
+        queryKey: propsQuery(topicId).queryKey,
       });
 
       toast({
@@ -68,7 +65,7 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
       console.error("Error creating Consensus Statement:", error);
       toast({
         title: "Consensus Statement",
-        description: "Unable to create Consensus Statement. Please try again.",
+        description: signedWriteError(error),
         variant: "destructive",
       });
     }
@@ -97,6 +94,9 @@ const CreateConsensusStatement: React.FC<CreateConsensusStatementProps> = ({
         <Button type="submit" variant="primary" disabled={isSubmitting}>
           {isSubmitting ? "Submitting..." : "Submit"}
         </Button>
+      </div>
+      <div className="mt-2">
+        <SignPrompt action="Proposing a statement" />
       </div>
     </form>
   );

@@ -1,16 +1,8 @@
-export type Prop = {
-  authorId: string;
-  created: string; // ISO date string
-  description: string;
-  id: string;
-  type:
-    | "Statement"
-    | "TopicQuestion"
-    | "TopicChange"
-    | "UserAdmit"
-    | "UserExpulse"
-    | "PaperExtractionComplete"
-    | "PaperIncludeMetaAnalysis"; // Enum string
-  concluded: string; // ISO date string
-  conclusion: "open" | "passed" | "failed" | "expired"; // Enum string
+import type { PropRecord } from "@metacensus/api";
+
+/** Fields the contract's Prop lacks; the Client never fills them. They stay until the contract decides them. */
+export type Prop = PropRecord & {
+  authorId?: string;
+  concluded?: string;
+  conclusion?: "open" | "passed" | "failed" | "expired";
 };

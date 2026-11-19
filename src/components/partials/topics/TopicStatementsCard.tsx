@@ -5,12 +5,11 @@ import AsyncSection from "@/components/shared/AsyncSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFetchData } from "@/hooks/useFetchData";
-import { routes } from "@/lib/routes";
+import { useVotes } from "@/hooks/useProps";
+import { Prop_Type } from "@metacensus/api";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { Prop } from "../../../../types/Prop";
-import type { Vote } from "../../../../types/vote";
 import VoteBar from "../VoteBar";
 import { tallyVotes } from "../voteTally";
 
@@ -21,18 +20,13 @@ export const DASHBOARD_STATEMENT_LIMIT = 3;
  *  matches the seeded order. */
 export function dashboardStatements(props: readonly Prop[], limit = DASHBOARD_STATEMENT_LIMIT) {
   return props
-    .filter((p) => p.type === "Statement")
-    .sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime())
+    .filter((p) => p.type === Prop_Type.Statement)
+    .sort((a, b) => new Date(a.recorded ?? 0).getTime() - new Date(b.recorded ?? 0).getTime())
     .slice(0, limit);
 }
 
 const StatementRow = ({ topicId, statement }: { topicId: string; statement: Prop }) => {
-  // Same key as StatementVoteStatus, so the statements page reuses this fetch.
-  const votesQuery = useFetchData<undefined, Vote[]>(
-    `${routes.api.topic}/${topicId}/prop/${statement.id}/vote`,
-    [`statement-${statement.id}-${topicId}`],
-    "GET"
-  );
+  const votesQuery = useVotes(topicId, statement.id);
   const tally = useMemo(() => tallyVotes(votesQuery.data), [votesQuery.data]);
 
   return (

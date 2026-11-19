@@ -1,12 +1,10 @@
 import TablePagination from "@/components/shared/TablePagination";
 import TableSimple from "@/components/shared/TableSimple";
 import { Button } from "@/components/ui/button";
-import { useFetchData } from "@/hooks/useFetchData";
+import { useUsers } from "@/hooks/useUsers";
 import { sameEntityId } from "@/lib/entityId";
-import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
-import { Contributor } from "../../../../types/Contributor";
 import { Prop } from "../../../../types/Prop";
 import StatementVote from "./StatementVote";
 import StatementVoteStatus from "./StatementVoteStatus";
@@ -27,10 +25,7 @@ const TopicConsensusStatementTable = ({
 }: Props) => {
   const [sortNewest, setSortNewest] = useState(true); // true for newest first, false for oldest
 
-  const { data: contributors } = useFetchData<undefined, Contributor[]>(
-    routes.api.user,
-    ["contributors"]
-  );
+  const { data: contributors } = useUsers();
 
   const columns = useMemo(() => {
     const toggleSort = () => {
@@ -83,8 +78,8 @@ const TopicConsensusStatementTable = ({
   const sortedStatements = useMemo(() => {
     if (!statements) return [];
     return [...statements].sort((a, b) => {
-      const dateA = new Date(a.created).getTime();
-      const dateB = new Date(b.created).getTime();
+      const dateA = new Date(a.recorded ?? 0).getTime();
+      const dateB = new Date(b.recorded ?? 0).getTime();
       return sortNewest ? dateB - dateA : dateA - dateB;
     });
   }, [statements, sortNewest]);

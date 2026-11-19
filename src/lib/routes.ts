@@ -11,11 +11,7 @@ import { apiPrefix } from "@metacensus/api";
 
 export const routes = {
   api: {
-    // Auth / identity
-    user: apiPrefix + "/user",
-
     // Topics
-    topic: apiPrefix + "/topic",
     topicProtocol: (topicId: string) =>
       `${apiPrefix}/topic/${topicId}/protocol`,
     topicMyVotes: (topicId: string) => `${apiPrefix}/topic/${topicId}/my-votes`,

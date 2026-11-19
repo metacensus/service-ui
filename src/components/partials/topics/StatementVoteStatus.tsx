@@ -1,8 +1,7 @@
 import formatIsoDate from "@/functions/formatIsoDate";
-import { useFetchData } from "@/hooks/useFetchData";
+import { useVotes } from "@/hooks/useProps";
 import { useGetUserId } from "@/hooks/useGetUserId";
 import { findVoteForUser } from "@/lib/entityId";
-import { routes } from "@/lib/routes";
 import { useMemo } from "react";
 import PropVoteStatus from "../PropVoteStatus";
 import { Prop } from "../../../../types/Prop";
@@ -18,14 +17,7 @@ const StatementVoteStatus = ({
   statement,
   topicId,
 }: StatementVoteStatusProps) => {
-  const { data: votes, isLoading: votesLoading } = useFetchData<
-    undefined,
-    any[]
-  >(
-    `${routes.api.topic}/${topicId}/prop/${propId}/vote`,
-    [`statement-${propId}-${topicId}`],
-    "GET"
-  );
+  const { data: votes, isLoading: votesLoading } = useVotes(topicId, propId);
 
   const { userId } = useGetUserId();
 
@@ -40,8 +32,8 @@ const StatementVoteStatus = ({
         <div>
           {userVote && !votesLoading && (
             <div className="text-xs text-muted-foreground">
-              You voted &quot;{userVote.position}&quot; on this question on{" "}
-              {formatIsoDate(userVote.lastCast)}
+              You voted &quot;{userVote.position}&quot; on this statement
+              {userVote.recorded && ` on ${formatIsoDate(userVote.recorded)}`}.
             </div>
           )}
         </div>

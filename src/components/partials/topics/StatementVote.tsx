@@ -1,9 +1,8 @@
 import MyDrawer from "@/components/shared/Drawer";
 import { Button } from "@/components/ui/button";
-import { useFetchData } from "@/hooks/useFetchData";
 import { useGetUserId } from "@/hooks/useGetUserId";
+import { useVotes } from "@/hooks/useProps";
 import { findVoteForUser, isPropVoteClosed } from "@/lib/entityId";
-import { routes } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Prop } from "../../../../types/Prop";
 import PropVoteConclusion from "../PropVoteConclusion";
@@ -19,11 +18,7 @@ const StatementVote = ({ topicId, prop }: StatementVoteProps) => {
 
   const { userId } = useGetUserId();
 
-  const { data: votes } = useFetchData<undefined, any[]>(
-    `${routes.api.topic}/${topicId}/prop/${prop.id}/vote`,
-    [`statement-${prop.id}-${topicId}-vote`],
-    "GET"
-  );
+  const { data: votes } = useVotes(topicId, prop.id);
 
   const userVote = useMemo(
     () => findVoteForUser(votes, userId),
@@ -49,7 +44,8 @@ const StatementVote = ({ topicId, prop }: StatementVoteProps) => {
           title="Vote on statement"
         >
           <PropVoting
-            propId={prop.id}
+            prop={prop}
+            hasVoted={!!userVote}
             topicId={topicId}
             handleClose={() => setOpenDrawer(false)}
           />

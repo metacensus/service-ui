@@ -1,31 +1,31 @@
-import { getAuthHeaders } from "@/functions/getAuthHeaders";
+import { SignPrompt, signedWriteError } from "@/components/shared/SignedWrite";
 import { useToast } from "@/hooks/use-toast";
-import { useFetchData } from "@/hooks/useFetchData";
+import { useGetUserId } from "@/hooks/useGetUserId";
+import { voteKey } from "@/hooks/useProps";
+import { apiClient } from "@/lib/apiClient";
 import queryClient from "@/lib/queryClient";
-import { routes } from "@/lib/routes";
+import { Vote_Position, type PropCitation, type PropRecord } from "@metacensus/api";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Prop } from "../../../types/Prop";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import {
   excerptForCitation,
   selectionOffsetsWithin,
-  type StatementCitation,
 } from "./statementCitations";
 import { Check, Circle, TextCursor, X } from "lucide-react";
 
 type PropVotingProps = {
   topicId: string;
-  propId: string;
+  prop: PropRecord;
   handleClose?: () => void;
-  userVote?: unknown;
+  hasVoted: boolean;
 };
 
 const votingOptionMap = {
-  accept: "For",
-  reject: "Against",
-  abstain: "Abstain",
+  accept: Vote_Position.For,
+  reject: Vote_Position.Against,
+  abstain: Vote_Position.Abstain,
 } as const;
 
 type VotingOption = (typeof votingOptionMap)[keyof typeof votingOptionMap];
@@ -38,100 +38,64 @@ function parseVotingOption(value: string): VotingOption | "" {
 
 const PropVoting = ({
   topicId,
-  propId,
+  prop,
   handleClose,
-  userVote,
+  hasVoted,
 }: PropVotingProps) => {
   const { toast } = useToast();
+  const { userId } = useGetUserId();
   const statementRef = useRef<HTMLParagraphElement>(null);
 
   const [votingComment, setVotingComment] = useState("");
   const [votingOption, setVotingOption] = useState<VotingOption | "">("");
-  const [selection, setSelection] = useState<StatementCitation | undefined>(
+  const [selection, setSelection] = useState<PropCitation | undefined>(
     undefined
   );
 
-  const { data: propsData } = useFetchData<undefined, Prop[]>(
-    `${routes.api.topic}/${topicId}/prop`,
-    [`statements-${topicId}`],
-    "GET"
-  );
-
-  const prop =
-    propsData
-      ?.filter((item) => item.type === "Statement")
-      .find((item) => item.id === propId) || null;
+  const propId = prop.id;
 
   const handleSubmitVote = async () => {
-    if (!propId || !votingOption || !topicId) {
+    if (!propId || !votingOption || !topicId || !userId) {
       return;
     }
 
-    const body: {
-      position: string;
-      explanation: string;
-      citations?: StatementCitation[];
-    } = {
-      position: votingOption,
-      explanation: votingComment,
-    };
-
-    // Citations are meaningful for Against only (contract).
-    if (votingOption === votingOptionMap.reject && selection) {
-      body.citations = [selection];
-    }
-
-    if (window.confirm("Are you sure you want to cast your vote?")) {
-      const headers = getAuthHeaders();
-
-      const request = await fetch(
-        `${routes.api.topic}/${topicId}/prop/${propId}/vote`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
-        }
-      );
-
-      if (!request.ok) {
-        let description = "Your vote could not be submitted.";
-        try {
-          const responseJson = await request.json();
-          description =
-            responseJson.error || responseJson.message || description;
-        } catch {
-          // keep the default description when the body is not JSON
-        }
-        toast({
-          title: "Vote failed",
-          description,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await request.json();
-      await queryClient.invalidateQueries({
-        queryKey: [`meta-vote-${topicId}`],
+    try {
+      await apiClient.setVote({
+        topicId,
+        propId,
+        content: {
+          topicId,
+          propId,
+          userId,
+          position: votingOption,
+          explanation: votingComment,
+          citations:
+            votingOption === votingOptionMap.reject && selection
+              ? [selection]
+              : [],
+        },
       });
-
-      await queryClient.invalidateQueries({
-        queryKey: [`statement-${propId}-${topicId}`],
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: [`statement-${propId}-${topicId}-vote`],
-      });
+    } catch (error) {
       toast({
-        title: "Vote submitted",
-        description: "Your vote has been submitted successfully",
+        title: "Vote failed",
+        description: signedWriteError(error),
+        variant: "destructive",
       });
-
-      setVotingOption("");
-      setVotingComment("");
-      setSelection(undefined);
-      handleClose && handleClose();
+      return;
     }
+
+    await queryClient.invalidateQueries({
+      queryKey: voteKey(topicId, propId),
+    });
+    toast({
+      title: "Vote submitted",
+      description: "Your vote has been submitted successfully",
+    });
+
+    setVotingOption("");
+    setVotingComment("");
+    setSelection(undefined);
+    handleClose && handleClose();
   };
 
   useEffect(() => {
@@ -141,14 +105,14 @@ const PropVoting = ({
   const selectedText = useMemo(
     () =>
       excerptForCitation({
-        statement: prop?.description ?? "",
+        statement: prop.description,
         citation: selection,
       }),
-    [prop?.description, selection]
+    [prop.description, selection]
   );
 
   const statementNodes = useMemo(() => {
-    const text = prop?.description;
+    const text = prop.description;
     if (!text) return null;
     if (!selection) return text;
 
@@ -161,7 +125,7 @@ const PropVoting = ({
         {text.slice(selection.end)}
       </>
     );
-  }, [prop?.description, selection]);
+  }, [prop.description, selection]);
 
   const captureSelection = () => {
     const element = statementRef.current;
@@ -178,7 +142,7 @@ const PropVoting = ({
 
   return (
     <div className="grid gap-6">
-      {prop?.description && (
+      {prop.description && (
         <div
           className="border rounded-md border-dashed border-mc-ink-secondary px-6 py-4"
           data-vaul-no-drag
@@ -196,7 +160,7 @@ const PropVoting = ({
       )}
       <div className="grid gap-2">
         <div className="text-sm font-bold">
-          {!userVote ? "Vote" : "Recast Vote"}
+          {hasVoted ? "Recast Vote" : "Vote"}
         </div>
 
         <div className="flex gap-2">
@@ -287,11 +251,12 @@ const PropVoting = ({
               type="button"
               className="gap-2 px-2 py-1"
               onClick={handleSubmitVote}
-              disabled={!votingOption}
+              disabled={!votingOption || !userId}
             >
               <span className="text-sm">Cast Vote</span>
             </Button>
           </div>
+          <SignPrompt action="Casting a vote" />
         </>
       )}
     </div>

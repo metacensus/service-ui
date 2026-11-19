@@ -4,10 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import TopicDashboard from "./page";
 
 vi.mock("@/hooks/useFetchData", () => ({
-  useFetchData: (url: string) =>
-    url.endsWith("/prop")
-      ? { isPending: true, failureCount: 1 }
-      : { isPending: false, isError: false, data: undefined },
+  useFetchData: () => ({ isPending: false, isError: false, data: undefined }),
+}));
+vi.mock("@/hooks/useProps", () => ({
+  useProps: () => ({ isPending: true, failureCount: 1 }),
+  useVotes: () => ({ isPending: true, failureCount: 0 }),
 }));
 vi.mock("@/hooks/useTopics", () => ({
   useTopics: () => ({ isPending: false, isError: false, data: [] }),
