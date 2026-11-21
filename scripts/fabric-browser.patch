@@ -1,0 +1,103 @@
+--- a/integration/service_integ_test.go
++++ b/integration/service_integ_test.go
+@@ -6,11 +6,14 @@
+ import (
+ 	"bytes"
+ 	"context"
++	"crypto/rand"
+ 	"fmt"
+ 	"io"
+ 	"log"
+ 	"net/http"
++	"net/http/httptest"
+ 	"os"
++	"os/exec"
+ 	"testing"
+ 	"time"
+ 
+@@ -103,7 +106,8 @@
+ 	}
+ }
+ 
+-func TestImages_Serve(t *testing.T) {
++func startAPI(t *testing.T, origin string) (*client, channels.Provision) {
++	t.Helper()
+ 	ctx := context.Background()
+ 	f := microfab
+ 
+@@ -119,7 +123,7 @@
+ 		"CHAINCODE_ID":             pkgID,
+ 		"CHAINCODE_SERVER_ADDRESS": fmt.Sprintf(":%d", chaincodePort),
+ 		"CHAINCODE_NAME":           name,
+-		"ALLOWED_ORIGINS":          appOrigin,
++		"ALLOWED_ORIGINS":          origin,
+ 		"CHAINCODE_PLAINTEXT":      "1",
+ 	}
+ 	cc.Networks = []string{f.Network.Name}
+@@ -155,6 +159,46 @@
+ 		t.Fatalf("mapped port: %v", err)
+ 	}
+ 	api := &client{t: t, base: fmt.Sprintf("http://%s:%s", host, port.Port())}
++	return api, f.Provisioner(name, pkgID)
++}
++
++func TestImages_Browser(t *testing.T) {
++	script := os.Getenv("BROWSER_TEST_SCRIPT")
++	if script == "" {
++		t.Skip("set BROWSER_TEST_SCRIPT to the UI browser test")
++	}
++	origin := os.Getenv("SPA_ORIGIN")
++	if origin == "" {
++		t.Fatal("SPA_ORIGIN must name the browser's origin")
++	}
++	api, provision := startAPI(t, origin)
++	path := "/" + rand.Text()
++	mux := http.NewServeMux()
++	mux.HandleFunc("PUT "+path+"/{topic}", func(w http.ResponseWriter, r *http.Request) {
++		channel, err := channels.Topic(r.PathValue("topic"))
++		if err != nil {
++			http.Error(w, err.Error(), http.StatusBadRequest)
++			return
++		}
++		if err := provision(r.Context(), channel); err != nil {
++			http.Error(w, err.Error(), http.StatusInternalServerError)
++			return
++		}
++		fmt.Fprint(w, channel)
++	})
++	control := httptest.NewServer(mux)
++	t.Cleanup(control.Close)
++	cmd := exec.CommandContext(t.Context(), "node", script, "--vote")
++	cmd.Env = append(os.Environ(), "API_PROXY_TARGET="+api.base, "PROVISION_TOPIC_URL="+control.URL+path)
++	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
++	if err := cmd.Run(); err != nil {
++		t.Fatal(err)
++	}
++}
++
++func TestImages_Serve(t *testing.T) {
++	ctx := context.Background()
++	api, provision := startAPI(t, appOrigin)
+ 
+ 	t.Run("error - the API refuses a caller with no session", func(t *testing.T) {
+ 		status, _ := api.send(http.MethodGet, routes.Prefix+"/self", "", nil)
+@@ -200,7 +244,7 @@
+ 		topicID := topicRec.GetId()
+ 		topicChannel, err := channels.Topic(topicID)
+ 		if err == nil {
+-			err = f.Provisioner(name, pkgID)(ctx, topicChannel)
++			err = provision(ctx, topicChannel)
+ 		}
+ 		if err != nil {
+ 			t.Fatalf("provision %s's channel: %v", topicID, err)
+--- a/internal/fabrictest/fabric.go
++++ b/internal/fabrictest/fabric.go
+@@ -98,7 +98,7 @@
+ 
+ 	f.container, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+ 		ContainerRequest: testcontainers.ContainerRequest{
+-			Image:           "ghcr.io/hyperledger-labs/microfab:latest",
++			Image:           "ghcr.io/hyperledger-labs/microfab@sha256:3e014755c2723b56087fd3cb2296d01b10d4f669e5f84a8907d8958c58384877",
+ 			ExposedPorts:    []string{microfabPort, peerPort, ordererPort},
+ 			Env:             map[string]string{"MICROFAB_CONFIG": microfabConfig()},
+ 			Networks:        []string{nw.Name},
