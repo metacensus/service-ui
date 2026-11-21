@@ -49,6 +49,7 @@ production:
 | `npm run preview`        | Preview the production build locally                |
 | `npm run tsc`            | Type-check the SPA (`tsc --noEmit`)                 |
 | `npm test`               | Run the test suite                                  |
+| `npm run e2e`            | Run Chromium against a disposable Fabric network    |
 
 ## Testing
 
@@ -72,6 +73,25 @@ npm run dev
 2. Open a topic that has a consensus statement.
 3. Cast a vote with an explanation if the statement has no votes yet (seed does not insert votes).
 4. Click **View Votes** and confirm columns left-to-right: **Contributor**, **Position**, **Explanation**.
+
+### Real-device checks
+
+Record the build, device, OS and browser versions, and a pass or the first unexpected result for each check. For the cookie exchange, record cookie names and HTTP statuses only. [First manual run (#14)](https://github.com/metacensus/service-ui/issues/14)
+
+#### After each staging deploy · Safari and Chrome
+
+Run both steps in **each browser** on a physical device with passkeys enabled. Use a disposable browser profile and a fresh test account in each. The staging SPA must use `service-api-chain` with the SPA origin in the chaincode's `ALLOWED_ORIGINS`.
+
+1. **Sign up.** Complete the form and select **Register** once. The native passkey sheet should offer to create a passkey. Approve creation, then approve signing the registration with it. The signed-in dashboard should open from that single submission, including in Safari.
+2. **Sign a topic.** Under **Topics → Create Topic**, enter a unique name and a description. Check that the form explains the Face ID, Touch ID or PIN request, then select **Create Topic**. The native passkey sheet should ask you to authorize the write once. Approve it, reload Topics, and confirm the saved topic appears.
+
+#### When session handling changes · Safari on localhost
+
+On a Mac, run the dev server against a local `service-api-chain` API and open `http://localhost:5173` in Safari. Use an account registered with that API. Open Web Inspector before signing in.
+
+1. **Check storage.** Sign in and inspect **Storage → Cookies** for localhost. Safari should store `mc_refresh` with **Secure** set. Note the user ID in the `GET /metacensus/api/v1/self` response.
+2. **Check reload.** Reload the dashboard. In **Network**, inspect the request cookies on `POST /metacensus/api/v1/refresh`. The request should carry `mc_refresh` and return HTTP 200. The next `/self` should return HTTP 200 with the same user ID, and the dashboard should stay open.
+3. **Check a lost refresh response.** Use a local test proxy to delay one successful refresh response, including its headers, beyond the client's 10-second timeout after the API rotates the cookie. Reload once to trigger that timeout, restore normal delivery, and reload again. The API should reject the old cookie on the next refresh and the app should return to **Log in**.
 
 ## Environment variables
 
