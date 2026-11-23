@@ -2,11 +2,29 @@
 
 import * as pdfjs from "pdfjs-dist";
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { ChevronLeft, ChevronRight, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SourceLocation } from "../../../types/DataExtraction";
+import { Input } from "@/components/ui/input";
+import { SourceLocation, SourceRect } from "../../../types/DataExtraction";
 import { openPdf } from "./openPdf";
+import {
+  findMatches,
+  marksByPage,
+  PageMatch,
+  pageText,
+  SearchMatch,
+  stepMatch,
+  TextRun,
+} from "./pdfSearch";
 
 // The worker is vendored in public/ and must match the installed pdfjs-dist.
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.js";
@@ -19,8 +37,15 @@ type ViewPDFProps = {
 
 type PageSize = { width: number; height: number };
 
+const box = (r: SourceRect) => ({
+  left: `${r.x * 100}%`,
+  top: `${r.y * 100}%`,
+  width: `${r.w * 100}%`,
+  height: `${r.h * 100}%`,
+});
+
 // A page is a canvas with a transparent text layer over it, so the browser can
-// select text, and an overlay for highlights. The wrapper's `aria-label` is how
+// select text, and overlays for highlights. The wrapper's `aria-label` is how
 // capturePdfSelection finds the page a selection falls on. Pages draw once they
 // scroll near the viewport and are released when they leave it.
 function PdfPage({
@@ -29,12 +54,14 @@ function PdfPage({
   size,
   scale,
   rects,
+  matches,
 }: {
   pdf: PDFDocumentProxy;
   pageNumber: number;
   size: PageSize;
   scale: number;
   rects: SourceLocation[number]["rects"] | undefined;
+  matches: PageMatch[] | undefined;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -125,15 +152,26 @@ function PdfPage({
               key={i}
               className="absolute rounded-sm border"
               style={{
-                left: `${r.x * 100}%`,
-                top: `${r.y * 100}%`,
-                width: `${r.w * 100}%`,
-                height: `${r.h * 100}%`,
+                ...box(r),
                 backgroundColor: "rgba(255, 215, 0, 0.4)",
                 borderColor: "rgba(218, 165, 32, 0.8)",
               }}
             />
           ))}
+        </div>
+      )}
+      {matches && (
+        <div className="pointer-events-none absolute inset-0">
+          {matches.flatMap((match, m) =>
+            match.rects.map((r, i) => (
+              <div
+                key={`${m}-${i}`}
+                data-current-match={match.current || undefined}
+                className="absolute rounded-sm bg-sky-400/35 data-[current-match]:bg-orange-600/50"
+                style={box(r)}
+              />
+            ))
+          )}
         </div>
       )}
     </div>
@@ -157,6 +195,10 @@ export default function ViewPDF({
   // 1 fits a page to the viewer's width.
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<SearchMatch[]>([]);
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const texts = useRef<Promise<TextRun[][]> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,6 +207,8 @@ export default function ViewPDF({
     setSizes([]);
     setZoom(1);
     setCurrentPage(1);
+    setQuery("");
+    texts.current = null;
     task.promise
       .then(async (doc) => {
         const pages = await Promise.all(
@@ -215,6 +259,44 @@ export default function ViewPDF({
     const page = highlightedPage ?? citedPage ?? null;
     return Number.isInteger(page) && page !== null && page > 0 ? page : null;
   }, [citedPage, highlight]);
+
+  useEffect(() => {
+    setCurrentMatch(0);
+    if (!pdf || !query.trim()) {
+      setMatches([]);
+      return;
+    }
+    let cancelled = false;
+    texts.current ??= Promise.all(
+      Array.from({ length: pdf.numPages }, (_, i) =>
+        pdf.getPage(i + 1).then(pageText)
+      )
+    );
+    texts.current
+      .then((pages) => {
+        if (!cancelled) setMatches(findMatches(pages, query));
+      })
+      .catch(() => {
+        texts.current = null;
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pdf, query]);
+
+  const matchesByPage = useMemo(
+    () => marksByPage(matches, currentMatch),
+    [matches, currentMatch]
+  );
+
+  useEffect(() => {
+    rootRef.current
+      ?.querySelector("[data-current-match]")
+      ?.scrollIntoView({ block: "center" });
+  }, [matchesByPage]);
+
+  const stepSearch = (delta: 1 | -1) =>
+    setCurrentMatch(stepMatch(currentMatch, matches.length, delta));
 
   const numPages = sizes.length;
 
@@ -313,6 +395,42 @@ export default function ViewPDF({
           >
             <Maximize2 className="size-4" />
           </Button>
+          <Input
+            type="search"
+            aria-label="Search the paper"
+            placeholder="Search"
+            className="ml-2 h-7 w-40 text-xs"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") stepSearch(e.shiftKey ? -1 : 1);
+            }}
+          />
+          {query.trim() && (
+            <span className="min-w-16 text-center text-xs" aria-live="polite">
+              {matches.length > 0
+                ? `${currentMatch + 1} of ${matches.length}`
+                : "No matches"}
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label="Previous match"
+            disabled={matches.length < 2}
+            onClick={() => stepSearch(-1)}
+          >
+            <ChevronUp className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label="Next match"
+            disabled={matches.length < 2}
+            onClick={() => stepSearch(1)}
+          >
+            <ChevronDown className="size-4" />
+          </Button>
         </div>
       )}
       <div className="overflow-x-auto">
@@ -327,6 +445,7 @@ export default function ViewPDF({
                 size={size}
                 scale={((width - 16) / size.width) * zoom}
                 rects={highlightByPage.get(i + 1)}
+                matches={matchesByPage.get(i + 1)}
               />
             ))}
         </div>
