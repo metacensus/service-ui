@@ -47,6 +47,13 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Run Chromium against Fabric
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 25
+        run: |
+          npx playwright install --with-deps --only-shell chromium
+          npm run e2e
+
   build-and-smoke-test:
     name: Build and smoke-test the SPA image
     runs-on: ubuntu-latest
